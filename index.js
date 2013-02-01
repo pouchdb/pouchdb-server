@@ -1,30 +1,48 @@
 
 var express = require('express')
   , Pouch   = require('pouchdb')
+  , uuid    = require('node-uuid')
   , app     = express()
   , dbs     = {};
 
+app.configure(function () {
+  app.use(express.logger('dev'));
+  app.use(function (req, res, next) {
+    var data = '';
+    req.on('data', function (chunk) { data += chunk; });
+    req.on('end', function () {
+      if (data) req.body = JSON.parse(data);
+      next();
+    });
+  });
+});
+
 module.exports = app;
 
-function prefix (name) {
-  return 'leveldb://' + name;
+function prefix (db) {
+  return 'leveldb://' + db;
 }
 
-// Logging
-app.use(express.logger('dev'));
+// UUID Generator
+app.get('/_uuids', function (req, res, next) {
+  req.query.count = req.query.count || 1;
+  res.send(200, {
+    uuids: (new Array(req.query.count)).map(function () {
+      return uuid.v4();
+    })
+  });
+});
 
 // Create a database.
 // Return 201, { ok: true } on success
 // Return 412 on failure
-app.put('/:name', function (req, res, next) {
-  Pouch(prefix(req.params.name), function (err, db) {
+app.put('/:db', function (req, res, next) {
+  Pouch(prefix(req.params.db), function (err, db) {
     if (err) {
-      res.json(err);
-      res.send(412);
+      res.send(412, err);
     } else {
-      dbs[req.params.name] = db;
-      res.json({ ok: true });
-      res.send(201);
+      dbs[req.params.db] = db;
+      res.send(201, { ok: true });
     }
   });
 });
@@ -32,15 +50,13 @@ app.put('/:name', function (req, res, next) {
 // Delete a database
 // Return 200, { ok: true } on success
 // Return 404 on failure
-app.del('/:name', function (req, res, next) {
-  Pouch.destroy(prefix(req.params.name), function (err, info) {
+app.del('/:db', function (req, res, next) {
+  Pouch.destroy(prefix(req.params.db), function (err, info) {
     if (err) {
-      res.json(err);
-      res.send(404);
+      res.send(404, err);
     } else {
-      delete dbs[req.params.name];
-      res.json({ ok: true });
-      res.send(200);
+      delete dbs[req.params.db];
+      res.send(200, { ok: true });
     }
   });
 });
@@ -48,15 +64,13 @@ app.del('/:name', function (req, res, next) {
 // Get database information
 // Return 200 with info on success
 // Return 404 on failure
-app.get('/:name', function (req, res, next) {
-  if (req.params.name in dbs) {
-    dbs[req.params.name].info(function (err, info) {
+app.get('/:db', function (req, res, next) {
+  if (req.params.db in dbs) {
+    dbs[req.params.db].info(function (err, info) {
       if (err) {
-        res.json(err);
-        res.send(404);
+        res.send(404, err);
       } else {
-        res.json(info);
-        res.send(200);
+        res.send(200, info);
       }
     });
   } else {
@@ -64,15 +78,33 @@ app.get('/:name', function (req, res, next) {
   }
 });
 
-// Create a document
+// POST a document
+// Return 201 with document information on success
+// Return 409? on failure
+app.post('/:db/', function (req, res, next) {
+  if (req.params.db in dbs) {
+    db[req.params.db].post(req.body, function (err, response) {
+      if (err) {
+        res.send(409, err);
+      } else {
+        res.send(201, response);
+      }
+    });
+  }
+});
+
+// PUT a document
 // Return 201 with document information on success
 // Return 404? on failure
-app.post('/:name', function (req, res, next) {
-  if (req.params.name in dbs) {
-    dbs[req.params.name].post(req.body, function (err, response) {
-      if (err) return res.send(404);
-      res.json(response);
-      res.send(201);
+app.put('/:db/:id', function (req, res, next) {
+  if (req.params.db in dbs) {
+    req.body._id = req.params.id;
+    dbs[req.params.db].put(req.body, function (err, response) {
+      if (err) {
+        res.send(409, err);
+      } else {
+        res.send(201, response);
+      }
     });
   }
 });
