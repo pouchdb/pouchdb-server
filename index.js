@@ -114,9 +114,29 @@ app.put('/:db/:id', function (req, res, next) {
 // Return 404 on failure
 app.get('/:db/:id', function (req, res, next) {
   if (req.params.db in dbs) {
-    dbs[req.params.db].get(req.params.id, function (err, doc) {
+    req.body = req.body || {};
+    if (req.query.rev) req.body.rev = req.query.rev;
+    dbs[req.params.db].get(req.params.id, req.body, function (err, doc) {
       if (err) return res.send(404, err);
       res.send(200, doc);
+    });
+  }
+});
+
+// Delete a document
+// Return 200 with deleted revision number on success
+// Return 404 on failure
+app.del('/:db/:id', function (req, res, next) {
+  if (req.params.db in dbs) {
+    var id = req.params.id
+      , opts = { rev: req.query.rev }
+      , db = dbs[req.params.db];
+
+    db.get(id, opts, function (err, doc) {
+      db.remove(doc, function (err, response) {
+        if (err) return res.send(404, err);
+        res.send(200, response);
+      });
     });
   }
 });
