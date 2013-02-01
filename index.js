@@ -80,7 +80,7 @@ app.get('/:db', function (req, res, next) {
 
 // POST a document
 // Return 201 with document information on success
-// Return 409? on failure
+// Return 409 on failure
 app.post('/:db/', function (req, res, next) {
   if (req.params.db in dbs) {
     db[req.params.db].post(req.body, function (err, response) {
@@ -95,7 +95,7 @@ app.post('/:db/', function (req, res, next) {
 
 // PUT a document
 // Return 201 with document information on success
-// Return 404? on failure
+// Return 409 on failure
 app.put('/:db/:id', function (req, res, next) {
   if (req.params.db in dbs) {
     req.body._id = req.params.id;
@@ -108,3 +108,16 @@ app.put('/:db/:id', function (req, res, next) {
     });
   }
 });
+
+// Retrieve a document
+// Return 200 with document info on success
+// Return 404 on failure
+app.get('/:db/:id', function (req, res, next) {
+  if (req.params.db in dbs) {
+    dbs[req.params.db].get(req.params.id, function (err, doc) {
+      if (err) return res.send(404, err);
+      res.send(200, doc);
+    });
+  }
+});
+
