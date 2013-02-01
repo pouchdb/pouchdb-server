@@ -141,3 +141,15 @@ app.del('/:db/:id(*)', function (req, res, next) {
   }
 });
 
+// Bulk docs operations
+// Return 201 with document information on success
+// Return 409 on error
+app.post('/:db/_bulk_docs', function (req, res, next) {
+  if (req.params.db in dbs) {
+    dbs[req.params.db].bulkDocs(req.body, function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(201, response);
+    });
+  }
+});
+
