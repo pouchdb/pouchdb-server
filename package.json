@@ -1,0 +1,23 @@
+{
+  "name": "pouch-server",
+  "description": "Map HTTP requests to a PouchDB instance running on a Node server.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/nick-thompson/pouch-server",
+  "author": {
+    "name": "Nick Thompson",
+    "email": "ncthom91@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nick-thompson/pouch-server.git"
+  },
+  "main": "./index.js",
+  "engines": {
+    "node": ">= 0.6.0"
+  },
+  "dependencies": {
+    "pouchdb": "0.0.8",
+    "optimist": "~0.3.5",
+    "express": "~3.1.0"
+  }
+}
