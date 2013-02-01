@@ -77,21 +77,6 @@ app.get('/:db', function (req, res, next) {
   }
 });
 
-// POST a document
-// Return 201 with document information on success
-// Return 409 on failure
-app.post('/:db', function (req, res, next) {
-  if (req.params.db in dbs) {
-    db[req.params.db].post(req.body, function (err, response) {
-      if (err) {
-        res.send(409, err);
-      } else {
-        res.send(201, response);
-      }
-    });
-  }
-});
-
 // PUT a document
 // Return 201 with document information on success
 // Return 409 on failure
