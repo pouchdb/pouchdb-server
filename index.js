@@ -23,7 +23,6 @@ function prefix (db) {
   return 'leveldb://' + db;
 }
 
-// UUID Generator
 app.get('/_uuids', function (req, res, next) {
   req.query.count = req.query.count || 1;
   res.send(200, {
@@ -81,7 +80,7 @@ app.get('/:db', function (req, res, next) {
 // POST a document
 // Return 201 with document information on success
 // Return 409 on failure
-app.post('/:db/', function (req, res, next) {
+app.post('/:db', function (req, res, next) {
   if (req.params.db in dbs) {
     db[req.params.db].post(req.body, function (err, response) {
       if (err) {
@@ -96,7 +95,7 @@ app.post('/:db/', function (req, res, next) {
 // PUT a document
 // Return 201 with document information on success
 // Return 409 on failure
-app.put('/:db/:id', function (req, res, next) {
+app.put('/:db/:id(*)', function (req, res, next) {
   if (req.params.db in dbs) {
     req.body._id = req.params.id;
     dbs[req.params.db].put(req.body, function (err, response) {
@@ -112,7 +111,7 @@ app.put('/:db/:id', function (req, res, next) {
 // Retrieve a document
 // Return 200 with document info on success
 // Return 404 on failure
-app.get('/:db/:id', function (req, res, next) {
+app.get('/:db/:id(*)', function (req, res, next) {
   if (req.params.db in dbs) {
     req.body = req.body || {};
     if (req.query.rev) req.body.rev = req.query.rev;
@@ -126,13 +125,14 @@ app.get('/:db/:id', function (req, res, next) {
 // Delete a document
 // Return 200 with deleted revision number on success
 // Return 404 on failure
-app.del('/:db/:id', function (req, res, next) {
+app.del('/:db/:id(*)', function (req, res, next) {
   if (req.params.db in dbs) {
     var id = req.params.id
       , opts = { rev: req.query.rev }
       , db = dbs[req.params.db];
 
     db.get(id, opts, function (err, doc) {
+      if (err) return res.send(404, err);
       db.remove(doc, function (err, response) {
         if (err) return res.send(404, err);
         res.send(200, response);
