@@ -113,9 +113,11 @@ app.put('/:db/:id(*)', function (req, res, next) {
 // Return 404 on failure
 app.get('/:db/:id(*)', function (req, res, next) {
   if (req.params.db in dbs) {
-    req.body = req.body || {};
-    if (req.query.rev) req.body.rev = req.query.rev;
-    dbs[req.params.db].get(req.params.id, req.body, function (err, doc) {
+    var body = req.body || {};
+    for (var prop in req.query) {
+      body[prop] = body[prop] || req.query[prop];
+    }
+    dbs[req.params.db].get(req.params.id, body, function (err, doc) {
       if (err) return res.send(404, err);
       res.send(200, doc);
     });
