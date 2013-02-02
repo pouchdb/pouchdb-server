@@ -8,12 +8,24 @@ var express = require('express')
 app.configure(function () {
   app.use(express.logger('dev'));
   app.use(function (req, res, next) {
-    var data = '';
+    var opts = {}
+      , data = ''
+      , prop;
+
+    // Pouch options come in as query string parameters,
+    // but need to be mapped back to an options object.
+    for (prop in req.query)
+      opts[prop] = req.query[prop];
+    req.opts = opts;
+
+    // Custom bodyParsing because express.bodyParser() chokes
+    // on `malformed` requests.
     req.on('data', function (chunk) { data += chunk; });
     req.on('end', function () {
       if (data) req.body = JSON.parse(data);
       next();
     });
+
   });
 });
 
@@ -91,11 +103,7 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 
 app.get('/:db/_changes', function (req, res, next) {
   if (req.params.db in dbs) {
-    var opts = req.body || {};
-    for (var prop in req.query) {
-      opts[prop] = opts[prop] || req.query[prop];
-    }
-    dbs[req.params.db].changes(opts, function (err, response) {
+    dbs[req.params.db].changes(req.opts, function (err, response) {
       if (err) return res.send(409, err);
       res.send(200, response);
     });
@@ -123,11 +131,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 // Return 404 on failure
 app.get('/:db/:id(*)', function (req, res, next) {
   if (req.params.db in dbs) {
-    var body = req.body || {};
-    for (var prop in req.query) {
-      body[prop] = body[prop] || req.query[prop];
-    }
-    dbs[req.params.db].get(req.params.id, body, function (err, doc) {
+    dbs[req.params.db].get(req.params.id, req.opts, function (err, doc) {
       if (err) return res.send(404, err);
       res.send(200, doc);
     });
