@@ -1,9 +1,18 @@
 
-var express = require('express')
-  , Pouch   = require('pouchdb')
-  , uuid    = require('node-uuid')
-  , app     = express()
-  , dbs     = {};
+/**
+ * Module dependencies and global variables.
+ */
+
+var express   = require('express')
+  , Pouch     = require('pouchdb')
+  , uuid      = require('node-uuid')
+  , app       = express()
+  , dbs       = {}
+  , protocol  = 'leveldb://';
+
+/**
+ * Server configuration.
+ */
 
 app.configure(function () {
   app.use(express.logger('dev'));
@@ -29,16 +38,34 @@ app.configure(function () {
   });
 });
 
+/**
+ * Export the express app itself.
+ */
+
 module.exports = app;
 
-function prefix (db) {
-  return 'leveldb://' + db;
+/**
+ * Delegate calls to a PouchDB instance, and cache
+ * Pouch instances in the running instance of the server.
+ *
+ * @param {string} name Database name
+ * @param {string} callback
+ */
+
+function delegate (name, callback) {
+  if (name in dbs) return callback(null, dbs[name]);
+  Pouch(protocol + name, function (err, db) {
+    dbs[name] = db;
+    callback(err, db);
+  });
 }
 
+// Generate UUIDs
+// Return 200 with a set of UUIDs on success
 app.get('/_uuids', function (req, res, next) {
-  req.query.count = req.query.count || 1;
+  req.opts.count = req.opts.count || 1;
   res.send(200, {
-    uuids: (new Array(req.query.count)).map(function () {
+    uuids: (new Array(req.opts.count)).map(function () {
       return uuid.v4();
     })
   });
@@ -48,13 +75,9 @@ app.get('/_uuids', function (req, res, next) {
 // Return 201, { ok: true } on success
 // Return 412 on failure
 app.put('/:db', function (req, res, next) {
-  Pouch(prefix(req.params.db), function (err, db) {
-    if (err) {
-      res.send(412, err);
-    } else {
-      dbs[req.params.db] = db;
-      res.send(201, { ok: true });
-    }
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(412, err);
+    res.send(201, { ok: true });
   });
 });
 
@@ -62,13 +85,10 @@ app.put('/:db', function (req, res, next) {
 // Return 200, { ok: true } on success
 // Return 404 on failure
 app.del('/:db', function (req, res, next) {
-  Pouch.destroy(prefix(req.params.db), function (err, info) {
-    if (err) {
-      res.send(404, err);
-    } else {
-      delete dbs[req.params.db];
-      res.send(200, { ok: true });
-    }
+  Pouch.destroy(protocol + req.params.db, function (err, info) {
+    if (err) return res.send(404, err);
+    delete dbs[req.params.db];
+    res.send(200, { ok: true });
   });
 });
 
@@ -76,84 +96,81 @@ app.del('/:db', function (req, res, next) {
 // Return 200 with info on success
 // Return 404 on failure
 app.get('/:db', function (req, res, next) {
-  if (req.params.db in dbs) {
-    dbs[req.params.db].info(function (err, info) {
-      if (err) {
-        res.send(404, err);
-      } else {
-        res.send(200, info);
-      }
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(404, err);
+    db.info(function (err, info) {
+      if (err) return res.send(404, err);
+      res.send(200, info);
     });
-  } else {
-    res.send(404);
-  }
+  });
 });
 
 // Bulk docs operations
 // Return 201 with document information on success
-// Return 409 on error
+// Return 409 on failure
 app.post('/:db/_bulk_docs', function (req, res, next) {
-  if (req.params.db in dbs) {
-    dbs[req.params.db].bulkDocs(req.body, function (err, response) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(409, err);
+    db.bulkDocs(req.body, function (err, response) {
       if (err) return res.send(409, err);
       res.send(201, response);
     });
-  }
+  });
 });
 
+// Monitor database changes
+// Return 200 with change set on success
+// Return 409 on failure
 app.get('/:db/_changes', function (req, res, next) {
-  if (req.params.db in dbs) {
-    dbs[req.params.db].changes(req.opts, function (err, response) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(409, err);
+    db.changes(req.opts, function (err, response) {
       if (err) return res.send(409, err);
       res.send(200, response);
     });
-  }
+  });
 });
 
 // PUT a document
 // Return 201 with document information on success
 // Return 409 on failure
 app.put('/:db/:id(*)', function (req, res, next) {
-  if (req.params.db in dbs) {
-    req.body._id = req.params.id;
-    dbs[req.params.db].put(req.body, function (err, response) {
-      if (err) {
-        res.send(409, err);
-      } else {
-        res.send(201, response);
-      }
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(409, err);
+    req.body._id = req.body._id || req.opts.id;
+    db.put(req.body, function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(201, response);
     });
-  }
+  });
 });
 
 // Retrieve a document
 // Return 200 with document info on success
 // Return 404 on failure
 app.get('/:db/:id(*)', function (req, res, next) {
-  if (req.params.db in dbs) {
-    dbs[req.params.db].get(req.params.id, req.opts, function (err, doc) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(409, err);
+    db.get(req.params.id, req.opts, function (err, doc) {
       if (err) return res.send(404, err);
       res.send(200, doc);
     });
-  }
+  });
 });
 
 // Delete a document
 // Return 200 with deleted revision number on success
 // Return 404 on failure
 app.del('/:db/:id(*)', function (req, res, next) {
-  if (req.params.db in dbs) {
-    var id = req.params.id
-      , opts = { rev: req.query.rev }
-      , db = dbs[req.params.db];
-
-    db.get(id, opts, function (err, doc) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(404, err);
+    db.get(req.params.id, req.opts, function (err, doc) {
       if (err) return res.send(404, err);
       db.remove(doc, function (err, response) {
         if (err) return res.send(404, err);
         res.send(200, response);
       });
     });
-  }
+  });
 });
 
