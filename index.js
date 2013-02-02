@@ -77,6 +77,31 @@ app.get('/:db', function (req, res, next) {
   }
 });
 
+// Bulk docs operations
+// Return 201 with document information on success
+// Return 409 on error
+app.post('/:db/_bulk_docs', function (req, res, next) {
+  if (req.params.db in dbs) {
+    dbs[req.params.db].bulkDocs(req.body, function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(201, response);
+    });
+  }
+});
+
+app.get('/:db/_changes', function (req, res, next) {
+  if (req.params.db in dbs) {
+    var opts = req.body || {};
+    for (var prop in req.query) {
+      opts[prop] = opts[prop] || req.query[prop];
+    }
+    dbs[req.params.db].changes(opts, function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(200, response);
+    });
+  }
+});
+
 // PUT a document
 // Return 201 with document information on success
 // Return 409 on failure
@@ -124,18 +149,6 @@ app.del('/:db/:id(*)', function (req, res, next) {
         if (err) return res.send(404, err);
         res.send(200, response);
       });
-    });
-  }
-});
-
-// Bulk docs operations
-// Return 201 with document information on success
-// Return 409 on error
-app.post('/:db/_bulk_docs', function (req, res, next) {
-  if (req.params.db in dbs) {
-    dbs[req.params.db].bulkDocs(req.body, function (err, response) {
-      if (err) return res.send(409, err);
-      res.send(201, response);
     });
   }
 });
