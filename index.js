@@ -4,7 +4,7 @@
  */
 
 var express   = require('express')
-  , Pouch     = require('pouchdb')
+  , Pouch     = require('./pouchdb')
   , uuid      = require('node-uuid')
   , app       = express()
   , dbs       = {}
