@@ -118,16 +118,27 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
   });
 });
 
+app.get('/:db/_all_docs', function (req, res, next) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(404, err);
+    db.allDocs(req.opts, function (err, response) {
+      if (err) return res.send(400, err);
+      res.send(200, response);
+    });
+  });
+});
+
 // Monitor database changes
 // Return 200 with change set on success
 // Return 409 on failure
 app.get('/:db/_changes', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    db.changes(req.opts, function (err, response) {
+    req.opts.complete = function (err, response) {
       if (err) return res.send(409, err);
       res.send(200, response);
-    });
+    };
+    db.changes(req.opts);
   });
 });
 
