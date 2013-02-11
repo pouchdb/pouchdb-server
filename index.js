@@ -21,8 +21,8 @@ app.configure(function () {
       , data = ''
       , prop;
 
-    // Pouch options come in as query string parameters,
-    // but need to be mapped back to an options object.
+    // Not sure what I was thinking... definitely don't need this.
+    // TODO: remove...
     for (prop in req.query)
       opts[prop] = req.query[prop];
     req.opts = opts;
@@ -114,6 +114,7 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 
     // Maybe this should be moved into the leveldb adapter itself? Not sure
     // how uncommon it is for important options to come through in the body
+    // https://github.com/daleharvey/pouchdb/issues/435
     var opts = {
       new_edits: 'new_edits' in req.body
         ? req.body.new_edits
@@ -130,7 +131,21 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 app.get('/:db/_all_docs', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(404, err);
-    db.allDocs(req.opts, function (err, response) {
+    for (var prop in req.query)
+      req.query[prop] = JSON.parse(req.query[prop]);
+    db.allDocs(req.query, function (err, response) {
+      if (err) return res.send(400, err);
+      res.send(200, response);
+    });
+  });
+});
+
+app.post('/:db/_all_docs', function (req, res, next) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(404, err);
+    for (var prop in req.query)
+      req.body[prop] = req.body[prop] || JSON.parse(req.query[prop]);
+    db.allDocs(req.body, function (err, response) {
       if (err) return res.send(400, err);
       res.send(200, response);
     });
