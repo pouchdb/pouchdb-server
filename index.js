@@ -111,7 +111,16 @@ app.get('/:db', function (req, res, next) {
 app.post('/:db/_bulk_docs', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    db.bulkDocs(req.body, function (err, response) {
+
+    // Maybe this should be moved into the leveldb adapter itself? Not sure
+    // how uncommon it is for important options to come through in the body
+    var opts = {
+      new_edits: 'new_edits' in req.body
+        ? req.body.new_edits
+        : undefined
+    };
+
+    db.bulkDocs(req.body, opts, function (err, response) {
       if (err) return res.send(409, err);
       res.send(201, response);
     });
