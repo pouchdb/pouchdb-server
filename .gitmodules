@@ -1,3 +1,0 @@
-[submodule "pouchdb"]
-	path = pouchdb
-	url = git://github.com/daleharvey/pouchdb.git
