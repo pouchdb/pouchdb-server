@@ -161,11 +161,38 @@ app.post('/:db/_all_docs', function (req, res, next) {
 app.get('/:db/_changes', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    req.query.complete = function (err, response) {
+    var longpoll = function (err, data) {
       if (err) return res.send(409, err);
-      res.send(200, response);
+      if (data.results && data.results.length) {
+        data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
+          return r.seq;
+        }));
+        res.send(200, data);
+      } else {
+        delete req.query.complete;
+        req.query.continuous = true;
+        req.query.onChange = function (change) {
+          res.send(200, {
+            results: [change],
+            last_seq: change.seq
+          });
+        };
+        db.changes(req.query);
+      }
     };
+
+    if (req.query.feed) {
+      req.socket.setTimeout(86400 * 1000);
+      req.query.complete = longpoll;
+    } else {
+      req.query.complete = function (err, response) {
+        if (err) return res.send(409, err);
+        res.send(200, response);
+      };
+    }
+
     db.changes(req.query);
+
   });
 });
 
