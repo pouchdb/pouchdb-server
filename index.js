@@ -172,10 +172,7 @@ app.get('/:db/_changes', function (req, res, next) {
         delete req.query.complete;
         req.query.continuous = true;
         req.query.onChange = function (change) {
-          res.send(200, {
-            results: [change],
-            last_seq: change.seq
-          });
+          res.send(200, change);
         };
         db.changes(req.query);
       }
