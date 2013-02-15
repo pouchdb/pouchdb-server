@@ -23,8 +23,12 @@ app.configure(function () {
 
     // Not sure what I was thinking... definitely don't need this.
     // TODO: remove...
-    for (prop in req.query)
+    for (prop in req.query) {
       opts[prop] = req.query[prop];
+      try {
+        req.query[prop] = JSON.parse(req.query[prop]);
+      } catch (e) {}
+    }
     req.opts = opts;
 
     // Custom bodyParsing because express.bodyParser() chokes
@@ -131,8 +135,6 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 app.get('/:db/_all_docs', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(404, err);
-    for (var prop in req.query)
-      req.query[prop] = JSON.parse(req.query[prop]);
     db.allDocs(req.query, function (err, response) {
       if (err) return res.send(400, err);
       res.send(200, response);
@@ -143,8 +145,11 @@ app.get('/:db/_all_docs', function (req, res, next) {
 app.post('/:db/_all_docs', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(404, err);
+
+    // The http adapter will post the `keys` parameter in the
+    // request body.
     for (var prop in req.query)
-      req.body[prop] = req.body[prop] || JSON.parse(req.query[prop]);
+      req.body[prop] = req.body[prop] || req.query[prop];
     db.allDocs(req.body, function (err, response) {
       if (err) return res.send(400, err);
       res.send(200, response);
@@ -186,7 +191,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
     req.body._id = req.body._id || req.opts.id;
-    db.put(req.body, function (err, response) {
+    db.put(req.body, req.query, function (err, response) {
       if (err) return res.send(409, err);
       res.send(201, response);
     });
