@@ -21,15 +21,13 @@ app.configure(function () {
       , data = ''
       , prop;
 
-    // Not sure what I was thinking... definitely don't need this.
-    // TODO: remove...
+    // Normalize query string parameters for direct passing
+    // into Pouch queries.
     for (prop in req.query) {
-      opts[prop] = req.query[prop];
       try {
         req.query[prop] = JSON.parse(req.query[prop]);
       } catch (e) {}
     }
-    req.opts = opts;
 
     // Custom bodyParsing because express.bodyParser() chokes
     // on `malformed` requests.
@@ -67,9 +65,9 @@ function delegate (name, callback) {
 // Generate UUIDs
 // Return 200 with a set of UUIDs on success
 app.get('/_uuids', function (req, res, next) {
-  req.opts.count = req.opts.count || 1;
+  req.query.count = req.query.count || 1;
   res.send(200, {
-    uuids: (new Array(req.opts.count)).map(function () {
+    uuids: (new Array(req.query.count)).map(function () {
       return uuid.v4();
     })
   });
@@ -163,11 +161,11 @@ app.post('/:db/_all_docs', function (req, res, next) {
 app.get('/:db/_changes', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    req.opts.complete = function (err, response) {
+    req.query.complete = function (err, response) {
       if (err) return res.send(409, err);
       res.send(200, response);
     };
-    db.changes(req.opts);
+    db.changes(req.query);
   });
 });
 
@@ -190,7 +188,7 @@ app.post('/:db/_revs_diff', function (req, res, next) {
 app.put('/:db/:id(*)', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    req.body._id = req.body._id || req.opts.id;
+    req.body._id = req.body._id || req.query.id;
     db.put(req.body, req.query, function (err, response) {
       if (err) return res.send(409, err);
       res.send(201, response);
@@ -204,7 +202,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 app.get('/:db/:id(*)', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    db.get(req.params.id, req.opts, function (err, doc) {
+    db.get(req.params.id, req.query, function (err, doc) {
       if (err) return res.send(404, err);
       res.send(200, doc);
     });
@@ -217,7 +215,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
 app.del('/:db/:id(*)', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(404, err);
-    db.get(req.params.id, req.opts, function (err, doc) {
+    db.get(req.params.id, req.query, function (err, doc) {
       if (err) return res.send(404, err);
       db.remove(doc, function (err, response) {
         if (err) return res.send(404, err);
