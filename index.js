@@ -182,6 +182,21 @@ app.post('/:db/_revs_diff', function (req, res, next) {
   });
 });
 
+// Temp Views
+// Return 200 on success
+// Return 400 on failure?
+app.post('/:db/_temp_view', function (req, res, next) {
+  delegate(req.params.db, function (err, db) {
+    if (err) return res.send(400, err);
+    if (req.body.map)
+      req.body.map = (new Function('return ' + req.body.map))();
+    db.query(req.body, req.query, function (err, response) {
+      if (err) return res.send(400, err);
+      res.send(200, response);
+    });
+  });
+});
+
 // PUT a document
 // Return 201 with document information on success
 // Return 409 on failure
