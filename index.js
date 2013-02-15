@@ -241,10 +241,22 @@ app.put('/:db/:id(*)', function (req, res, next) {
 app.get('/:db/:id(*)', function (req, res, next) {
   delegate(req.params.db, function (err, db) {
     if (err) return res.send(409, err);
-    db.get(req.params.id, req.query, function (err, doc) {
-      if (err) return res.send(404, err);
-      res.send(200, doc);
-    });
+
+    if (req.params.id.match(/^_design/) && req.params.id.match(/_view/)) {
+      var id = req.params.id.replace(/^_design\//, '')
+        , query = id.split('/_view/').join('/');
+
+      db.query(query, req.query, function (err, response) {
+        if (err) return res.send(404, err);
+        res.send(200, response);
+      });
+    } else {
+      db.get(req.params.id, req.query, function (err, doc) {
+        if (err) return res.send(404, err);
+        res.send(200, doc);
+      });
+    }
+
   });
 });
 
