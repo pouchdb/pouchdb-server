@@ -214,6 +214,7 @@ app.post('/:db/_temp_view', function (req, res, next) {
     if (err) return res.send(400, err);
     if (req.body.map)
       req.body.map = (new Function('return ' + req.body.map))();
+    req.query.conflicts = true;
     db.query(req.body, req.query, function (err, response) {
       if (err) return res.send(400, err);
       res.send(200, response);
