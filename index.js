@@ -33,7 +33,13 @@ app.configure(function () {
     // on `malformed` requests.
     req.on('data', function (chunk) { data += chunk; });
     req.on('end', function () {
-      if (data) req.body = JSON.parse(data);
+      if (data) {
+        try {
+          req.body = JSON.parse(data);
+        } catch (e) {
+          req.body = data;
+        }
+      }
       next();
     });
 
