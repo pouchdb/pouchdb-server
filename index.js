@@ -138,8 +138,6 @@ app.all('/:db/_all_docs', function (req, res, next) {
 });
 
 // Monitor database changes
-// Return 200 with change set on success
-// Return 409 on failure
 app.get('/:db/_changes', function (req, res, next) {
 
   var longpoll = function (err, data) {
@@ -174,8 +172,6 @@ app.get('/:db/_changes', function (req, res, next) {
 });
 
 // Revs Diff
-// Return 200 with revs diff on success
-// Return 400 on failure
 app.post('/:db/_revs_diff', function (req, res, next) {
   req.db.revsDiff(req.body, function (err, diffs) {
     if (err) return res.send(400, err);
@@ -184,11 +180,8 @@ app.post('/:db/_revs_diff', function (req, res, next) {
 });
 
 // Temp Views
-// Return 200 on success
-// Return 400 on failure?
 app.post('/:db/_temp_view', function (req, res, next) {
-  if (req.body.map)
-    req.body.map = (new Function('return ' + req.body.map))();
+  if (req.body.map) req.body.map = (new Function('return ' + req.body.map))();
   req.query.conflicts = true;
   req.db.query(req.body, req.query, function (err, response) {
     if (err) return res.send(400, err);
@@ -196,9 +189,7 @@ app.post('/:db/_temp_view', function (req, res, next) {
   });
 });
 
-// PUT a document
-// Return 201 with document information on success
-// Return 409 on failure
+// Create a document
 app.put('/:db/:id(*)', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
   req.db.put(req.body, req.query, function (err, response) {
@@ -208,8 +199,6 @@ app.put('/:db/:id(*)', function (req, res, next) {
 });
 
 // Retrieve a document
-// Return 200 with document info on success
-// Return 404 on failure
 app.get('/:db/:id(*)', function (req, res, next) {
 
   if (req.params.id.match(/^_design/) && req.params.id.match(/_view/)) {
