@@ -198,29 +198,24 @@ app.put('/:db/:id(*)', function (req, res, next) {
   });
 });
 
+// Query a document view
+app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
+  var query = req.params.id + '/' + req.params.view;
+  req.db.query(query, req.query, function (err, response) {
+    if (err) return res.send(404, err);
+    res.send(200, response);
+  });
+});
+
 // Retrieve a document
 app.get('/:db/:id(*)', function (req, res, next) {
-
-  if (req.params.id.match(/^_design/) && req.params.id.match(/_view/)) {
-    var id = req.params.id.replace(/^_design\//, '')
-      , query = id.split('/_view/').join('/');
-
-    req.db.query(query, req.query, function (err, response) {
-      if (err) return res.send(404, err);
-      res.send(200, response);
-    });
-  } else {
-    req.db.get(req.params.id, req.query, function (err, doc) {
-      if (err) return res.send(404, err);
-      res.send(200, doc);
-    });
-  }
-
+  req.db.get(req.params.id, req.query, function (err, doc) {
+    if (err) return res.send(404, err);
+    res.send(200, doc);
+  });
 });
 
 // Delete a document
-// Return 200 with deleted revision number on success
-// Return 404 on failure
 app.del('/:db/:id(*)', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
