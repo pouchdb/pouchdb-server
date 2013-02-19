@@ -1,18 +1,13 @@
 
-/**
- * Module dependencies and global variables.
- */
-
 var express   = require('express')
   , Pouch     = require('./pouchdb')
   , uuid      = require('node-uuid')
+  , fs        = require('fs')
   , app       = express()
   , dbs       = {}
   , protocol  = 'leveldb://';
 
-/**
- * Server configuration.
- */
+module.exports = app;
 
 app.configure(function () {
   app.use(express.logger('dev'));
@@ -46,30 +41,7 @@ app.configure(function () {
   });
 });
 
-/**
- * Export the express app itself.
- */
-
-module.exports = app;
-
-/**
- * Delegate calls to a PouchDB instance, and cache
- * Pouch instances in the running instance of the server.
- *
- * @param {string} name Database name
- * @param {string} callback
- */
-
-function delegate (name, callback) {
-  if (name in dbs) return callback(null, dbs[name]);
-  Pouch(protocol + name, function (err, db) {
-    dbs[name] = db;
-    callback(err, db);
-  });
-}
-
-// Generate UUIDs
-// Return 200 with a set of UUIDs on success
+// TODO: Remove this: https://github.com/nick-thompson/pouch-server/issues/1
 app.get('/_uuids', function (req, res, next) {
   req.query.count = req.query.count || 1;
   res.send(200, {
@@ -80,18 +52,16 @@ app.get('/_uuids', function (req, res, next) {
 });
 
 // Create a database.
-// Return 201, { ok: true } on success
-// Return 412 on failure
 app.put('/:db', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  if (req.params.db in dbs) return res.send(201, { ok: true });
+  Pouch(protocol + req.params.db, function (err, db) {
     if (err) return res.send(412, err);
+    dbs[req.params.db] = db;
     res.send(201, { ok: true });
   });
 });
 
 // Delete a database
-// Return 200, { ok: true } on success
-// Return 404 on failure
 app.del('/:db', function (req, res, next) {
   Pouch.destroy(protocol + req.params.db, function (err, info) {
     if (err) return res.send(404, err);
@@ -100,115 +70,124 @@ app.del('/:db', function (req, res, next) {
   });
 });
 
+// At this point, some route middleware can take care of identifying the
+// correct Pouch instance.
+app.all('/:db/*', function (req, res, next) {
+  var name = req.params.db;
+
+  if (name in dbs) {
+    req.db = dbs[name];
+    return next();
+  }
+
+  // Check for the data stores, and rebuild a Pouch instance if able
+  fs.stat(name, function (err, stats) {
+    if (err && err.code == 'ENOENT') return res.send(404);
+    if (stats.isDirectory()) {
+      Pouch(protocol + name, function (err, db) {
+        if (err) return res.send(412, err);
+        dbs[name] = db;
+        req.db = db;
+        return next();
+      });
+    }
+  });
+
+});
+
 // Get database information
-// Return 200 with info on success
-// Return 404 on failure
 app.get('/:db', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  req.db.info(function (err, info) {
     if (err) return res.send(404, err);
-    db.info(function (err, info) {
-      if (err) return res.send(404, err);
-      res.send(200, info);
-    });
+    res.send(200, info);
   });
 });
 
 // Bulk docs operations
-// Return 201 with document information on success
-// Return 409 on failure
 app.post('/:db/_bulk_docs', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+
+  // Maybe this should be moved into the leveldb adapter itself? Not sure
+  // how uncommon it is for important options to come through in the body
+  // https://github.com/daleharvey/pouchdb/issues/435
+  var opts = {
+    new_edits: 'new_edits' in req.body
+      ? req.body.new_edits
+      : undefined
+  };
+
+  req.db.bulkDocs(req.body, opts, function (err, response) {
     if (err) return res.send(409, err);
-
-    // Maybe this should be moved into the leveldb adapter itself? Not sure
-    // how uncommon it is for important options to come through in the body
-    // https://github.com/daleharvey/pouchdb/issues/435
-    var opts = {
-      new_edits: 'new_edits' in req.body
-        ? req.body.new_edits
-        : undefined
-    };
-
-    db.bulkDocs(req.body, opts, function (err, response) {
-      if (err) return res.send(409, err);
-      res.send(201, response);
-    });
+    res.send(201, response);
   });
+
 });
 
+// All docs operations
 app.get('/:db/_all_docs', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
-    if (err) return res.send(404, err);
-    db.allDocs(req.query, function (err, response) {
-      if (err) return res.send(400, err);
-      res.send(200, response);
-    });
+  req.db.allDocs(req.query, function (err, response) {
+    if (err) return res.send(400, err);
+    res.send(200, response);
   });
 });
 
 app.post('/:db/_all_docs', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
-    if (err) return res.send(404, err);
 
-    // The http adapter will post the `keys` parameter in the
-    // request body.
-    for (var prop in req.query)
-      req.body[prop] = req.body[prop] || req.query[prop];
-    db.allDocs(req.body, function (err, response) {
-      if (err) return res.send(400, err);
-      res.send(200, response);
-    });
+  // The http adapter will post the `keys` parameter in the
+  // request body.
+  for (var prop in req.query) {
+    req.body[prop] = req.body[prop] || req.query[prop];
+  }
+
+  req.db.allDocs(req.body, function (err, response) {
+    if (err) return res.send(400, err);
+    res.send(200, response);
   });
+
 });
 
 // Monitor database changes
 // Return 200 with change set on success
 // Return 409 on failure
 app.get('/:db/_changes', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+
+  var longpoll = function (err, data) {
     if (err) return res.send(409, err);
-    var longpoll = function (err, data) {
-      if (err) return res.send(409, err);
-      if (data.results && data.results.length) {
-        data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
-          return r.seq;
-        }));
-        res.send(200, data);
-      } else {
-        delete req.query.complete;
-        req.query.continuous = true;
-        req.query.onChange = function (change) {
-          res.send(200, change);
-        };
-        db.changes(req.query);
-      }
-    };
-
-    if (req.query.feed) {
-      req.socket.setTimeout(86400 * 1000);
-      req.query.complete = longpoll;
+    if (data.results && data.results.length) {
+      data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
+        return r.seq;
+      }));
+      res.send(200, data);
     } else {
-      req.query.complete = function (err, response) {
-        if (err) return res.send(409, err);
-        res.send(200, response);
+      delete req.query.complete;
+      req.query.continuous = true;
+      req.query.onChange = function (change) {
+        res.send(200, change);
       };
+      req.db.changes(req.query);
     }
+  };
 
-    db.changes(req.query);
+  if (req.query.feed) {
+    req.socket.setTimeout(86400 * 1000);
+    req.query.complete = longpoll;
+  } else {
+    req.query.complete = function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(200, response);
+    };
+  }
 
-  });
+  req.db.changes(req.query);
+
 });
 
 // Revs Diff
 // Return 200 with revs diff on success
 // Return 400 on failure
 app.post('/:db/_revs_diff', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  req.db.revsDiff(req.body, function (err, diffs) {
     if (err) return res.send(400, err);
-    db.revsDiff(req.body, function (err, diffs) {
-      if (err) return res.send(400, err);
-      res.send(200, diffs);
-    });
+    res.send(200, diffs);
   });
 });
 
@@ -216,15 +195,12 @@ app.post('/:db/_revs_diff', function (req, res, next) {
 // Return 200 on success
 // Return 400 on failure?
 app.post('/:db/_temp_view', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  if (req.body.map)
+    req.body.map = (new Function('return ' + req.body.map))();
+  req.query.conflicts = true;
+  req.db.query(req.body, req.query, function (err, response) {
     if (err) return res.send(400, err);
-    if (req.body.map)
-      req.body.map = (new Function('return ' + req.body.map))();
-    req.query.conflicts = true;
-    db.query(req.body, req.query, function (err, response) {
-      if (err) return res.send(400, err);
-      res.send(200, response);
-    });
+    res.send(200, response);
   });
 });
 
@@ -232,13 +208,10 @@ app.post('/:db/_temp_view', function (req, res, next) {
 // Return 201 with document information on success
 // Return 409 on failure
 app.put('/:db/:id(*)', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  req.body._id = req.body._id || req.query.id;
+  req.db.put(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
-    req.body._id = req.body._id || req.query.id;
-    db.put(req.body, req.query, function (err, response) {
-      if (err) return res.send(409, err);
-      res.send(201, response);
-    });
+    res.send(201, response);
   });
 });
 
@@ -246,39 +219,33 @@ app.put('/:db/:id(*)', function (req, res, next) {
 // Return 200 with document info on success
 // Return 404 on failure
 app.get('/:db/:id(*)', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
-    if (err) return res.send(409, err);
 
-    if (req.params.id.match(/^_design/) && req.params.id.match(/_view/)) {
-      var id = req.params.id.replace(/^_design\//, '')
-        , query = id.split('/_view/').join('/');
+  if (req.params.id.match(/^_design/) && req.params.id.match(/_view/)) {
+    var id = req.params.id.replace(/^_design\//, '')
+      , query = id.split('/_view/').join('/');
 
-      db.query(query, req.query, function (err, response) {
-        if (err) return res.send(404, err);
-        res.send(200, response);
-      });
-    } else {
-      db.get(req.params.id, req.query, function (err, doc) {
-        if (err) return res.send(404, err);
-        res.send(200, doc);
-      });
-    }
+    req.db.query(query, req.query, function (err, response) {
+      if (err) return res.send(404, err);
+      res.send(200, response);
+    });
+  } else {
+    req.db.get(req.params.id, req.query, function (err, doc) {
+      if (err) return res.send(404, err);
+      res.send(200, doc);
+    });
+  }
 
-  });
 });
 
 // Delete a document
 // Return 200 with deleted revision number on success
 // Return 404 on failure
 app.del('/:db/:id(*)', function (req, res, next) {
-  delegate(req.params.db, function (err, db) {
+  req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
-    db.get(req.params.id, req.query, function (err, doc) {
+    req.db.remove(doc, function (err, response) {
       if (err) return res.send(404, err);
-      db.remove(doc, function (err, response) {
-        if (err) return res.send(404, err);
-        res.send(200, response);
-      });
+      res.send(200, response);
     });
   });
 });
