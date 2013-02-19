@@ -123,22 +123,14 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 });
 
 // All docs operations
-app.get('/:db/_all_docs', function (req, res, next) {
-  req.db.allDocs(req.query, function (err, response) {
-    if (err) return res.send(400, err);
-    res.send(200, response);
-  });
-});
+app.all('/:db/_all_docs', function (req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'POST') return next();
 
-app.post('/:db/_all_docs', function (req, res, next) {
-
-  // The http adapter will post the `keys` parameter in the
-  // request body.
-  for (var prop in req.query) {
-    req.body[prop] = req.body[prop] || req.query[prop];
+  for (var prop in req.body) {
+    req.query[prop] = req.query[prop] || req.body[prop];
   }
 
-  req.db.allDocs(req.body, function (err, response) {
+  req.db.allDocs(req.query, function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
   });
