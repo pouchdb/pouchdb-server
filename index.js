@@ -189,6 +189,44 @@ app.post('/:db/_temp_view', function (req, res, next) {
   });
 });
 
+// Put a document attachment
+app.put('/:db/:id/:attachment', function (req, res, next) {
+
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+
+  var name = req.params.id + '/' + req.params.attachment
+    , rev = req.query.rev
+    , doc = req.body
+    , type = req.get('Content-Type');
+
+  req.db.putAttachment(name, rev, doc, type, function (err, response) {
+    if (err) return res.send(409, err);
+    res.send(200, response);
+  });
+
+});
+
+// Delete a document attachment
+app.del('/:db/:id/:attachment', function (req, res, next) {
+
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+
+  var name = req.params.id + '/' + req.params.attachment
+    , rev = req.query.rev;
+
+  req.db.removeAttachment(name, rev, function (err, response) {
+    if (err) return res.send(409, err);
+    res.send(200, response);
+  });
+
+});
+
 // Create a document
 app.put('/:db/:id(*)', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
