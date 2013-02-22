@@ -82,7 +82,14 @@ app.all('/:db/*', function (req, res, next) {
 
   // Check for the data stores, and rebuild a Pouch instance if able
   fs.stat(name, function (err, stats) {
-    if (err && err.code == 'ENOENT') return res.send(404);
+    if (err && err.code == 'ENOENT') {
+      return res.send(404, {
+        status: 404,
+        error: 'not_found',
+        reason: 'no_db_file'
+      });
+    }
+
     if (stats.isDirectory()) {
       Pouch(protocol + name, function (err, db) {
         if (err) return res.send(412, err);
