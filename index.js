@@ -1,6 +1,6 @@
 
 var express   = require('express')
-  , Pouch     = require('./pouchdb')
+  , Pouch     = require('pouchdb')
   , uuid      = require('node-uuid')
   , fs        = require('fs')
   , app       = express()
