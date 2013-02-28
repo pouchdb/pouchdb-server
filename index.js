@@ -130,7 +130,7 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
   };
 
   req.db.bulkDocs(req.body, opts, function (err, response) {
-    if (err) return res.send(409, err);
+    if (err) return res.send(400, err);
     res.send(201, response);
   });
 
