@@ -51,6 +51,13 @@ app.get('/_uuids', function (req, res, next) {
   });
 });
 
+app.get('/', function (req, res, next) {
+  res.send(200, {
+    'pouchdb-server': 'Welcome!',
+    'version': '0.1.0'
+  });
+});
+
 // Create a database.
 app.put('/:db', function (req, res, next) {
   if (req.params.db in dbs) return res.send(201, { ok: true });
