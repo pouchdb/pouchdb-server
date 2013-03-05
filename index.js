@@ -215,8 +215,8 @@ app.put('/:db/:id/:attachment', function (req, res, next) {
     , rev = req.query.rev
     , type = req.get('Content-Type')
     , body = typeof req.body === 'string'
-        ? req.body
-        : JSON.stringify(req.body);
+        ? new Buffer(req.body)
+        : new Buffer(JSON.stringify(req.body));
 
   // CouchDB will create the document for you before adding the attachment
   // if the document doesn't already exist. Mimic that here.
