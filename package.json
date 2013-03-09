@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server",
   "description": "PouchDB HTTP support for Node.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/nick-thompson/pouch-server",
   "author": {
     "name": "Nick Thompson",
@@ -12,6 +12,12 @@
     "url": "git://github.com/nick-thompson/pouch-server.git"
   },
   "main": "./index.js",
+  "bin": {
+    "pouchdb-server": "./bin/pouch"
+  },
+  "scripts": {
+    "start": "node ./bin/pouch"
+  },
   "engines": {
     "node": ">= 0.6.0"
   },
