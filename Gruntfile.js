@@ -8,13 +8,13 @@ module.exports = function(grunt) {
     test: {
       pouchdb: {
         cmd: 'grunt',
-        args: ['cors-server', 'node-qunit'],
-        root: './node_modules/pouchdb'
+        root: './node_modules/pouchdb',
+        args: ['cors-server', 'node-qunit']
       },
       couchdb: {
-        cmd: 'npm',
-        args: ['start'],
-        root: './node_modules/couchdb-harness'
+        cmd: './bin/couchdb-harness',
+        root: './node_modules/couchdb-harness',
+        args: []
       }
     }
 
@@ -35,7 +35,6 @@ module.exports = function(grunt) {
     task.on('exit', function (code) {
       done(!code);
     });
-
   });
 
   grunt.registerTask('default', ['test']);
