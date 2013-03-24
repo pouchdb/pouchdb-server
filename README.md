@@ -2,9 +2,9 @@
 
 >PouchDB HTTP support for Node.js.
 
-* Allows for replication from idb to node.
+* Replicate PouchDB stores from idb to node.
+* Use PouchDB as a mini CouchDB replacement to get up and running quickly.
 * Allows the PouchDB team to run the extensive CouchDB test suite against PouchDB.
-* Allows people to use a PouchDB as a mini-CouchDB replacement to get up and running.
 
 See the discussion behind this project here: https://github.com/daleharvey/pouchdb/issues/175
 
@@ -33,22 +33,21 @@ rather than relying on the npm package to be constantly up-to-date.
 
 ## Usage
 
-To run the server from the command line,
+### Command Line
+
+If you've installed the package globally, you can run the server with,
 
 ```
-./bin/pouch [port]
+pouchdb-server [port]
 ```
 
-or
+Otherwise you can run the server with `npm start` from the root directory of
+your installation.
 
-```
-./node_modules/pouchdb-server/bin/pouch [port]
-```
+By default, the server will run on port 5984, the same port that CouchDB 
+defaults to, for ease of testing.
 
-depending on your install. By default, the server will run on port 5984, the
-same port that CouchDB defaults to, for ease of testing.
-
-To run the server via Node.js,
+### Node.js
 
 ```
 var server = require("pouchdb-server");
@@ -57,8 +56,20 @@ server.listen(5984);
 
 ## Testing
 
-If you're interested in running the test suites, spin up an instance of pouchdb-server
-from the command line, and then run the PouchDB test suite as you normally would.
-Make sure that you have halted your CouchDB server so that the two are not competing
-for the same port.
+If you're interested in running the test suites, spin up an instance of
+pouchdb-server from the command line, and then run the various test suites
+from the root directory of your installation with,
+
+```
+grunt test:pouchdb
+```
+
+or
+
+```
+grunt test:couchdb
+```
+
+Make sure that you have halted your CouchDB server so that the two are not
+competing for the same port.
 
