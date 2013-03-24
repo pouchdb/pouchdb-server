@@ -64,7 +64,13 @@ app.get('/', function (req, res, next) {
 
 // Create a database.
 app.put('/:db', function (req, res, next) {
-  if (req.params.db in dbs) return res.send(201, { ok: true });
+  if (req.params.db in dbs) {
+    return res.send(412, {
+      'error': 'file_exists',
+      'reason': 'The database could not be created.'
+    });
+  }
+
   Pouch(protocol + req.params.db, function (err, db) {
     if (err) return res.send(412, err);
     dbs[req.params.db] = db;
