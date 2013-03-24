@@ -27,7 +27,10 @@
     "node-uuid": "~1.4.0",
     "pouchdb": "*",
     "couchdb-harness": "*",
-    "grunt": "~0.4.0",
     "corser": "~1.2.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-clean": "~0.4.0"
   }
 }

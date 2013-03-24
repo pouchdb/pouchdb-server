@@ -5,6 +5,8 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
 
+    clean: ['./_allDbs', 'testdb_*'],
+
     test: {
       pouchdb: {
         cmd: 'grunt',
@@ -37,6 +39,7 @@ module.exports = function(grunt) {
     });
   });
 
+  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.registerTask('default', ['test']);
 
 };
