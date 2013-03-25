@@ -56,19 +56,9 @@ server.listen(5984);
 
 ## Testing
 
-If you're interested in running the test suites, spin up an instance of
-pouchdb-server from the command line, and then run the various test suites
-from the root directory of your installation with,
-
-```
-grunt test:pouchdb
-```
-
-or
-
-```
-grunt test:couchdb
-```
+If you're interested in running the test suites, `grunt server test:pouchdb` or
+`grunt server test:couchdb`. You can specify specific test files to run for
+the couchdb test suite with `grunt server test:couchdb:basics`. 
 
 Make sure that you have halted your CouchDB server so that the two are not
 competing for the same port.
