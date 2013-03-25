@@ -5,7 +5,14 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
 
-    clean: ['./_allDbs', 'testdb_*'],
+    clean: [
+      './_allDbs',
+      'testdb_*'
+    ],
+
+    server: {
+      port: 5984
+    },
 
     test: {
       pouchdb: {
@@ -20,6 +27,10 @@ module.exports = function(grunt) {
       }
     }
 
+  });
+
+  grunt.registerTask('server', function () {
+    require('./').listen(grunt.config.get('server.port'));
   });
 
   grunt.registerMultiTask('test', function () {
