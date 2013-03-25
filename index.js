@@ -45,6 +45,13 @@ app.configure(function () {
   });
 });
 
+app.get('/', function (req, res, next) {
+  res.send(200, {
+    'pouchdb-server': 'Welcome!',
+    'version': '0.1.0'
+  });
+});
+
 // TODO: Remove this: https://github.com/nick-thompson/pouch-server/issues/1
 app.get('/_uuids', function (req, res, next) {
   req.query.count = req.query.count || 1;
@@ -55,10 +62,11 @@ app.get('/_uuids', function (req, res, next) {
   });
 });
 
-app.get('/', function (req, res, next) {
-  res.send(200, {
-    'pouchdb-server': 'Welcome!',
-    'version': '0.1.0'
+// List all databases.
+app.get('/_all_dbs', function (req, res, next) {
+  Pouch.allDbs(function (err, response) {
+    if (err) res.send(500, Pouch.UNKNOWN_ERROR);
+    res.send(200, response);
   });
 });
 
