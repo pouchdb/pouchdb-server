@@ -157,9 +157,10 @@ app.all('/:db/_all_docs', function (req, res, next) {
   if (req.method !== 'GET' && req.method !== 'POST') return next();
 
   // Check that the request body is an object.
-  if (typeof req.body !== 'object' || Array.isArray(req.body)) {
-    return res.send(400, Pouch.BAD_REQUEST);
-  }
+  // Necessary to pass CouchDB suite, but fails on PouchDB suite when implemented
+  // if (typeof req.body !== 'object' || Array.isArray(req.body)) {
+  //   return res.send(400, Pouch.BAD_REQUEST);
+  // }
 
   for (var prop in req.body) {
     req.query[prop] = req.query[prop] || req.body[prop];

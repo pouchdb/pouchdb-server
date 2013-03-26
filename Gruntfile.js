@@ -8,7 +8,7 @@ module.exports = function(grunt) {
     clean: [
       './_allDbs',
       'testdb_*',
-      'test_suite_db'
+      'test_suite_*'
     ],
 
     server: {
