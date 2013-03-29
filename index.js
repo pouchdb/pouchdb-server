@@ -72,25 +72,33 @@ app.get('/_all_dbs', function (req, res, next) {
 
 // Create a database.
 app.put('/:db', function (req, res, next) {
-  if (req.params.db in dbs) {
+  var name = encodeURIComponent(req.params.db);
+  if (name in dbs) {
     return res.send(412, {
       'error': 'file_exists',
       'reason': 'The database could not be created.'
     });
   }
 
-  Pouch(protocol + req.params.db, function (err, db) {
+  Pouch(protocol + name, function (err, db) {
     if (err) return res.send(412, err);
-    dbs[req.params.db] = db;
+    dbs[name] = db;
+    var loc = req.protocol
+      + '://'
+      + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
+      + req.host
+      + '/' + name;
+    res.location(loc);
     res.send(201, { ok: true });
   });
 });
 
 // Delete a database
 app.del('/:db', function (req, res, next) {
-  Pouch.destroy(protocol + req.params.db, function (err, info) {
+  var name = encodeURIComponent(req.params.db);
+  Pouch.destroy(protocol + name, function (err, info) {
     if (err) return res.send(404, err);
-    delete dbs[req.params.db];
+    delete dbs[name];
     res.send(200, { ok: true });
   });
 });
@@ -98,7 +106,7 @@ app.del('/:db', function (req, res, next) {
 // At this point, some route middleware can take care of identifying the
 // correct Pouch instance.
 app.all('/:db/*', function (req, res, next) {
-  var name = req.params.db;
+  var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
     req.db = dbs[name];
