@@ -206,6 +206,14 @@ app.get('/:db/_changes', function (req, res, next) {
 
 });
 
+// DB Compaction
+app.post('/:db/_compact', function (req, res, next) {
+  req.db.compact(function (err, response) {
+    if (err) return res.send(500, err);
+    res.send(200, response);
+  });
+});
+
 // Revs Diff
 app.post('/:db/_revs_diff', function (req, res, next) {
   req.db.revsDiff(req.body, function (err, diffs) {
