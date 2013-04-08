@@ -35,14 +35,15 @@ module.exports = function(grunt) {
     require('./').listen(grunt.config.get('server.port'));
   });
 
-  grunt.registerMultiTask('test', function (couchFile) {
+  grunt.registerMultiTask('test', function () {
     var cmd = this.data.cmd
       , args = this.data.args
+      , files = Array.prototype.slice.call(arguments, 0)
       , done = this.async()
       , task;
 
     if (this.target === 'couchdb') {
-      args.push(couchFile);
+      args = args.concat(files);
     }
 
     task = spawn(cmd, args, { cwd: this.data.root });
