@@ -283,8 +283,20 @@ app.del('/:db/:id/:attachment', function (req, res, next) {
 // Create a document
 app.put('/:db/:id(*)', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
+  if (!req.body._id) {
+    req.body._id = (!!req.params.id && req.params.id !== 'null')
+      ? req.params.id
+      : null;
+  }
   req.db.put(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
+    var loc = req.protocol
+      + '://'
+      + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
+      + req.host
+      + '/' + req.params.db
+      + '/' + req.body._id;
+    res.location(loc);
     res.send(201, response);
   });
 });
