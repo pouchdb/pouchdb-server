@@ -6,7 +6,8 @@ module.exports = function(grunt) {
   grunt.initConfig({
 
     clean: [
-      './_allDbs',
+      '_allDbs',
+      '_pouch_*',
       'testdb_*',
       'test_suite_*'
     ],
@@ -55,6 +56,7 @@ module.exports = function(grunt) {
     });
 
     task.on('exit', function (code) {
+      grunt.task.run('clean');
       done(!code);
     });
   });
