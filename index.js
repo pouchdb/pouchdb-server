@@ -183,6 +183,10 @@ app.all('/:db/_all_docs', function (req, res, next) {
 // Monitor database changes
 app.get('/:db/_changes', function (req, res, next) {
 
+  // api.changes expects a property `query_params`
+  // This is a pretty inefficient way to do it.. Revisit?
+  req.query.query_params = JSON.parse(JSON.stringify(req.query));
+
   var longpoll = function (err, data) {
     if (err) return res.send(409, err);
     if (data.results && data.results.length) {
