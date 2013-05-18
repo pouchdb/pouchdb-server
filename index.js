@@ -290,7 +290,7 @@ app.del('/:db/:id/:attachment', function (req, res, next) {
 
 });
 
-// Create a document
+// Create or update document that has an ID
 app.put('/:db/:id(*)', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
   if (!req.body._id) {
@@ -307,6 +307,14 @@ app.put('/:db/:id(*)', function (req, res, next) {
       + '/' + req.params.db
       + '/' + req.body._id;
     res.location(loc);
+    res.send(201, response);
+  });
+});
+
+// Create a document
+app.post('/:db(*)', function (req, res, next) {
+  req.db.post(req.body, req.query, function (err, response) {
+    if (err) return res.send(409, err);
     res.send(201, response);
   });
 });
