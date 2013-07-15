@@ -1,4 +1,3 @@
-
 var express   = require('express')
   , Pouch     = require('pouchdb')
   , uuid      = require('node-uuid')
@@ -10,6 +9,8 @@ var express   = require('express')
   , protocol  = 'leveldb://';
 
 module.exports = app;
+
+Pouch.enableAllDbs = true;
 
 app.configure(function () {
   app.use(express.logger('dev'));
@@ -105,7 +106,7 @@ app.del('/:db', function (req, res, next) {
 
 // At this point, some route middleware can take care of identifying the
 // correct Pouch instance.
-app.all('/:db/*', function (req, res, next) {
+app.all(['/:db','/:db/*'], function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
