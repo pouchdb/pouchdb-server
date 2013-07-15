@@ -70,6 +70,31 @@ app.get('/_all_dbs', function (req, res, next) {
   });
 });
 
+
+// Replicate a database
+app.post('/_replicate', function (req, res, next) {
+
+  var source = req.body.source;
+  var target = req.body.target;
+  var opts = 'continuous' in req.body
+    ? { continuous : req.body.continuous }
+    : { 'continuous' : false};
+
+  promise = Pouch.replicate(source, target, opts, function(err, response) {
+    if (err) return res.send(400, err);
+    res.send(200, response);
+  })
+
+  // if continuous pull replication return 'ok' since we cannot wait for callback
+  if (target in dbs){
+    if(opts.continuous){
+      res.send(200, { ok : true }) ;
+    }
+  }
+
+});
+
+
 // Create a database.
 app.put('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
