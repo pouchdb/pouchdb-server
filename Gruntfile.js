@@ -20,7 +20,7 @@ module.exports = function(grunt) {
       pouchdb: {
         cmd: 'grunt',
         root: './node_modules/pouchdb',
-        args: ['cors-server', 'node-qunit']
+        args: ['node-qunit']
       },
       couchdb: {
         cmd: './bin/couchdb-harness',

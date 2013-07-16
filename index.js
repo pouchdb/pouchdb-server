@@ -1,3 +1,4 @@
+
 var express   = require('express')
   , Pouch     = require('pouchdb')
   , uuid      = require('node-uuid')
@@ -9,7 +10,6 @@ var express   = require('express')
   , protocol  = 'leveldb://';
 
 module.exports = app;
-
 Pouch.enableAllDbs = true;
 
 app.configure(function () {
@@ -75,22 +75,21 @@ app.get('/_all_dbs', function (req, res, next) {
 // Replicate a database
 app.post('/_replicate', function (req, res, next) {
 
-  var source = req.body.source;
-  var target = req.body.target;
-  var opts = 'continuous' in req.body
-    ? { continuous : req.body.continuous }
-    : { 'continuous' : false};
+  var source = req.body.source
+    , target = req.body.target
+    , opts = { continuous: !!req.body.continuous };
 
-  promise = Pouch.replicate(source, target, opts, function(err, response) {
+  if (req.body.filter) opts.filter = req.body.filter;
+  opts.complete = function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
-  })
+  };
+
+  Pouch.replicate(source, target, opts);
 
   // if continuous pull replication return 'ok' since we cannot wait for callback
-  if (target in dbs){
-    if(opts.continuous){
-      res.send(200, { ok : true }) ;
-    }
+  if (target in dbs && opts.continuous) {
+    res.send(200, { ok : true });
   }
 
 });
