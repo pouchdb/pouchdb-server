@@ -63,11 +63,12 @@ app.get('/', function (req, res, next) {
 
 // TODO: Remove this: https://github.com/nick-thompson/pouch-server/issues/1
 app.get('/_uuids', function (req, res, next) {
-  req.query.count = req.query.count || 1;
+  var count = req.query.count || 1
+    , uuids = [];
+
+  while (--count >= 0) { uuids.push(uuid.v4()); }
   res.send(200, {
-    uuids: (new Array(req.query.count)).map(function () {
-      return uuid.v4();
-    })
+    uuids: uuids
   });
 });
 
@@ -138,7 +139,7 @@ app.del('/:db', function (req, res, next) {
 
 // At this point, some route middleware can take care of identifying the
 // correct Pouch instance.
-app.all(['/:db','/:db/*'], function (req, res, next) {
+app.all(['/:db/*','/:db'], function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
