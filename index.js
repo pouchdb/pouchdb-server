@@ -5,9 +5,11 @@ var express   = require('express')
   , fs        = require('fs')
   , corser    = require("corser")
   , app       = express()
-  , corserRequestListener = corser.create()
   , dbs       = {}
-  , protocol  = 'leveldb://';
+  , protocol  = 'leveldb://'
+  , corserRequestListener = corser.create({
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE']
+  });
 
 module.exports = app;
 Pouch.enableAllDbs = true;
@@ -17,31 +19,37 @@ app.configure(function () {
   app.use(function (req, res, next) {
     // Route req and res through the request listener.
     corserRequestListener(req, res, function () {
-      var opts = {}
-        , data = ''
-        , prop;
+      if (req.method == 'OPTIONS') {
+        // End CORS preflight request.
+        res.writeHead(204);
+        res.end();
+      } else {
+        var opts = {}
+          , data = ''
+          , prop;
 
-      // Normalize query string parameters for direct passing
-      // into Pouch queries.
-      for (prop in req.query) {
-        try {
-          req.query[prop] = JSON.parse(req.query[prop]);
-        } catch (e) {}
-      }
-
-      // Custom bodyParsing because express.bodyParser() chokes
-      // on `malformed` requests.
-      req.on('data', function (chunk) { data += chunk; });
-      req.on('end', function () {
-        if (data) {
+        // Normalize query string parameters for direct passing
+        // into Pouch queries.
+        for (prop in req.query) {
           try {
-            req.body = JSON.parse(data);
-          } catch (e) {
-            req.body = data;
-          }
+            req.query[prop] = JSON.parse(req.query[prop]);
+          } catch (e) {}
         }
-        next();
-      });
+
+        // Custom bodyParsing because express.bodyParser() chokes
+        // on `malformed` requests.
+        req.on('data', function (chunk) { data += chunk; });
+        req.on('end', function () {
+          if (data) {
+            try {
+              req.body = JSON.parse(data);
+            } catch (e) {
+              req.body = data;
+            }
+          }
+          next();
+        });
+      }
     });
   });
 });
