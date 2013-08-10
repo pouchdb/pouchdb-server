@@ -49,10 +49,26 @@ defaults to, for ease of testing.
 
 ### Node.js
 
+It is not invoked like this
+
 ```
 var server = require("pouchdb-server");
 server.listen(5984);
 ```
+
+but like this
+
+```
+var express  = require('express'),
+    app = express();
+    pouchdb_server = require("pouchdb-server");
+    
+app.use('/your_prefix_for_pouchdb_server', pouchdb_server);
+// ...
+app.listen(3000);
+```
+
+
 
 ## Testing
 

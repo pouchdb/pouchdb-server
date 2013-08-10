@@ -14,7 +14,6 @@ app = module.exports = express();
 
 Pouch.enableAllDbs = true;
 
-
 //app.use(express.logger('dev'));
 
 app.use(function (req, res, next) {
