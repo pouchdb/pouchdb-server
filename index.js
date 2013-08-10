@@ -5,30 +5,34 @@ var fs        = require('fs')
   , dbs       = {}
   , protocol  = 'leveldb://'
   , express   = require('express')
-  , corser    = require("corser")
-  , corserRequestListener = corser.create({
-      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE']
-  });
+  , useCorser = false;
+
 
 app = module.exports = express();
-
-Pouch.enableAllDbs = true;
-
 //app.use(express.logger('dev'));
 
-app.use(function (req, res, next) {
-  // Route req and res through the request listener.
-  corserRequestListener(req, res, function () {
-    if (req.method == 'OPTIONS') {
-      // End CORS preflight request.
-      res.writeHead(204);
-      res.end();
-    } else {
-     normalize_query(req,res,next);
-    }
+Pouch.enableAllDbs = true;
+ 
+if (useCorser) {
+  var corser    = require("corser");
+  var corserRequestListener = corser.create({
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE']
   });
-});
-
+  app.use(function (req, res, next) {
+    // Route req and res through the request listener.
+    corserRequestListener(req, res, function () {
+      if (req.method == 'OPTIONS') {
+        // End CORS preflight request.
+        res.writeHead(204);
+        res.end();
+      } else {
+       normalize_query(req,res,next);
+      }
+    });
+  });
+} else {
+  app.use(normalize_query);
+}
 
 function normalize_query(req,res,next) {  // Normalize query string parameters for direct passing
  var opts = {}            // into Pouch queries.
