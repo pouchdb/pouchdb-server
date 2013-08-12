@@ -1,21 +1,23 @@
 
-var express   = require('express')
+var fs        = require('fs')
   , Pouch     = require('pouchdb')
   , uuid      = require('node-uuid')
-  , fs        = require('fs')
-  , corser    = require("corser")
-  , app       = express()
   , dbs       = {}
   , protocol  = 'leveldb://'
-  , corserRequestListener = corser.create({
+  , express   = require('express')
+  , useCorser = false;
+
+
+app = module.exports = express();
+//app.use(express.logger('dev'));
+
+Pouch.enableAllDbs = true;
+ 
+if (useCorser) {
+  var corser    = require("corser");
+  var corserRequestListener = corser.create({
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE']
   });
-
-module.exports = app;
-Pouch.enableAllDbs = true;
-
-app.configure(function () {
-  app.use(express.logger('dev'));
   app.use(function (req, res, next) {
     // Route req and res through the request listener.
     corserRequestListener(req, res, function () {
@@ -24,35 +26,40 @@ app.configure(function () {
         res.writeHead(204);
         res.end();
       } else {
-        var opts = {}
-          , data = ''
-          , prop;
-
-        // Normalize query string parameters for direct passing
-        // into Pouch queries.
-        for (prop in req.query) {
-          try {
-            req.query[prop] = JSON.parse(req.query[prop]);
-          } catch (e) {}
-        }
-
-        // Custom bodyParsing because express.bodyParser() chokes
-        // on `malformed` requests.
-        req.on('data', function (chunk) { data += chunk; });
-        req.on('end', function () {
-          if (data) {
-            try {
-              req.body = JSON.parse(data);
-            } catch (e) {
-              req.body = data;
-            }
-          }
-          next();
-        });
+       normalize_query(req,res,next);
       }
     });
   });
-});
+} else {
+  app.use(normalize_query);
+}
+
+function normalize_query(req,res,next) {  // Normalize query string parameters for direct passing
+ var opts = {}            // into Pouch queries.
+    , data = ''
+    , prop;
+
+  for (prop in req.query) {
+    try {
+      req.query[prop] = JSON.parse(req.query[prop]);
+    } catch (e) {}
+  }
+
+  // Custom bodyParsing because express.bodyParser() chokes
+  // on `malformed` requests.
+  req.on('data', function (chunk) { data += chunk; });
+  req.on('end', function () {
+    if (data) {
+      try {
+        req.body = JSON.parse(data);
+      } catch (e) {
+        req.body = data;
+      }
+    }
+    next();
+  });
+}
+
 
 app.get('/', function (req, res, next) {
   res.send(200, {
@@ -139,7 +146,7 @@ app.del('/:db', function (req, res, next) {
 
 // At this point, some route middleware can take care of identifying the
 // correct Pouch instance.
-app.all(['/:db/*','/:db'], function (req, res, next) {
+['/:db/*','/:db'].forEach(function (route) { app.all(route, function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
@@ -167,7 +174,7 @@ app.all(['/:db/*','/:db'], function (req, res, next) {
     }
   });
 
-});
+})});
 
 // Get database information
 app.get('/:db', function (req, res, next) {
@@ -380,4 +387,3 @@ app.del('/:db/:id(*)', function (req, res, next) {
     });
   });
 });
-
