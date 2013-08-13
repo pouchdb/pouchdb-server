@@ -4,7 +4,7 @@ var fs        = require('fs')
   , uuid      = require('node-uuid')
   , dbs       = {}
   , protocol  = 'leveldb://'
-  , useCORS   = false,
+  , useCORS   = false
   , useLogger = 'dev';
 
 module.exports = {
@@ -12,7 +12,7 @@ module.exports = {
      useCORS = bool || useCORS;
      return this;
   },
-  setLogger(log){
+  setLogger: function(log){
     useLogger = log;
   },
   listen: function(port) {
