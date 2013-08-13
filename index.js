@@ -4,17 +4,20 @@ var fs        = require('fs')
   , uuid      = require('node-uuid')
   , dbs       = {}
   , protocol  = 'leveldb://'
-  , useCORS   = false;
+  , useCORS   = false,
+  , useLogger = 'dev';
 
 module.exports = {
   setCORS: function (bool) {
-     useCORS = bool;
+     useCORS = bool || useCORS;
      return this;
+  },
+  setLogger(log){
+    useLogger = log;
   },
   listen: function(port) {
     var express = require('express');
     app = configure_app(express);
-    app.use(express.logger('dev'))
     app.listen(port || 5984);
   },
   middleware: function (express) {
@@ -24,7 +27,10 @@ module.exports = {
 
 
 function configure_app(express) {
-  var app=express();  
+  var app=express();
+  if (useLogger) {
+    app.use(express.logger((typeof useLogger === 'string') ? useLogger: 'dev'));
+  }  
   Pouch.enableAllDbs = true;
 
   // CONFIGURE CORS AND NORMALIZE QUERY
