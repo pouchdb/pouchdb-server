@@ -49,21 +49,21 @@ defaults to, for ease of testing.
 
 ### Node.js
 
-It is not invoked like this
+Standalone:
 
 ```
-var server = require("pouchdb-server");
-server.listen(5984);
+var pouchdb_server = require("pouchdb-server");
+pouchdb_server.useCORS(true_or_false).listen(5984);
 ```
 
-but like this
+Middleware
 
 ```
 var express  = require('express'),
     app = express();
     pouchdb_server = require("pouchdb-server");
     
-app.use('/your_prefix_for_pouchdb_server', pouchdb_server);
+app.use('/your_prefix_for_pouchdb_server', pouchdb_server.middleware(express)));
 // ...
 app.listen(3000);
 ```
