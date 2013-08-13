@@ -9,6 +9,7 @@ var fs        = require('fs')
 module.exports = {
   setCORS: function (bool) {
      useCORS = bool;
+     return this;
   },
   listen: function(port) {
     var express = require('express');
@@ -403,7 +404,5 @@ function configure_app(express) {
       });
     });
   });
-  
-    console.log('hi');
   return app;
 }
