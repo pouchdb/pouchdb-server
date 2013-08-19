@@ -19,7 +19,7 @@ module.exports = function(grunt) {
     test: {
       pouchdb: {
         cmd: 'grunt',
-        root: './node_modules/pouchdb',
+        root: './node_modules/express-pouchdb/node_modules/pouchdb',
         args: ['node-qunit']
       },
       couchdb: {
