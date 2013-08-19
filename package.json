@@ -1,0 +1,27 @@
+{
+  "name": "express-pouchdb",
+  "description": "Express submodule with a CouchDB style REST interface to PouchDB.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/nick-thompson/express-pouchdb",
+  "author": {
+    "name": "Nick Thompson",
+    "email": "ncthom91@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nick-thompson/express-pouchdb.git"
+  },
+  "main": "./index.js",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "pouchdb": "*"
+  },
+  "devDependencies": {
+    "express": "~3.3.5"
+  },
+  "peerDependencies": {
+    "express": "~3.3.5"
+  }
+}
