@@ -1,65 +1,58 @@
-# PouchDB-Server
+# Express PouchDB
 
->PouchDB HTTP support for Node.js.
-
-* Replicate PouchDB stores from idb to node.
-* Use PouchDB as a mini CouchDB replacement to get up and running quickly.
-* Allows the PouchDB team to run the extensive CouchDB test suite against PouchDB.
-
-See the discussion behind this project here: https://github.com/daleharvey/pouchdb/issues/175
+## Introduction
 
 ## Installation
 
-PouchDB-Server can be installed via npm,
-
 ```
-npm install pouchdb-server
+npm install express-pouchdb
 ```
 
-however, if you plan to use it for testing PouchDB, it's recommended that you
-follow these steps,
+## Example Usage
 
 ```
-git clone git://github.com/nick-thompson/pouchdb-server.git
-cd pouchdb-server
-npm link pouchdb
-npm install
+var express = require('express')
+  , app     = express();
+
+app.configure(function () {
+  app.use(express.logger('tiny'));
+  app.use('/_prefix', require('express-pouchdb'));
+  ...
+});
 ```
 
-The above assumes that you have linked a local clone of the PouchDB repository
-(from your local PouchDB repository, `npm link`).
-This allows you to run the test suites against the development version of PouchDB,
-rather than relying on the npm package to be constantly up-to-date.
+## Contributing
 
-## Usage
+Want to help me make this thing awesome? Great! Your pull requests are always
+welcome. In lieu of a formal styleguide, please take care to maintain the existing coding style.
 
-### Command Line
+## Contributors
 
-If you've installed the package globally, you can run the server with,
+| *Dale Harvey* | [github/daleharvey](https://github.com/daleharvey)
+| *Ryan Ramage* | [github/ryanramage](https://github.com/ryanramage)
 
-```
-pouchdb-server [port]
-```
+## License
 
-Otherwise you can run the server with `npm start` from the root directory of
-your installation.
+Copyright (c) 2013 Nick Thompson
 
-By default, the server will run on port 5984, the same port that CouchDB 
-defaults to, for ease of testing.
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
 
-### Node.js
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
 
-```
-var server = require("pouchdb-server");
-server.listen(5984);
-```
-
-## Testing
-
-If you're interested in running the test suites, `grunt server test:pouchdb` or
-`grunt server test:couchdb`. You can specify specific test files to run for
-the couchdb test suite with `grunt server test:couchdb:basics`. 
-
-Make sure that you have halted your CouchDB server so that the two are not
-competing for the same port.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
 
