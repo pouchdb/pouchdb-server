@@ -49,10 +49,26 @@ defaults to, for ease of testing.
 
 ### Node.js
 
+Standalone:
+
 ```
-var server = require("pouchdb-server");
-server.listen(5984);
+var pouchdb_server = require("pouchdb-server");
+pouchdb_server.useCORS(true_or_false).listen(5984);
 ```
+
+Middleware
+
+```
+var express  = require('express'),
+    app = express();
+    pouchdb_server = require("pouchdb-server");
+    
+app.use('/your_prefix_for_pouchdb_server', pouchdb_server.middleware(express)));
+// ...
+app.listen(3000);
+```
+
+
 
 ## Testing
 
