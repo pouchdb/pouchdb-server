@@ -52,7 +52,7 @@ app.get('/_uuids', function (req, res, next) {
   var count = req.query.count || 1
     , uuids = [];
 
-  while (--count >= 0) { uuids.push(uuid.v4()); }
+  while (--count >= 0) { uuids.push(Pouch.uuid()); }
   res.send(200, {
     uuids: uuids
   });
@@ -123,34 +123,35 @@ app.del('/:db', function (req, res, next) {
 
 // At this point, some route middleware can take care of identifying the
 // correct Pouch instance.
-app.all(['/:db/*','/:db'], function (req, res, next) {
-  var name = encodeURIComponent(req.params.db);
+['/:db/*','/:db'].forEach(function (route) {
+  app.all(route, function (req, res, next) {
+    var name = encodeURIComponent(req.params.db);
 
-  if (name in dbs) {
-    req.db = dbs[name];
-    return next();
-  }
-
-  // Check for the data stores, and rebuild a Pouch instance if able
-  fs.stat(name, function (err, stats) {
-    if (err && err.code == 'ENOENT') {
-      return res.send(404, {
-        status: 404,
-        error: 'not_found',
-        reason: 'no_db_file'
-      });
+    if (name in dbs) {
+      req.db = dbs[name];
+      return next();
     }
 
-    if (stats.isDirectory()) {
-      Pouch(protocol + name, function (err, db) {
-        if (err) return res.send(412, err);
-        dbs[name] = db;
-        req.db = db;
-        return next();
-      });
-    }
+    // Check for the data stores, and rebuild a Pouch instance if able
+    fs.stat(name, function (err, stats) {
+      if (err && err.code == 'ENOENT') {
+        return res.send(404, {
+          status: 404,
+          error: 'not_found',
+          reason: 'no_db_file'
+        });
+      }
+
+      if (stats.isDirectory()) {
+        Pouch(protocol + name, function (err, db) {
+          if (err) return res.send(412, err);
+          dbs[name] = db;
+          req.db = db;
+          return next();
+        });
+      }
+    });
   });
-
 });
 
 // Get database information
