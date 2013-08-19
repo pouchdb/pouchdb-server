@@ -6,6 +6,6 @@ var server = require('..')
       ? +args[0]
       : 5984;
 
-server.listen(port);
+server.useCORS(true).listen(port);
 process.stdout.write('PouchDB server listening on ' + port + '.\n');
 
