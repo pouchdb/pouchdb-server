@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+var express = require('express')
+  , corser  = require('corser')
+  , args    = require('optimist').argv._
+  , app     = express()
+  , port    = args.length ? +args[0] : 5984
+  , corserRequestListener = corser.create({
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
+      supportsCredentials: true
+  });
+
+app.configure(function () {
+  app.use(express.logger('dev'));
+  app.use(function (req, res, next) {
+    corserRequestListener(req, res, function () {
+      if (req.method == 'OPTIONS') {
+        // End CORS preflight request.
+        res.writeHead(204);
+        return res.end();
+      }
+      next();
+    });
+  });
+  app.use(require('express-pouchdb'));
+});
+
+app.listen(port);
+console.log('pouchdb-server listening on port ' + port + '.\n');
+
