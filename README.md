@@ -35,6 +35,7 @@ $ pouchdb-server -p 15984 -l tiny
 pouchdb-server listening on port 15984.
 ```
 
+Take a look at the possible log formats [here](http://www.senchalabs.org/connect/middleware-logger.html). 
 Alternatively, **pouchdb-server**'s functionality can be mounted into other Express web apps. For more information
 on that, check out [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
 
