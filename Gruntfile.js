@@ -12,10 +12,6 @@ module.exports = function(grunt) {
       'test_suite_*'
     ],
 
-    server: {
-      port: 5984
-    },
-
     test: {
       pouchdb: {
         cmd: 'grunt',
@@ -29,10 +25,6 @@ module.exports = function(grunt) {
       }
     }
 
-  });
-
-  grunt.registerTask('server', function () {
-    require('./').listen(grunt.config.get('server.port'));
   });
 
   grunt.registerMultiTask('test', function () {
