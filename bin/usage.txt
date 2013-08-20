@@ -4,4 +4,5 @@
    Options:
      -p, --port           Port on which to run the server.
      -l, --log            Connect log format.
+     -h, --help           Show this usage information.
 
