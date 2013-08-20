@@ -1,4 +1,3 @@
-
 var express   = require('express')
   , Pouch     = require('pouchdb')
   , fs        = require('fs')
@@ -6,6 +5,8 @@ var express   = require('express')
   , dbs       = {}
   , protocol  = 'leveldb://'
   , app       = module.exports = express();
+
+module.exports.Pouch = Pouch;
 
 // We'll need this for the _all_dbs route.
 Pouch.enableAllDbs = true;
