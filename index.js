@@ -47,7 +47,7 @@ app.get('/', function (req, res, next) {
   });
 });
 
-// TODO: Remove this: https://github.com/nick-thompson/pouch-server/issues/1
+// Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
   var count = req.query.count || 1
     , uuids = [];
