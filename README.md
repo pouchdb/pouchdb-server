@@ -48,6 +48,19 @@ GET / 200 56 - 7 ms
 }
 ```
 
+*Note,* **express-pouchdb** bundles its own JSON parsing middleware which conflicts with 
+[`express.bodyParser()`](http://expressjs.com/api.html#bodyParser). Please avoid using `express.bodyParser()`. Rather,
+you can use `express.urlencoded()` and `express.multipart()` alongside the **express-pouchdb** JSON middleware 
+and you should find the results to be the same as you would have expected with `express.bodyParser()`.
+
+```javascript
+app.configure(function () {
+  app.use(express.urlencoded());
+  app.use(express.multipart());
+  app.use(require('express-pouchdb'));
+});
+```
+
 ## Contributing
 
 Want to help me make this thing awesome? Great! Your pull requests are always
