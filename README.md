@@ -1,65 +1,100 @@
-# PouchDB-Server
+# pouchdb-server
 
->PouchDB HTTP support for Node.js.
+> A standalone REST interface server for PouchDB.
 
-* Replicate PouchDB stores from idb to node.
-* Use PouchDB as a mini CouchDB replacement to get up and running quickly.
-* Allows the PouchDB team to run the extensive CouchDB test suite against PouchDB.
+## Introduction
 
-See the discussion behind this project here: https://github.com/daleharvey/pouchdb/issues/175
+**pouchdb-server** is a simple Node.js server that presents a simple REST API, which mimics that of [CouchDB](couchdb.apache.org),
+on top of [PouchDB](pouchdb.com). Among other things, this allows users to replicate IndexedDB stores to LevelDB, or to
+spin up a quick and dirty drop-in replacement for CouchDB to get things moving quickly.
 
 ## Installation
 
-PouchDB-Server can be installed via npm,
-
+```bash
+$ npm install -g pouchdb-server
 ```
-npm install pouchdb-server
-```
-
-however, if you plan to use it for testing PouchDB, it's recommended that you
-follow these steps,
-
-```
-git clone git://github.com/nick-thompson/pouchdb-server.git
-cd pouchdb-server
-npm link pouchdb
-npm install
-```
-
-The above assumes that you have linked a local clone of the PouchDB repository
-(from your local PouchDB repository, `npm link`).
-This allows you to run the test suites against the development version of PouchDB,
-rather than relying on the npm package to be constantly up-to-date.
 
 ## Usage
 
-### Command Line
-
-If you've installed the package globally, you can run the server with,
-
-```
-pouchdb-server [port]
 ```
 
-Otherwise you can run the server with `npm start` from the root directory of
-your installation.
+   Usage: pouchdb-server [options]
 
-By default, the server will run on port 5984, the same port that CouchDB 
-defaults to, for ease of testing.
+   Options:
+     -p, --port           Port on which to run the server.
+     -l, --log            Connect log format.
+     -h, --help           Show this usage information.
 
-### Node.js
 
 ```
-var server = require("pouchdb-server");
-server.listen(5984);
+
+A simple example might be,
+
+```bash
+$ pouchdb-server -p 15984 -l tiny
+pouchdb-server listening on port 15984.
 ```
+
+Alternatively, **pouchdb-server**'s functionality can be mounted into other Express web apps. For more information
+on that, check out [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
 
 ## Testing
 
-If you're interested in running the test suites, `grunt server test:pouchdb` or
-`grunt server test:couchdb`. You can specify specific test files to run for
-the couchdb test suite with `grunt server test:couchdb:basics`. 
+One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself.
+To do that, you can simply,
 
-Make sure that you have halted your CouchDB server so that the two are not
-competing for the same port.
+```bash
+$ pouchdb-server &
+$ grunt test:pouchdb
+```
 
+Additionally, we've started porting CouchDB's JavaScript test harness to 
+[a simple Node module](https://github.com/nick-thompson/couchdb-harness), which can be run against PouchDB via
+**pouchdb-server**.
+
+```bash
+$ pouchdb-server &
+$ grunt test:couchdb
+```
+
+**Note**, you can also specify specific test files to run from CouchDB's harness: `$ grunt test:couchdb:basics:all_docs`
+
+## Contributing
+
+Want to help me make this thing awesome? Great! Your pull requests are always
+welcome. In lieu of a formal styleguide, please take care to maintain the existing coding style.
+
+## Contributors
+
+A huge thanks goes out to all of the following people for helping me get this to where it is now.
+
+* Dale Harvey ([@daleharvey](https://github.com/daleharvey))
+* Ryan Ramage ([@ryanramage](https://github.com/ryanramage))
+* Garren Smith ([@garrensmith](https://github.com/garrensmith))
+* ([@copongcopong](https://github.com/copongcopong))
+* ([@zevero](https://github.com/zevero))
+
+## License
+
+Copyright (c) 2013 Nick Thompson
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
