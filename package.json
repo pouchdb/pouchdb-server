@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server",
-  "description": "PouchDB HTTP support for Node.js",
-  "version": "0.1.9",
+  "description": "A standalone REST interface server for PouchDB.",
+  "version": "0.2.0",
   "homepage": "https://github.com/nick-thompson/pouchdb-server",
   "author": {
     "name": "Nick Thompson",
