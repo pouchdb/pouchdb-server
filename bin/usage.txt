@@ -1,0 +1,7 @@
+
+   Usage: pouchdb-server [options]
+
+   Options:
+     -p, --port           Port on which to run the server.
+     -l, --log            Connect log format.
+

@@ -2,16 +2,28 @@
 
 var express = require('express')
   , corser  = require('corser')
-  , args    = require('optimist').argv._
+  , argv    = require('optimist').argv
+  , port    = +(argv.p || argv.port || 5984)
+  , logger  = argv.l || argv.log || 'dev'
   , app     = express()
-  , port    = args.length ? +args[0] : 5984
   , corserRequestListener = corser.create({
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
       supportsCredentials: true
   });
 
+// Help, display usage information
+if (argv.h || argv.help) {
+  var path = require('path')
+    , fs = require('fs')
+    , fp = path.resolve(__dirname, 'usage.txt')
+    , usage = fs.readFileSync(fp, 'utf8');
+
+  process.stdout.write(usage);
+  process.exit(1);
+}
+
 app.configure(function () {
-  app.use(express.logger('dev'));
+  app.use(express.logger(logger));
   app.use(function (req, res, next) {
     corserRequestListener(req, res, function () {
       if (req.method == 'OPTIONS') {
