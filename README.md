@@ -1,24 +1,51 @@
-# Express PouchDB
+# express-pouchdb
+
+> An Express submodule with a CouchDB style REST interface to PouchDB.
 
 ## Introduction
 
+The **express-pouchdb** module is a fully qualified [Express](http://expressjs.com/) application with routing defined to 
+mimic most of the [CouchDB](http://couchdb.apache.org/) REST API, and whose behavior is handled by 
+[PouchDB](http://pouchdb.com/). The intention is for **express-pouchdb** to be mounted into other Express apps for 
+extended usability. A simple example of this is [pouchdb-server](https://github.com/nick-thompson/pouchdb-server), 
+which is primarily used as a quick-and-dirty drop-in replacement for CouchDB in Node.js.
+
+## Screencasts
+
+* [Modular web applications with Node.js and Express](http://vimeo.com/56166857)
+
 ## Installation
 
-```
-npm install express-pouchdb
+```bash
+$ npm install express-pouchdb
 ```
 
 ## Example Usage
 
-```
+Here's a sample Express app, which we'll name `app.js`.
+
+```javascript
 var express = require('express')
   , app     = express();
 
 app.configure(function () {
   app.use(express.logger('tiny'));
-  app.use('/_prefix', require('express-pouchdb'));
-  ...
+  app.use('/db', require('express-pouchdb'));
 });
+
+app.listen(3000);
+```
+
+Now we can run this little guy and find each of `express-pouch`'s routes at the `/db` prefix.
+
+```bash
+$ node app.js &
+$ curl http://localhost:5984/db/
+GET / 200 56 - 7 ms
+{
+  "pouchdb-server": "Welcome!",
+  "version": "0.2.0"
+}
 ```
 
 ## Contributing
@@ -28,8 +55,13 @@ welcome. In lieu of a formal styleguide, please take care to maintain the existi
 
 ## Contributors
 
-| *Dale Harvey* | [github/daleharvey](https://github.com/daleharvey)
-| *Ryan Ramage* | [github/ryanramage](https://github.com/ryanramage)
+A huge thanks goes out to all of the following people for helping me get this to where it is now.
+
+* Dale Harvey ([@daleharvey](https://github.com/daleharvey))
+* Ryan Ramage ([@ryanramage](https://github.com/ryanramage))
+* Garren Smith ([@garrensmith](https://github.com/garrensmith))
+* ([@copongcopong](https://github.com/copongcopong))
+* ([@zevero](https://github.com/zevero))
 
 ## License
 
