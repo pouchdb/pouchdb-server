@@ -2,6 +2,7 @@
 var express   = require('express')
   , Pouch     = require('pouchdb')
   , fs        = require('fs')
+  , pkg       = require('./package.json')
   , dbs       = {}
   , protocol  = 'leveldb://'
   , app       = module.exports = express();
@@ -42,8 +43,8 @@ app.configure(function () {
 // Root route, return welcome message
 app.get('/', function (req, res, next) {
   res.send(200, {
-    'pouchdb-server': 'Welcome!',
-    'version': '0.1.0'
+    'express-pouchdb': 'Welcome!',
+    'version': pkg.version
   });
 });
 
