@@ -1,12 +1,10 @@
+
 var express   = require('express')
-  , Pouch     = require('pouchdb')
   , fs        = require('fs')
   , pkg       = require('./package.json')
   , dbs       = {}
-  , protocol  = 'leveldb://'
-  , app       = module.exports = express();
-
-module.exports.Pouch = Pouch;
+  , app       = module.exports = express()
+  , Pouch     = module.exports.Pouch = require('pouchdb');
 
 // We'll need this for the _all_dbs route.
 Pouch.enableAllDbs = true;
@@ -100,7 +98,7 @@ app.put('/:db', function (req, res, next) {
     });
   }
 
-  Pouch(protocol + name, function (err, db) {
+  Pouch(name, function (err, db) {
     if (err) return res.send(412, err);
     dbs[name] = db;
     var loc = req.protocol
@@ -116,7 +114,7 @@ app.put('/:db', function (req, res, next) {
 // Delete a database
 app.del('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
-  Pouch.destroy(protocol + name, function (err, info) {
+  Pouch.destroy(name, function (err, info) {
     if (err) return res.send(404, err);
     delete dbs[name];
     res.send(200, { ok: true });
@@ -145,7 +143,7 @@ app.del('/:db', function (req, res, next) {
       }
 
       if (stats.isDirectory()) {
-        Pouch(protocol + name, function (err, db) {
+        Pouch(name, function (err, db) {
           if (err) return res.send(412, err);
           dbs[name] = db;
           req.db = db;
