@@ -74,6 +74,7 @@ app.post('/_replicate', function (req, res, next) {
     , opts = { continuous: !!req.body.continuous };
 
   if (req.body.filter) opts.filter = req.body.filter;
+  if (req.body.query_params) opts.query_params = req.body.query_params;
   opts.complete = function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
