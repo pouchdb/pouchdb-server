@@ -6,6 +6,88 @@ var express   = require('express')
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
+//------------------------------------------------------------------------------
+//
+// "Replication Damping" is an ugly work-around to avoid endless replication-
+// loops for documents which are actually in conflict (although PouchDB does not
+// recognize that). In fact, PouchDB should really brush up its conflict hand-
+// ling - but 'til then, "Replication Damping" may help
+//
+//------------------------------------------------------------------------------
+
+var ReplDamper_on            = true;         // is "Replication Damping" active?
+var ReplDamper_lastUpdateSet = {};     // set of most recently updated documents
+var ReplDamper_ignoredDocSet = {};   // set of documents which should be ignored
+
+//------------------------------------------------------------------------------
+// ReplDamper_rememberLastUpdates keeps track of the most recently updated docs
+//------------------------------------------------------------------------------
+
+var ReplDamper_rememberLastUpdates = function (DocSet) {
+  var DocList = DocSet.docs || [];
+  
+  ReplDamper_lastUpdateSet = {};
+  for (var i = 0; i < DocList.length; i++) {
+    var DocId  = DocList[i]._id;
+    var DocRev = DocList[i]._rev;
+
+    if (!(DocId in ReplDamper_lastUpdateSet)) {
+      ReplDamper_lastUpdateSet[DocId] = {};
+    };
+
+    ReplDamper_lastUpdateSet[DocId][DocRev] = true;
+  };
+};
+
+//------------------------------------------------------------------------------
+// ReplDamper_updateIgnorables updates set of documents which should be ignored
+//------------------------------------------------------------------------------
+
+var ReplDamper_updateIgnorables = function (DiffSet) {
+  for (var DocId in DiffSet) {
+    if (!DiffSet.hasOwnProperty(DocId)) {continue};
+
+    if (DocId in ReplDamper_lastUpdateSet) {  // document has been _bulk_updated
+      var MissingList = DiffSet[DocId].missing;
+      for (var i = 0; i < MissingList.length; i++) {
+        if (MissingList[i] in ReplDamper_lastUpdateSet[DocId]) {
+          if (!(DocId in ReplDamper_ignoredDocSet)) {
+            ReplDamper_ignoredDocSet[DocId] = {};
+          };
+
+          ReplDamper_ignoredDocSet[DocId][MissingList[i]] = true;
+        };
+      };
+    };
+  };
+};
+
+//------------------------------------------------------------------------------
+// ReplDamper_removeIgnorables   removes any docs to be ignored from _revs_diff
+//------------------------------------------------------------------------------
+
+var ReplDamper_removeIgnorables = function (DiffSet) {
+  for (var DocId in DiffSet) {
+    if (!DiffSet.hasOwnProperty(DocId)) {continue};
+
+    if (DocId in ReplDamper_ignoredDocSet) {       // document should be ignored
+      var IgnorableSet = ReplDamper_ignoredDocSet[DocId];
+      var MissingList  = DiffSet[DocId].missing;
+      for (var i = MissingList.length-1; i >= 0; i--) {
+        if (MissingList[i] in IgnorableSet) {
+          MissingList.splice(i,1);
+        };
+      };
+
+      if (MissingList.length === 0) {
+        delete DiffSet[DocId];
+      };
+    };
+  };
+};
+
+//------------------------------------------------------------------------------
+
 // We'll need this for the _all_dbs route.
 Pouch.enableAllDbs = true;
 
@@ -47,6 +129,16 @@ app.get('/', function (req, res, next) {
   });
 });
 
+//------------------------------------------------------------------------------
+// let "Replication Damping" be switched on/off on request
+//------------------------------------------------------------------------------
+
+// activate/deactivate "Replication Damping"
+app.post('/_replication_damping', function (req, res, next) {
+  ReplDamper_on = !!req.query.on;
+  res.send(204);
+});
+
 // Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
   var count = req.query.count || 1
@@ -74,7 +166,6 @@ app.post('/_replicate', function (req, res, next) {
     , opts = { continuous: !!req.body.continuous };
 
   if (req.body.filter) opts.filter = req.body.filter;
-  if (req.body.query_params) opts.query_params = req.body.query_params;
   opts.complete = function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
@@ -173,6 +264,10 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
     ? { new_edits: req.body.new_edits }
     : null;
 
+  if (ReplDamper_on) {                 // remember all documents in this request
+    ReplDamper_rememberLastUpdates(req.body);
+  };
+
   req.db.bulkDocs(req.body, opts, function (err, response) {
     if (err) return res.send(400, err);
     res.send(201, response);
@@ -254,8 +349,14 @@ app.post('/:db/_compact', function (req, res, next) {
 
 // Revs Diff
 app.post('/:db/_revs_diff', function (req, res, next) {
-  req.db.revsDiff(req.body, function (err, diffs) {
+  req.db.revsDiff(req.body || {}, function (err, diffs) {
     if (err) return res.send(400, err);
+
+    if (ReplDamper_on) {
+      ReplDamper_updateIgnorables(diffs);// which docs should always be ignored?
+      ReplDamper_removeIgnorables(diffs);  // remove any ignorables from "diffs"
+    };
+
     res.send(200, diffs);
   });
 });
@@ -271,47 +372,81 @@ app.post('/:db/_temp_view', function (req, res, next) {
 });
 
 // Put a document attachment
-app.put('/:db/:id/:attachment', function (req, res, next) {
+app.put('/:db/:id/:attachment(*)', function (req, res, next) {
 
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
 
-  var name = req.params.id + '/' + req.params.attachment
+  var name = req.params.id
+    , attachment = req.params.attachment
     , rev = req.query.rev
-    , type = req.get('Content-Type')
-    , body = typeof req.body === 'string'
-        ? new Buffer(req.body)
-        : new Buffer(JSON.stringify(req.body));
+    , type = req.get('Content-Type') || 'application/octet-stream'
+    , body = (req.body === undefined)
+        ? new Buffer('')
+        : (typeof req.body === 'string')
+          ? new Buffer(req.body)
+          : new Buffer(JSON.stringify(req.body));
 
-  req.db.putAttachment(name, rev, body, type, function (err, response) {
+  req.db.putAttachment(name, attachment, rev, body, type, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });
+});
 
+// Retrieve a document attachment
+app.get('/:db/:id/:attachment(*)', function (req, res, next) {
+
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+
+/**** look for the attachment's type first ****/
+
+  var name = req.params.id
+    , attachment = req.params.attachment;
+
+  req.db.get(req.params.id, req.query, function (err, info) {
+    if (err) return res.send(404, err);
+
+    if (!info._attachments || !info._attachments[attachment]) {
+      return res.send(404, {status:404, error:'not_found', reason:'missing'});
+    };
+
+    var type = info._attachments[attachment].content_type;
+ 
+  /**** then retrieve it an send it back using the original type ****/
+
+    req.db.getAttachment(name, attachment, function (err, response) {
+      if (err) return res.send(409, err);
+      res.set('Content-Type', type);
+      res.send(200, response);
+    });    
+  });
 });
 
 // Delete a document attachment
-app.del('/:db/:id/:attachment', function (req, res, next) {
+app.del('/:db/:id/:attachment(*)', function (req, res, next) {
 
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
 
-  var name = req.params.id + '/' + req.params.attachment
+  var name = req.params.id
+    , attachment = req.params.attachment
     , rev = req.query.rev;
 
-  req.db.removeAttachment(name, rev, function (err, response) {
+  req.db.removeAttachment(name, attachment, rev, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });
-
 });
 
 // Create or update document that has an ID
-app.put('/:db/:id(*)', function (req, res, next) {
+app.put('/:db/:id', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
   if (!req.body._id) {
     req.body._id = (!!req.params.id && req.params.id !== 'null')
@@ -332,7 +467,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 });
 
 // Create a document
-app.post('/:db(*)', function (req, res, next) {
+app.post('/:db', function (req, res, next) {
   req.db.post(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
     res.send(201, response);
@@ -349,7 +484,7 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
 });
 
 // Retrieve a document
-app.get('/:db/:id(*)', function (req, res, next) {
+app.get('/:db/:id', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     res.send(200, doc);
@@ -357,7 +492,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
 });
 
 // Delete a document
-app.del('/:db/:id(*)', function (req, res, next) {
+app.del('/:db/:id', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     req.db.remove(doc, function (err, response) {
@@ -366,4 +501,3 @@ app.del('/:db/:id(*)', function (req, res, next) {
     });
   });
 });
-
