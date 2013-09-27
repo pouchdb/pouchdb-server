@@ -6,88 +6,6 @@ var express   = require('express')
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
-//------------------------------------------------------------------------------
-//
-// "Replication Damping" is an ugly work-around to avoid endless replication-
-// loops for documents which are actually in conflict (although PouchDB does not
-// recognize that). In fact, PouchDB should really brush up its conflict hand-
-// ling - but 'til then, "Replication Damping" may help
-//
-//------------------------------------------------------------------------------
-
-var ReplDamper_on            = true;         // is "Replication Damping" active?
-var ReplDamper_lastUpdateSet = {};     // set of most recently updated documents
-var ReplDamper_ignoredDocSet = {};   // set of documents which should be ignored
-
-//------------------------------------------------------------------------------
-// ReplDamper_rememberLastUpdates keeps track of the most recently updated docs
-//------------------------------------------------------------------------------
-
-var ReplDamper_rememberLastUpdates = function (DocSet) {
-  var DocList = DocSet.docs || [];
-  
-  ReplDamper_lastUpdateSet = {};
-  for (var i = 0; i < DocList.length; i++) {
-    var DocId  = DocList[i]._id;
-    var DocRev = DocList[i]._rev;
-
-    if (!(DocId in ReplDamper_lastUpdateSet)) {
-      ReplDamper_lastUpdateSet[DocId] = {};
-    };
-
-    ReplDamper_lastUpdateSet[DocId][DocRev] = true;
-  };
-};
-
-//------------------------------------------------------------------------------
-// ReplDamper_updateIgnorables updates set of documents which should be ignored
-//------------------------------------------------------------------------------
-
-var ReplDamper_updateIgnorables = function (DiffSet) {
-  for (var DocId in DiffSet) {
-    if (!DiffSet.hasOwnProperty(DocId)) {continue};
-
-    if (DocId in ReplDamper_lastUpdateSet) {  // document has been _bulk_updated
-      var MissingList = DiffSet[DocId].missing;
-      for (var i = 0; i < MissingList.length; i++) {
-        if (MissingList[i] in ReplDamper_lastUpdateSet[DocId]) {
-          if (!(DocId in ReplDamper_ignoredDocSet)) {
-            ReplDamper_ignoredDocSet[DocId] = {};
-          };
-
-          ReplDamper_ignoredDocSet[DocId][MissingList[i]] = true;
-        };
-      };
-    };
-  };
-};
-
-//------------------------------------------------------------------------------
-// ReplDamper_removeIgnorables   removes any docs to be ignored from _revs_diff
-//------------------------------------------------------------------------------
-
-var ReplDamper_removeIgnorables = function (DiffSet) {
-  for (var DocId in DiffSet) {
-    if (!DiffSet.hasOwnProperty(DocId)) {continue};
-
-    if (DocId in ReplDamper_ignoredDocSet) {       // document should be ignored
-      var IgnorableSet = ReplDamper_ignoredDocSet[DocId];
-      var MissingList  = DiffSet[DocId].missing;
-      for (var i = MissingList.length-1; i >= 0; i--) {
-        if (MissingList[i] in IgnorableSet) {
-          MissingList.splice(i,1);
-        };
-      };
-
-      if (MissingList.length === 0) {
-        delete DiffSet[DocId];
-      };
-    };
-  };
-};
-
-//------------------------------------------------------------------------------
-
 // We'll need this for the _all_dbs route.
 Pouch.enableAllDbs = true;
 
@@ -127,16 +45,6 @@ app.get('/', function (req, res, next) {
     'express-pouchdb': 'Welcome!',
     'version': pkg.version
   });
-});
-
-//------------------------------------------------------------------------------
-// let "Replication Damping" be switched on/off on request
-//------------------------------------------------------------------------------
-
-// activate/deactivate "Replication Damping"
-app.post('/_replication_damping', function (req, res, next) {
-  ReplDamper_on = !!req.query.on;
-  res.send(204);
 });
 
 // Generate UUIDs
@@ -264,10 +172,6 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
     ? { new_edits: req.body.new_edits }
     : null;
 
-  if (ReplDamper_on) {                 // remember all documents in this request
-    ReplDamper_rememberLastUpdates(req.body);
-  };
-
   req.db.bulkDocs(req.body, opts, function (err, response) {
     if (err) return res.send(400, err);
     res.send(201, response);
@@ -351,11 +255,6 @@ app.post('/:db/_compact', function (req, res, next) {
 app.post('/:db/_revs_diff', function (req, res, next) {
   req.db.revsDiff(req.body || {}, function (err, diffs) {
     if (err) return res.send(400, err);
-
-    if (ReplDamper_on) {
-      ReplDamper_updateIgnorables(diffs);// which docs should always be ignored?
-      ReplDamper_removeIgnorables(diffs);  // remove any ignorables from "diffs"
-    };
 
     res.send(200, diffs);
   });
