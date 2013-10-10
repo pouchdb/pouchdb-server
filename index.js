@@ -74,7 +74,6 @@ app.post('/_replicate', function (req, res, next) {
     , opts = { continuous: !!req.body.continuous };
 
   if (req.body.filter) opts.filter = req.body.filter;
-  if (req.body.query_params) opts.query_params = req.body.query_params;
   opts.complete = function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
@@ -254,8 +253,9 @@ app.post('/:db/_compact', function (req, res, next) {
 
 // Revs Diff
 app.post('/:db/_revs_diff', function (req, res, next) {
-  req.db.revsDiff(req.body, function (err, diffs) {
+  req.db.revsDiff(req.body || {}, function (err, diffs) {
     if (err) return res.send(400, err);
+
     res.send(200, diffs);
   });
 });
@@ -271,47 +271,81 @@ app.post('/:db/_temp_view', function (req, res, next) {
 });
 
 // Put a document attachment
-app.put('/:db/:id/:attachment', function (req, res, next) {
+app.put('/:db/:id/:attachment(*)', function (req, res, next) {
 
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
 
-  var name = req.params.id + '/' + req.params.attachment
+  var name = req.params.id
+    , attachment = req.params.attachment
     , rev = req.query.rev
-    , type = req.get('Content-Type')
-    , body = typeof req.body === 'string'
-        ? new Buffer(req.body)
-        : new Buffer(JSON.stringify(req.body));
+    , type = req.get('Content-Type') || 'application/octet-stream'
+    , body = (req.body === undefined)
+        ? new Buffer('')
+        : (typeof req.body === 'string')
+          ? new Buffer(req.body)
+          : new Buffer(JSON.stringify(req.body));
 
-  req.db.putAttachment(name, rev, body, type, function (err, response) {
+  req.db.putAttachment(name, attachment, rev, body, type, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });
+});
 
+// Retrieve a document attachment
+app.get('/:db/:id/:attachment(*)', function (req, res, next) {
+
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+
+/**** look for the attachment's type first ****/
+
+  var name = req.params.id
+    , attachment = req.params.attachment;
+
+  req.db.get(req.params.id, req.query, function (err, info) {
+    if (err) return res.send(404, err);
+
+    if (!info._attachments || !info._attachments[attachment]) {
+      return res.send(404, {status:404, error:'not_found', reason:'missing'});
+    };
+
+    var type = info._attachments[attachment].content_type;
+ 
+  /**** then retrieve it an send it back using the original type ****/
+
+    req.db.getAttachment(name, attachment, function (err, response) {
+      if (err) return res.send(409, err);
+      res.set('Content-Type', type);
+      res.send(200, response);
+    });    
+  });
 });
 
 // Delete a document attachment
-app.del('/:db/:id/:attachment', function (req, res, next) {
+app.del('/:db/:id/:attachment(*)', function (req, res, next) {
 
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
 
-  var name = req.params.id + '/' + req.params.attachment
+  var name = req.params.id
+    , attachment = req.params.attachment
     , rev = req.query.rev;
 
-  req.db.removeAttachment(name, rev, function (err, response) {
+  req.db.removeAttachment(name, attachment, rev, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });
-
 });
 
 // Create or update document that has an ID
-app.put('/:db/:id(*)', function (req, res, next) {
+app.put('/:db/:id', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
   if (!req.body._id) {
     req.body._id = (!!req.params.id && req.params.id !== 'null')
@@ -332,7 +366,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 });
 
 // Create a document
-app.post('/:db(*)', function (req, res, next) {
+app.post('/:db', function (req, res, next) {
   req.db.post(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
     res.send(201, response);
@@ -349,7 +383,7 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
 });
 
 // Retrieve a document
-app.get('/:db/:id(*)', function (req, res, next) {
+app.get('/:db/:id', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     res.send(200, doc);
@@ -357,7 +391,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
 });
 
 // Delete a document
-app.del('/:db/:id(*)', function (req, res, next) {
+app.del('/:db/:id', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     req.db.remove(doc, function (err, response) {
@@ -366,4 +400,3 @@ app.del('/:db/:id(*)', function (req, res, next) {
     });
   });
 });
-
