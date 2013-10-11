@@ -10,6 +10,9 @@ var express   = require('express')
 Pouch.enableAllDbs = true;
 
 app.configure(function () {
+  app.use('/js', express.static(__dirname + '/fauxton/js'));
+  app.use('/css', express.static(__dirname + '/fauxton/css'));
+  app.use('/img', express.static(__dirname + '/fauxton/img'));
   app.use(function (req, res, next) {
     var opts = {}
       , data = ''
@@ -45,6 +48,14 @@ app.get('/', function (req, res, next) {
     'express-pouchdb': 'Welcome!',
     'version': pkg.version
   });
+});
+
+app.get('/_session', function (req, res, next) {
+  res.send({"ok":true,"userCtx":{"name":null,"roles":["_admin"]},"info":{}});
+});
+
+app.get('/_utils', function (req, res, next) {
+  res.sendfile(__dirname + '/fauxton/index.html');
 });
 
 // Generate UUIDs
@@ -86,6 +97,10 @@ app.post('/_replicate', function (req, res, next) {
     res.send(200, { ok : true });
   }
 
+});
+
+app.get('/_active_tasks', function (req, res, next) {
+  res.send(200, []);
 });
 
 // Create a database.
@@ -345,7 +360,7 @@ app.del('/:db/:id/:attachment(*)', function (req, res, next) {
 });
 
 // Create or update document that has an ID
-app.put('/:db/:id', function (req, res, next) {
+app.put('/:db/:id(*)', function (req, res, next) {
   req.body._id = req.body._id || req.query.id;
   if (!req.body._id) {
     req.body._id = (!!req.params.id && req.params.id !== 'null')
@@ -363,6 +378,23 @@ app.put('/:db/:id', function (req, res, next) {
     res.location(loc);
     res.send(201, response);
   });
+});
+
+app.get('/:db/_design/:id/_info', function (req, res, next) {
+  // dummy data for now. We can investigate and see if pouch can do this for us.
+  res.send(200, 
+           {"name":req.query.id,
+             "view_index":{"signature":"0",
+             "language":"javascript",
+             "disk_size":0,
+             "data_size":0,
+             "update_seq":0,
+             "purge_seq":0,
+             "updater_running":false,
+             "compact_running":false,
+             "waiting_commit":false,
+             "waiting_clients":0}
+           });
 });
 
 // Create a document
