@@ -4,8 +4,8 @@
 
 ## Introduction
 
-**pouchdb-server** is a simple Node.js server that presents a simple REST API, which mimics that of [CouchDB](couchdb.apache.org),
-on top of [PouchDB](pouchdb.com). Among other things, this allows users to replicate IndexedDB stores to LevelDB, or to
+**pouchdb-server** is a simple Node.js server that presents a simple REST API, which mimics that of [CouchDB](http://couchdb.apache.org),
+on top of [PouchDB](http://pouchdb.com). Among other things, this allows users to replicate IndexedDB stores to LevelDB, or to
 spin up a quick and dirty drop-in replacement for CouchDB to get things moving quickly.
 
 ## Installation
