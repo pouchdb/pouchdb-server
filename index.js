@@ -318,8 +318,6 @@ app.get('/:db/:id/:attachment(*)', function (req, res, next) {
     return next();
   }
 
-/**** look for the attachment's type first ****/
-
   var name = req.params.id
     , attachment = req.params.attachment;
 
@@ -332,8 +330,6 @@ app.get('/:db/:id/:attachment(*)', function (req, res, next) {
 
     var type = info._attachments[attachment].content_type;
  
-  /**** then retrieve it an send it back using the original type ****/
-
     req.db.getAttachment(name, attachment, function (err, response) {
       if (err) return res.send(409, err);
       res.set('Content-Type', type);
@@ -382,20 +378,22 @@ app.put('/:db/:id(*)', function (req, res, next) {
 });
 
 app.get('/:db/_design/:id/_info', function (req, res, next) {
-  // dummy data for now. We can investigate and see if pouch can do this for us.
-  res.send(200, 
-           {"name":req.query.id,
-             "view_index":{"signature":"0",
-             "language":"javascript",
-             "disk_size":0,
-             "data_size":0,
-             "update_seq":0,
-             "purge_seq":0,
-             "updater_running":false,
-             "compact_running":false,
-             "waiting_commit":false,
-             "waiting_clients":0}
-           });
+  // Dummy data for now. We can investigate and see if pouch can do this for us.
+  res.send(200, {
+    'name': req.query.id,
+    'view_index': {
+      'signature': '0',
+      'language': 'javascript',
+      'disk_size': 0,
+      'data_size': 0,
+      'update_seq': 0,
+      'purge_seq': 0,
+      'updater_running': false,
+      'compact_running': false,
+      'waiting_commit': false,
+      'waiting_clients': 0
+    }
+  });
 });
 
 // Create a document
