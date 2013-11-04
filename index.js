@@ -433,3 +433,32 @@ app.del('/:db/:id', function (req, res, next) {
     });
   });
 });
+
+// Copy a document
+app.copy('/:db/:id', function (req, res, next) {
+  var dest = req.get('Destination')
+    , rev
+    , match;
+
+  if (!dest) {
+    return res.send(400, {
+      'error': 'bad_request',
+      'reason': 'Destination header is mandatory for COPY.'
+    });
+  }
+
+  if (match = /(.+?)\?rev=(.+)/.exec(dest)) {
+    dest = match[1];
+    rev = match[2];
+  }
+
+  req.db.get(req.params.id, req.query, function (err, doc) {
+    if (err) return res.send(404, err);
+    doc._id = dest;
+    doc._rev = rev;
+    req.db.put(doc, function (err, response) {
+      if (err) return res.send(409, err);
+      res.send(200, doc);
+    });
+  });
+});
