@@ -39,6 +39,10 @@ Take a look at the possible log formats [here](http://www.senchalabs.org/connect
 Alternatively, **pouchdb-server**'s functionality can be mounted into other Express web apps. For more information
 on that, check out [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
 
+## Fauxton
+
+**pouchdb-server** currently supports an experimental version of CouchDB's [Fauxton](http://docs.couchdb.org/en/latest/fauxton/index.html). Fauxton, the successor to CouchDB's original Futon, is a simple web UI for interacting with your databases. With your server running, navigate to `/_utils` to check it out!
+
 ## Testing
 
 One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself.
