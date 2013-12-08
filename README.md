@@ -24,7 +24,8 @@ $ npm install -g pouchdb-server
      -p, --port           Port on which to run the server.
      -l, --log            Connect log format.
      -h, --help           Show this usage information.
-
+     -u, --user           Set Basic Auth username. (Both user and pass required for Basic Auth).
+     -s, --pass           Set Basic Auth password. (Both user and pass required for Basic Auth).
 
 ```
 
@@ -38,6 +39,25 @@ pouchdb-server listening on port 15984.
 Take a look at the possible log formats [here](http://www.senchalabs.org/connect/middleware-logger.html). 
 Alternatively, **pouchdb-server**'s functionality can be mounted into other Express web apps. For more information
 on that, check out [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
+
+## Basic Auth
+
+**pouchdb-server** supports a read-only authentication scheme with Basic Auth 
+out of the box. Usage is simple:
+```bash
+$ pouchdb-server --user=nick --pass=secret &
+$ curl -X PUT http://localhost:5984/test
+PUT /test 401 4ms - 12b
+Unauthorized.
+$ curl --user nick:secret -X PUT http://localhost:5984/test
+PUT /test 201 815ms - 16b
+{
+  "ok": true
+}
+```
+
+If you need a more involved authentication option, it's encouraged that you mount
+[express-pouchdb](https://github.com/nick-thompson/express-pouchdb) into a custom application.
 
 ## Fauxton
 

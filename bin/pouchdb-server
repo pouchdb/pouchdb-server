@@ -5,6 +5,9 @@ var express = require('express')
   , argv    = require('optimist').argv
   , port    = +(argv.p || argv.port || 5984)
   , logger  = argv.l || argv.log || 'dev'
+  , user    = argv.u || argv.user
+  , pass    = argv.s || argv.pass
+  , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
@@ -34,9 +37,33 @@ app.configure(function () {
       next();
     });
   });
-  app.use(require('express-pouchdb'));
 });
 
+if (useAuth) {
+  app.all('*', function (req, res, next) {
+    var auth = req.headers.authorization;
+    // Default read-only
+    if (req.user || req.method === 'GET') return next();
+    // Otherwise authenticate
+    if (!auth) return res.send(401);
+
+    var parts = auth.split(' ');
+    if (parts.length !== 2) return res.send(400);
+    var scheme = parts[0]
+      , credentials = new Buffer(parts[1], 'base64').toString()
+      , index = credentials.indexOf(':');
+
+    if (scheme !== 'Basic' || index < 0) return res.send(400);
+
+    var reqUser = credentials.slice(0, index)
+      , reqPass = credentials.slice(index + 1);
+
+    if (reqUser == user && reqPass == pass) return next();
+    res.send(401);
+  });
+}
+
+app.use(require('express-pouchdb'));
 app.listen(port);
 console.log('pouchdb-server listening on port ' + port + '.\n');
 
