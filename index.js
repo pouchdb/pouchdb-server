@@ -286,6 +286,23 @@ app.post('/:db/_temp_view', function (req, res, next) {
   });
 });
 
+// Query design document info
+app.get('/:db/_design/:id/_info', function (req, res, next) {
+  res.send(200, {
+    'name': req.query.id,
+    'view_index': 'Not implemented.'
+  });
+});
+
+// Query a document view
+app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
+  var query = req.params.id + '/' + req.params.view;
+  req.db.query(query, req.query, function (err, response) {
+    if (err) return res.send(404, err);
+    res.send(200, response);
+  });
+});
+
 // Put a document attachment
 app.put('/:db/:id/:attachment(*)', function (req, res, next) {
 
@@ -377,25 +394,6 @@ app.put('/:db/:id(*)', function (req, res, next) {
   });
 });
 
-app.get('/:db/_design/:id/_info', function (req, res, next) {
-  // Dummy data for now. We can investigate and see if pouch can do this for us.
-  res.send(200, {
-    'name': req.query.id,
-    'view_index': {
-      'signature': '0',
-      'language': 'javascript',
-      'disk_size': 0,
-      'data_size': 0,
-      'update_seq': 0,
-      'purge_seq': 0,
-      'updater_running': false,
-      'compact_running': false,
-      'waiting_commit': false,
-      'waiting_clients': 0
-    }
-  });
-});
-
 // Create a document
 app.post('/:db', function (req, res, next) {
   req.db.post(req.body, req.query, function (err, response) {
@@ -404,17 +402,8 @@ app.post('/:db', function (req, res, next) {
   });
 });
 
-// Query a document view
-app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
-  var query = req.params.id + '/' + req.params.view;
-  req.db.query(query, req.query, function (err, response) {
-    if (err) return res.send(404, err);
-    res.send(200, response);
-  });
-});
-
 // Retrieve a document
-app.get('/:db/:id', function (req, res, next) {
+app.get('/:db/:id(*)', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     res.send(200, doc);
@@ -422,7 +411,7 @@ app.get('/:db/:id', function (req, res, next) {
 });
 
 // Delete a document
-app.del('/:db/:id', function (req, res, next) {
+app.del('/:db/:id(*)', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     req.db.remove(doc, function (err, response) {
