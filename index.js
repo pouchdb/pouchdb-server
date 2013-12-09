@@ -288,6 +288,7 @@ app.post('/:db/_temp_view', function (req, res, next) {
 
 // Query design document info
 app.get('/:db/_design/:id/_info', function (req, res, next) {
+  // Dummy data for Fauxton
   res.send(200, {
     'name': req.query.id,
     'view_index': 'Not implemented.'
@@ -301,6 +302,26 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
     if (err) return res.send(404, err);
     res.send(200, response);
   });
+});
+
+// Query design document list handler; Not implemented.
+app.get('/:db/_design/:id/_list(*)', function (req, res, next) {
+  res.send(501);
+});
+
+// Query design document show handler; Not implemented.
+app.get('/:db/_design/:id/_show(*)', function (req, res, next) {
+  res.send(501);
+});
+
+// Query design document update handler; Not implemented.
+app.get('/:db/_design/:id/_update(*)', function (req, res, next) {
+  res.send(501);
+});
+
+// Query design document rewrite handler; Not implemented.
+app.get('/:db/_design/:id/_rewrite(*)', function (req, res, next) {
+  res.send(501);
 });
 
 // Put a document attachment
