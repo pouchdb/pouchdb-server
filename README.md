@@ -43,7 +43,7 @@ $ node app.js &
 $ curl http://localhost:5984/db/
 GET / 200 56 - 7 ms
 {
-  "pouchdb-server": "Welcome!",
+  "express-pouchdb": "Welcome!",
   "version": "0.2.0"
 }
 ```
