@@ -8,7 +8,7 @@
 
   // EDITING STARTS HERE (you dont need to edit anything above this line)
 
-  var db = new Pouch('todos');
+  var db = new PouchDB('todos');
   var remoteCouch = window.location.href + 'db/todos';
 
   db.info(function(err, info) {
