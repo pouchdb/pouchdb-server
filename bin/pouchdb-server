@@ -67,3 +67,6 @@ app.use(require('express-pouchdb'));
 app.listen(port);
 console.log('pouchdb-server listening on port ' + port + '.\n');
 
+process.on('SIGINT', function () {
+  process.exit(0)
+})
