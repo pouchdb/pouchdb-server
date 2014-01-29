@@ -40,7 +40,7 @@ Now we can run this little guy and find each of `express-pouch`'s routes at the 
 
 ```bash
 $ node app.js &
-$ curl http://localhost:5984/db/
+$ curl http://localhost:3000/db/
 GET / 200 56 - 7 ms
 {
   "express-pouchdb": "Welcome!",
