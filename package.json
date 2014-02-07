@@ -19,9 +19,9 @@
     "pouchdb": "*"
   },
   "devDependencies": {
-    "express": "~3.3.5"
+    "express": "3.x"
   },
   "peerDependencies": {
-    "express": "~3.3.5"
+    "express": "3.x"
   }
 }
