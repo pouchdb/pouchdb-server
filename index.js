@@ -222,12 +222,6 @@ app.get('/:db/_changes', function (req, res, next) {
   // This is a pretty inefficient way to do it.. Revisit?
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
-  if (req.query.filter) {
-    // CouchDB seems to default these to true when a filter is applied
-    req.query.conflicts = true;
-    req.query.include_docs = true;
-  }
-
   var longpoll = function (err, data) {
     if (err) return res.send(409, err);
     if (data.results && data.results.length) {
