@@ -6,6 +6,10 @@ var express   = require('express')
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
+function isPouchError(obj) {
+  return obj.error && obj.error === true;
+}
+
 // We'll need this for the _all_dbs route.
 Pouch.enableAllDbs = true;
 
@@ -40,6 +44,24 @@ app.configure(function () {
       next();
     });
   });
+  app.use(function (req, res, next) {
+    var _res = res;
+    var send = res.send;
+    res.send = function() {
+      var args = Array.prototype.slice.call(arguments).map(function (arg) {
+        if (typeof arg === 'object' && isPouchError(arg)) {
+          var _arg = {
+            error: arg.name,
+            reason: arg.message
+          };
+          return _arg;
+        }
+        return arg;
+      });
+      send.apply(_res, args);
+    };
+    next();
+  });
 });
 
 // Root route, return welcome message
@@ -60,12 +82,9 @@ app.get('/_utils', function (req, res, next) {
 
 // Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
-  var count = req.query.count || 1
-    , uuids = [];
-
-  while (--count >= 0) { uuids.push(Pouch.uuid()); }
+  var count = req.query.count || 1;
   res.send(200, {
-    uuids: uuids
+    uuids: Pouch.utils.uuids(count)
   });
 });
 
@@ -189,7 +208,7 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
     : null;
 
   req.db.bulkDocs(req.body, opts, function (err, response) {
-    if (err) return res.send(400, err);
+    if (err) return res.send(500, err);
     res.send(201, response);
   });
 
@@ -397,7 +416,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
       : null;
   }
   req.db.put(req.body, req.query, function (err, response) {
-    if (err) return res.send(409, err);
+    if (err) return res.send(500, err);
     var loc = req.protocol
       + '://'
       + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
