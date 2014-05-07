@@ -1,11 +1,12 @@
 "use strict";
 
+//TODO: call http equivalent if http adapter
+
 var Promise = require("lie");
 
 var coucheval = require("../utils/coucheval.js");
 var addCallback = require("../utils/promisewrapper.js");
-var buildUserContextObject = require("../builders/couchusercontextobject.js");
-var buildSecurityObject = require("../builders/couchsecurityobject.js");
+var couchdb_objects = require("../couchdb-objects");
 
 function addOldDoc(db, id, args) {
   return db.get(id).then(function (err) {
@@ -80,10 +81,11 @@ function completeValidationOptions(db, options) {
     options = {};
   }
   if (!options.secObj) {
-    options.secObj = buildSecurityObject();
+    options.secObj = couchdb_objects.buildSecurityObject();
   }
   if (!options.userCtx) {
-    return db.info().then(buildUserContextObject).then(function (userCtx) {
+    var buildUserContext = couchdb_objects.buildUserContextObject;
+    return db.info().then(buildUserContext).then(function (userCtx) {
       options.userCtx = userCtx;
       return options;
     });
@@ -111,7 +113,7 @@ function parseValidationFunctions(resp) {
   });
   validationFuncs = validationFuncs.map(function (info) {
     //convert str -> function
-    return coucheval.eval(info.doc, {}, info.func);
+    return coucheval.evaluate(info.doc, {}, info.func);
   });
   return validationFuncs;
 }
@@ -187,7 +189,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   return promise;
 };
 
-exports.validatingPutAttachment = function (docId, attachmentId, rev, attachment, type, options, callback) {
+var vpa = function (docId, attachmentId, rev, attachment, type, options, callback) {
   var args = processArgs(this, callback, options);
 
   //get the doc
@@ -210,8 +212,9 @@ exports.validatingPutAttachment = function (docId, attachmentId, rev, attachment
   addCallback(promise, callback);
   return promise;
 };
+exports.validatingPutAttachment = vpa;
 
-exports.validatingRemoveAttachment = function (docId, attachmentId, rev, options, callback) {
+var vra = function (docId, attachmentId, rev, options, callback) {
   var args = processArgs(this, callback, options);
   //get the doc
   var promise = args.db.get(docId, {rev: rev}).then(function (doc) {
@@ -226,3 +229,4 @@ exports.validatingRemoveAttachment = function (docId, attachmentId, rev, options
   addCallback(promise, callback);
   return promise;
 };
+exports.validatingRemoveAttachment = vra;
