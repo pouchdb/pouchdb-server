@@ -1,9 +1,11 @@
 "use strict";
 
+//TODO: call http equivalent if http adapter.
+
 var Promise = require("lie");
 var extend = require("extend");
 
-var buildRequestObject = require("../builders/couchrequestobject.js");
+var couchdb_objects = require("../couchdb-objects");
 var render = require("../utils/couchrender.js");
 var addCallback = require("../utils/promisewrapper.js");
 
@@ -27,7 +29,7 @@ exports.list = function (listPath, options, callback) {
     }
     return path;
   });
-  var reqPromise = buildRequestObject(options, pathPromise, infoPromise, db);
+  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
 
   //get the data involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
