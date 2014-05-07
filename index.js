@@ -1,3 +1,19 @@
+/*
+	Copyright 2013-2014, Marten de Vries
+
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+*/
+
 "use strict";
 
 //TODO: call http equivalent if http adapter
@@ -26,7 +42,7 @@ function doUpdating(methodName, db, query, options, callback) {
     }
     return path;
   });
-  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db)
+  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
 
   //get the documents involved
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
@@ -59,7 +75,7 @@ function doUpdating(methodName, db, query, options, callback) {
     }
     //save result if necessary
     if (result[0] !== null) {
-      return doc["method"](result[0]).then(function () {
+      return db[methodName](result[0]).then(function () {
         return result[1];
       });
     }
@@ -69,7 +85,7 @@ function doUpdating(methodName, db, query, options, callback) {
   return promise;
 }
 
-exports.updatingPut = function (doc, _id, _rev, options, callback) {
+exports.updatingPut = function (query, options, callback) {
   var db = this;
   var methodName = options.withValidation ? "validatingPut" : "put";
   return doUpdating(methodName, db, query, options, callback);
