@@ -1,7 +1,9 @@
 "use strict";
 
+//TODO: call http equivalent if http adapter
+
 var Promise = require("lie");
-var buildRequestObject = require("../builders/couchrequestobject.js");
+var couchdb_objects = require("../couchdb-objects");
 var render = require("../utils/couchrender.js");
 var addCallback = require("../utils/promisewrapper.js");
 
@@ -9,7 +11,6 @@ exports.show = function (showPath, options, callback) {
   //options:
   //- reqObjStub
   //- format
-  "use strict";
 
   if (typeof options === "function") {
     callback = options;
@@ -34,7 +35,7 @@ exports.show = function (showPath, options, callback) {
     }
     return path;
   });
-  var reqPromise = buildRequestObject(options, pathPromise, infoPromise, db);
+  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
 
   //get the documents involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
@@ -48,8 +49,8 @@ exports.show = function (showPath, options, callback) {
     return designDoc;
   });
   var docPromise = db.get(docId).catch(function () {
-      //doc might not exist - that's ok and expected.
-      return null;
+    //doc might not exist - that's ok and expected.
+    return null;
   });
   var promise = Promise.all([ddocPromise, docPromise, reqPromise]).then(function (args) {
     //all data collected - do the magic that is a show function
