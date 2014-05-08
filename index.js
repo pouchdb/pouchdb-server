@@ -19,9 +19,9 @@
 //TODO: call http equivalent if http adapter
 
 var Promise = require("bluebird");
-var couchdb_objects = require("../couchdb-objects");
-var addCallback = require("../utils/promisewrapper.js");
-var coucheval = require("../utils/coucheval.js");
+var couchdb_objects = require("couchdb-objects");
+var nodify = require("promise-nodify");
+var coucheval = require("couchdb-eval");
 
 function doUpdating(methodName, db, query, options, callback) {
   if (typeof options === "function") {
@@ -81,7 +81,7 @@ function doUpdating(methodName, db, query, options, callback) {
     }
     return result[1];
   });
-  addCallback(promise, callback);
+  nodify(promise, callback);
   return promise;
 }
 
