@@ -1,4 +1,7 @@
 {
 	"name": "couchdb-objects",
-	"main": "index.js"
+	"main": "index.js",
+	"browser": {
+		"bluebird": "lie"
+	}
 }

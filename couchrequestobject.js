@@ -16,10 +16,11 @@
 
 "use strict";
 
-var Promise = require("lie");
+var Promise = require("bluebird");
 var extend = require("extend");
 
 var is = require("is");
+var querystring = require("querystring");
 var buildUserContextObject = require("./couchusercontextobject.js");
 var buildSecurityObject = require("./couchsecurityobject.js");
 
@@ -76,18 +77,18 @@ function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
   var i = result.requested_path.length - 1;
   var pathEnd = result.requested_path[i];
   if (!is.empty(result.query) && pathEnd.indexOf("?") === -1) {
-    result.requested_path[i] = pathEnd + "?" + serialize(result.query);
+    result.requested_path[i] = pathEnd + "?" + querystring.stringify(result.query);
   }
   //add query string to raw_path if necessary
   if (!is.empty(result.query) && result.raw_path.indexOf("?") === -1) {
-    result.raw_path += "?" + serialize(result.query);
+    result.raw_path += "?" + querystring.stringify(result.query);
   }
 
   //update body based on form & add content-type & content-length
   //header accordingly if necessary. Also switch to POST (most common
   //if not already either POST, PUT or PATCH.
   if (!is.empty(result.form) && result.body === "undefined") {
-    result.body = serialize(result.form);
+    result.body = querystring.stringify(result.form);
     result.headers["Content-Type"] = "application/x-www-form-urlencoded";
     result.headers["Content-Length"] = result.body.length.toString();
     if (["POST", "PUT", "PATCH"].indexOf(result.method) === -1) {
@@ -115,14 +116,4 @@ function buildUserAgent() {
   //if running in a browser, use its user agent.
   var ua = (global.navigator || {}).userAgent;
   return ua || "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:28.0) Gecko/20100101 Firefox/28.0";
-}
-
-function serialize(obj) {
-  var result = [];
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      result.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
-    }
-  }
-  return result.join("&");
 }
