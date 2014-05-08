@@ -18,7 +18,7 @@
 
 //TODO: call http equivalent if http adapter
 
-var Promise = require("lie");
+var Promise = require("bluebird");
 var couchdb_objects = require("../couchdb-objects");
 var render = require("../utils/couchrender.js");
 var addCallback = require("../utils/promisewrapper.js");
