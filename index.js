@@ -18,7 +18,7 @@
 
 //TODO: call http equivalent if http adapter
 
-var Promise = require("lie");
+var Promise = require("bluebird");
 
 var coucheval = require("../utils/coucheval.js");
 var addCallback = require("../utils/promisewrapper.js");
