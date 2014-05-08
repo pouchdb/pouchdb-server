@@ -1,0 +1,9 @@
+{
+	"name": "couchdb-render",
+	"main": "index.js",
+	"dependencies": {
+		"extend": "*",
+		"is": "*",
+		"couchdb-eval": "*"
+	}
+}
