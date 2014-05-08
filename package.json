@@ -4,6 +4,17 @@
 	"browser": {
 		"bluebird": "lie"
 	},
+	"dependencies": {
+		"bluebird": "*",
+		"couchdb-objects": "*",
+		"couchdb-render": "*",
+		"promise-nodify": "*"
+	},
+	"devDependencies": {
+		"browserify": "*",
+		"uglify-js": "*",
+		"lie": "*"
+	},
 	"scripts": {
 		"build-js": "mkdir -p ../../dist && browserify index.js -s Show -o ../../dist/pouchdb-show.js",
 		"build": "npm run build-js; cd ../../dist; uglifyjs pouchdb-show.js -mc > pouchdb-show.min.js"
