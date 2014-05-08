@@ -21,9 +21,9 @@
 var Promise = require("bluebird");
 var extend = require("extend");
 
-var couchdb_objects = require("../couchdb-objects");
-var render = require("../utils/couchrender.js");
-var addCallback = require("../utils/promisewrapper.js");
+var couchdb_objects = require("couchdb-objects");
+var render = require("couchdb-render");
+var nodify = require("promise-nodify");
 
 exports.list = function (listPath, options, callback) {
   var db = this;
@@ -97,6 +97,6 @@ exports.list = function (listPath, options, callback) {
     }
     return resp;
   });
-  addCallback(promise, callback);
+  nodify(promise, callback);
   return promise;
 };
