@@ -10,59 +10,56 @@ function isPouchError(obj) {
   return obj.error && obj.error === true;
 }
 
-// We'll need this for the _all_dbs route.
-Pouch.enableAllDbs = true;
 
-app.configure(function () {
-  app.use('/js', express.static(__dirname + '/fauxton/js'));
-  app.use('/css', express.static(__dirname + '/fauxton/css'));
-  app.use('/img', express.static(__dirname + '/fauxton/img'));
-  app.use(function (req, res, next) {
-    var opts = {}
-      , data = ''
-      , prop;
+app.use('/js', express.static(__dirname + '/fauxton/js'));
+app.use('/css', express.static(__dirname + '/fauxton/css'));
+app.use('/img', express.static(__dirname + '/fauxton/img'));
+app.use(function (req, res, next) {
+  var opts = {}
+    , data = ''
+    , prop;
 
-    // Normalize query string parameters for direct passing
-    // into Pouch queries.
-    for (prop in req.query) {
+  // Normalize query string parameters for direct passing
+  // into Pouch queries.
+  for (prop in req.query) {
+    try {
+      req.query[prop] = JSON.parse(req.query[prop]);
+    } catch (e) {}
+  }
+
+  // Custom bodyParsing because express.bodyParser() chokes
+  // on `malformed` requests.
+  req.on('data', function (chunk) { data += chunk; });
+  req.on('end', function () {
+    if (data) {
       try {
-        req.query[prop] = JSON.parse(req.query[prop]);
-      } catch (e) {}
-    }
-
-    // Custom bodyParsing because express.bodyParser() chokes
-    // on `malformed` requests.
-    req.on('data', function (chunk) { data += chunk; });
-    req.on('end', function () {
-      if (data) {
-        try {
-          req.body = JSON.parse(data);
-        } catch (e) {
-          req.body = data;
-        }
+        req.body = JSON.parse(data);
+      } catch (e) {
+        req.body = data;
       }
-      next();
-    });
-  });
-  app.use(function (req, res, next) {
-    var _res = res;
-    var send = res.send;
-    res.send = function() {
-      var args = Array.prototype.slice.call(arguments).map(function (arg) {
-        if (typeof arg === 'object' && isPouchError(arg)) {
-          var _arg = {
-            error: arg.name,
-            reason: arg.message
-          };
-          return _arg;
-        }
-        return arg;
-      });
-      send.apply(_res, args);
-    };
+    }
     next();
   });
 });
+app.use(function (req, res, next) {
+  var _res = res;
+  var send = res.send;
+  res.send = function() {
+    var args = Array.prototype.slice.call(arguments).map(function (arg) {
+      if (typeof arg === 'object' && isPouchError(arg)) {
+        var _arg = {
+          error: arg.name,
+          reason: arg.message
+        };
+        return _arg;
+      }
+      return arg;
+    });
+    send.apply(_res, args);
+  };
+  next();
+});
+
 
 // Root route, return welcome message
 app.get('/', function (req, res, next) {
@@ -105,12 +102,12 @@ app.post('/_replicate', function (req, res, next) {
 
   if (req.body.filter) opts.filter = req.body.filter;
   if (req.body.query_params) opts.query_params = req.body.query_params;
-  opts.complete = function (err, response) {
-    if (err) return res.send(400, err);
-    res.send(200, response);
-  };
 
-  Pouch.replicate(source, target, opts);
+  Pouch.replicate(source, target, opts).then(function (response) {
+    res.send(200, response);
+  }, function (err) {
+    res.send(400, err);
+  });
 
   // if continuous pull replication return 'ok' since we cannot wait for callback
   if (target in dbs && opts.continuous) {
@@ -241,7 +238,7 @@ app.get('/:db/_changes', function (req, res, next) {
   // This is a pretty inefficient way to do it.. Revisit?
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
-  var longpoll = function (err, data) {
+  function longpoll(err, data) {
     if (err) return res.send(409, err);
     if (data.results && data.results.length) {
       data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
@@ -250,13 +247,14 @@ app.get('/:db/_changes', function (req, res, next) {
       res.send(200, data);
     } else {
       delete req.query.complete;
-      req.query.continuous = true;
-      req.query.onChange = function (change) {
+      req.query.live = true;
+      var query = req.db.changes(req.query);
+      query.once('change', function (change) {
         res.send(200, change);
-      };
-      req.db.changes(req.query);
+        query.abort();
+      });
     }
-  };
+  }
 
   if (req.query.feed) {
     req.socket.setTimeout(86400 * 1000);

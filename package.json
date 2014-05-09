@@ -12,16 +12,14 @@
     "url": "git://github.com/nick-thompson/express-pouchdb.git"
   },
   "main": "./index.js",
-  "engines": {
-    "node": ">= 0.8.0"
-  },
   "dependencies": {
-    "pouchdb": "*"
+    "pouchdb": "pouchdb/pouchdb"
   },
   "devDependencies": {
-    "express": "3.x"
+    "express": "4.x",
+    "morgan": "^1.0.1"
   },
   "peerDependencies": {
-    "express": "3.x"
+    "express": "4.x"
   }
 }
