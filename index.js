@@ -251,7 +251,7 @@ app.get('/:db/_changes', function (req, res, next) {
       var query = req.db.changes(req.query);
       query.once('change', function (change) {
         res.send(200, change);
-        query.abort();
+        query.cancel();
       });
     }
   }
