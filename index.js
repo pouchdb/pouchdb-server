@@ -25,11 +25,11 @@ var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 
 function addOldDoc(db, id, args) {
-  return db.get(id).then(function (err) {
-    args.push(null);
-    return args;
-  }, function (doc) {
+  return db.get(id).then(function (doc) {
     args.push(doc);
+    return args;
+  }, function (err) {
+    args.push(null);
     return args;
   });
 }
@@ -135,7 +135,7 @@ function parseValidationFunctions(resp) {
 }
 
 function processArgs(db, callback, options) {
-  if (!callback) {
+  if (typeof options === "function") {
     callback = options;
     options = {};
   }
