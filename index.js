@@ -18,12 +18,12 @@
 
 //TODO: call http equivalent if http adapter
 
-var Promise = require("bluebird");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
 
 function doUpdating(methodName, db, query, options, callback) {
+  var Promise = db.constructor.utils.Promise;
   if (typeof options === "function") {
     callback = options;
     options = {};
