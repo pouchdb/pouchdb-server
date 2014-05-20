@@ -18,8 +18,6 @@
 
 //TODO: call http equivalent if http adapter
 
-var Promise = require("bluebird");
-
 var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
@@ -35,6 +33,7 @@ function addOldDoc(db, id, args) {
 }
 
 function doValidation(db, newDoc, options, callback) {
+  var Promise = db.constructor.utils.Promise;
   //a new promise because sometimes it's possible to declare a
   //document valid early on in the process.
   return new Promise(function (resolve, reject) {
@@ -106,7 +105,7 @@ function completeValidationOptions(db, options) {
       return options;
     });
   }
-  return Promise.resolve(options);
+  return db.constructor.utils.Promise.resolve(options);
 }
 
 function getValidationFunctions(db, callback) {
@@ -181,6 +180,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   //Also, the result array might not be in the same order as
   //``bulkDocs.docs``
   var args = processArgs(this, callback, options);
+  var Promise = args.db.constructor.utils.Promise;
 
   var done = [];
   var todo = [];
