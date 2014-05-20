@@ -16,15 +16,15 @@
 
 "use strict";
 
-var Promise = require("bluebird");
 var extend = require("extend");
 
-var is = require("is");
+var isEmpty = require("is-empty");
 var querystring = require("querystring");
 var buildUserContextObject = require("./couchusercontextobject.js");
 var buildSecurityObject = require("./couchsecurityobject.js");
 
 module.exports = function buildRequestObject(options, pathPromise, infoPromise, db) {
+  var Promise = db.constructor.utils.Promise;
   var userCtxPromise = infoPromise.then(buildUserContextObject);
   var uuidPromise = db.id();
 
@@ -76,18 +76,18 @@ function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
   //add query string to requested_path if necessary
   var i = result.requested_path.length - 1;
   var pathEnd = result.requested_path[i];
-  if (!is.empty(result.query) && pathEnd.indexOf("?") === -1) {
+  if (!isEmpty(result.query) && pathEnd.indexOf("?") === -1) {
     result.requested_path[i] = pathEnd + "?" + querystring.stringify(result.query);
   }
   //add query string to raw_path if necessary
-  if (!is.empty(result.query) && result.raw_path.indexOf("?") === -1) {
+  if (!isEmpty(result.query) && result.raw_path.indexOf("?") === -1) {
     result.raw_path += "?" + querystring.stringify(result.query);
   }
 
   //update body based on form & add content-type & content-length
   //header accordingly if necessary. Also switch to POST (most common
   //if not already either POST, PUT or PATCH.
-  if (!is.empty(result.form) && result.body === "undefined") {
+  if (!isEmpty(result.form) && result.body === "undefined") {
     result.body = querystring.stringify(result.form);
     result.headers["Content-Type"] = "application/x-www-form-urlencoded";
     result.headers["Content-Length"] = result.body.length.toString();

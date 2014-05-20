@@ -1,12 +1,8 @@
 {
 	"name": "couchdb-objects",
 	"main": "index.js",
-	"browser": {
-		"bluebird": "lie"
-	},
 	"dependencies": {
-		"bluebird": "*",
-		"is": "*",
+		"is-empty": "*",
 		"extend": "*"
 	}
 }
