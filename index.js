@@ -18,7 +18,6 @@
 
 //TODO: call http equivalent if http adapter
 
-var Promise = require("bluebird");
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
 var nodify = require("promise-nodify");
@@ -33,6 +32,9 @@ exports.show = function (showPath, options, callback) {
     options = {};
   }
   var db = this;
+  var PouchDB = db.constructor;
+  var Promise = PouchDB.utils.Promise;
+//  var ajax = PouchDB.utils.ajax;
 
   var splitted = showPath.split("/");
   var designDocName = splitted[0];

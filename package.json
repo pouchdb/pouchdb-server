@@ -1,19 +1,14 @@
 {
 	"name": "pouchdb-show",
 	"main": "index.js",
-	"browser": {
-		"bluebird": "lie"
-	},
 	"dependencies": {
-		"bluebird": "*",
 		"couchdb-objects": "*",
 		"couchdb-render": "*",
 		"promise-nodify": "*"
 	},
 	"devDependencies": {
 		"browserify": "*",
-		"uglify-js": "*",
-		"lie": "*"
+		"uglify-js": "*"
 	},
 	"scripts": {
 		"build-js": "mkdir -p ../../dist && browserify index.js -s Show -o ../../dist/pouchdb-show.js",
