@@ -18,7 +18,6 @@
 
 //TODO: call http equivalent if http adapter.
 
-var Promise = require("bluebird");
 var extend = require("extend");
 
 var couchdb_objects = require("couchdb-objects");
@@ -27,6 +26,7 @@ var nodify = require("promise-nodify");
 
 exports.list = function (listPath, options, callback) {
   var db = this;
+  var Promise = db.constructor.utils.Promise;
 
   if (typeof options === "function") {
     callback = options;
@@ -91,7 +91,7 @@ exports.list = function (listPath, options, callback) {
 
     var resp = render(designDoc.lists[listName], designDoc, head, req, listApi);
     if (respInfo) {
-      extend(resp, respInfo || {});
+      extend(resp, respInfo);
       resp.body = chunks.join("") + resp.body;
       resp.headers["Transfer-Encoding"] = "chunked";
     }
