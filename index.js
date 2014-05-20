@@ -17,9 +17,13 @@
 "use strict";
 
 var extend = require("extend");
-var is = require("is");
+var isEmpty = require("is-empty");
 
 var coucheval = require("couchdb-eval");
+
+function isObject(value) {
+  return Object.prototype.toString.call(value) === "[object Object]";
+}
 
 module.exports = function render(source, designDoc, data, req, extraVars) {
   /*jshint evil: true */
@@ -36,7 +40,7 @@ module.exports = function render(source, designDoc, data, req, extraVars) {
   } catch (e) {
     throw coucheval.wrapExecutionError(e);
   }
-  if (!(typeof result === "string" || is.object(result))) {
+  if (!(typeof result === "string" || isObject(result))) {
     var resp = providesCtx.getResult(req);
     result = resp[0];
     contentType = resp[1];
@@ -45,7 +49,7 @@ module.exports = function render(source, designDoc, data, req, extraVars) {
   if (typeof result === "string") {
     result = {body: result};
   }
-  if (!is.object(result)) {
+  if (!isObject(result)) {
     result = {body: ""};
   }
   result.code = result.code || 200;
@@ -163,7 +167,7 @@ function buildProvidesCtx() {
   }
 
   function getResult(req) {
-    if (is.empty(providesFuncs)) {
+    if (isEmpty(providesFuncs)) {
       return [""];
     }
     if (req.query.format) {

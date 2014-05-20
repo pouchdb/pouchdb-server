@@ -3,7 +3,7 @@
 	"main": "index.js",
 	"dependencies": {
 		"extend": "*",
-		"is": "*",
+		"is-empty": "*",
 		"couchdb-eval": "*"
 	}
 }
