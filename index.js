@@ -3,6 +3,7 @@ var express   = require('express')
   , fs        = require('fs')
   , pkg       = require('./package.json')
   , dbs       = {}
+  , uuids     = require('./uuids')
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
@@ -79,9 +80,9 @@ app.get('/_utils', function (req, res, next) {
 
 // Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
-  var count = req.query.count || 1;
+  var count = typeof req.query.count === 'number' ? req.query.count : 1;
   res.send(200, {
-    uuids: Pouch.utils.uuids(count)
+    uuids: uuids.getFirst(count)
   });
 });
 
@@ -414,6 +415,8 @@ app.put('/:db/:id(*)', function (req, res, next) {
       : null;
   }
   req.db.put(req.body, req.query, function (err, response) {
+    console.log('hey heres an error');
+    console.log(err);
     if (err) return res.send(500, err);
     var loc = req.protocol
       + '://'
@@ -428,7 +431,8 @@ app.put('/:db/:id(*)', function (req, res, next) {
 
 // Create a document
 app.post('/:db', function (req, res, next) {
-  req.db.post(req.body, req.query, function (err, response) {
+  req.body._id = uuids.dequeue();
+  req.db.put(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
     res.send(201, response);
   });
