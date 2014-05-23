@@ -4,6 +4,7 @@ var express   = require('express')
   , pkg       = require('./package.json')
   , dbs       = {}
   , uuids     = require('./uuids')
+  , allDbs    = require('./all-dbs')
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
@@ -88,7 +89,7 @@ app.get('/_uuids', function (req, res, next) {
 
 // List all databases.
 app.get('/_all_dbs', function (req, res, next) {
-  Pouch.allDbs(function (err, response) {
+  allDbs(function (err, response) {
     if (err) res.send(500, Pouch.UNKNOWN_ERROR);
     res.send(200, response);
   });
