@@ -146,7 +146,7 @@ app.put('/:db', function (req, res, next) {
 });
 
 // Delete a database
-app.del('/:db', function (req, res, next) {
+app.delete('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
   Pouch.destroy(name, function (err, info) {
     if (err) return res.send(404, err);
@@ -390,7 +390,7 @@ app.get('/:db/:id/:attachment(*)', function (req, res, next) {
 });
 
 // Delete a document attachment
-app.del('/:db/:id/:attachment(*)', function (req, res, next) {
+app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
 
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
@@ -448,7 +448,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
 });
 
 // Delete a document
-app.del('/:db/:id(*)', function (req, res, next) {
+app.delete('/:db/:id(*)', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
     req.db.remove(doc, function (err, response) {
