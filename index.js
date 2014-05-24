@@ -276,7 +276,7 @@ app.get('/:db/_changes', function (req, res, next) {
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
   function longpoll(err, data) {
-    if (err) return res.send(409, err);
+    if (err) return res.send(err.status, err);
     if (data.results && data.results.length) {
       data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
         return r.seq;
@@ -298,7 +298,7 @@ app.get('/:db/_changes', function (req, res, next) {
     req.query.complete = longpoll;
   } else {
     req.query.complete = function (err, response) {
-      if (err) return res.send(409, err);
+      if (err) return res.send(err.status, err);
       res.send(200, response);
     };
   }
