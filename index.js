@@ -1,5 +1,6 @@
 
 var express   = require('express')
+  , rawBody   = require('raw-body')
   , fs        = require('fs')
   , pkg       = require('./package.json')
   , dbs       = {}
@@ -16,6 +17,7 @@ function isPouchError(obj) {
 app.use('/js', express.static(__dirname + '/fauxton/js'));
 app.use('/css', express.static(__dirname + '/fauxton/css'));
 app.use('/img', express.static(__dirname + '/fauxton/img'));
+
 app.use(function (req, res, next) {
   var opts = {}
     , data = ''
@@ -28,20 +30,22 @@ app.use(function (req, res, next) {
       req.query[prop] = JSON.parse(req.query[prop]);
     } catch (e) {}
   }
-
   // Custom bodyParsing because express.bodyParser() chokes
-  // on `malformed` requests.
-  req.on('data', function (chunk) { data += chunk; });
-  req.on('end', function () {
-    if (data) {
-      try {
-        req.body = JSON.parse(data);
-      } catch (e) {
-        req.body = data;
-      }
-    }
-    next();
-  });
+  // on 'malformed' requests, and also because we need the
+  // rawBody for attachments
+  rawBody(req, {
+    length: req.headers['content-length'],
+    encoding: 'binary'
+  }, function (err, string) {
+    if (err)
+      return next(err)
+
+    req.rawBody = string
+    try {
+      req.body = JSON.parse(string.toString('utf8'))
+    } catch (err) {}
+    next()
+  })
 });
 app.use(function (req, res, next) {
   var _res = res;
@@ -344,16 +348,14 @@ app.put('/:db/:id/:attachment(*)', function (req, res, next) {
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
-
+  console.log('raw body');
+  console.log(req.rawBody);
+  console.log(JSON.stringify(req.rawBody));
   var name = req.params.id
     , attachment = req.params.attachment
     , rev = req.query.rev
     , type = req.get('Content-Type') || 'application/octet-stream'
-    , body = (req.body === undefined)
-        ? new Buffer('')
-        : (typeof req.body === 'string')
-          ? new Buffer(req.body)
-          : new Buffer(JSON.stringify(req.body));
+    , body = new Buffer(req.rawBody || '', 'binary')
 
   req.db.putAttachment(name, attachment, rev, body, type, function (err, response) {
     if (err) return res.send(409, err);

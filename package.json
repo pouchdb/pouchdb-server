@@ -13,7 +13,8 @@
   },
   "main": "./index.js",
   "dependencies": {
-    "pouchdb": "pouchdb/pouchdb"
+    "pouchdb": "pouchdb/pouchdb",
+    "raw-body": "^1.1.5"
   },
   "devDependencies": {
     "express": "4.x",
