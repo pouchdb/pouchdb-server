@@ -2,10 +2,12 @@
 var express   = require('express')
   , rawBody   = require('raw-body')
   , fs        = require('fs')
+  , extend    = require('extend')
   , pkg       = require('./package.json')
   , dbs       = {}
   , uuids     = require('./uuids')
   , allDbs    = require('./all-dbs')
+  , histories = {}
   , app       = module.exports = express()
   , Pouch     = module.exports.Pouch = require('pouchdb');
 
@@ -109,7 +111,36 @@ app.post('/_replicate', function (req, res, next) {
   if (req.body.filter) opts.filter = req.body.filter;
   if (req.body.query_params) opts.query_params = req.body.query_params;
 
+  var startDate = new Date();
   Pouch.replicate(source, target, opts).then(function (response) {
+    
+    var historyObj = extend(true, {
+      start_time: startDate.toJSON(),
+      end_time: new Date().toJSON(),
+    }, response);
+    
+    var currentHistories = [];
+    
+    if (!/^https?:\/\//.test(source)) {
+      histories[source] = histories[source] || [];
+      currentHistories.push(histories[source]);
+
+    }
+    if (!/^https?:\/\//.test(target)) {
+      histories[target] = histories[target] || [];
+      currentHistories.push(histories[target]);
+    }
+    
+    currentHistories.forEach(function (history) {
+      // CouchDB caps history at 50 according to
+      // http://guide.couchdb.org/draft/replication.html
+      history.push(historyObj);
+      if (history.length > 50) {
+        history.splice(0, 1); // TODO: this is slow, use a stack instead
+      }      
+    });
+    
+    response.history = histories[source] || histories[target] || [];
     res.send(200, response);
   }, function (err) {
     res.send(400, err);
