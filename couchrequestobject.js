@@ -16,7 +16,7 @@
 
 "use strict";
 
-var extend = require("extend");
+var extend = require("pouchdb-extend");
 
 var isEmpty = require("is-empty");
 var querystring = require("querystring");

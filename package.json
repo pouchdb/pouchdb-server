@@ -3,6 +3,14 @@
 	"main": "index.js",
 	"dependencies": {
 		"is-empty": "*",
-		"extend": "*"
+		"pouchdb-extend": "*"
+	},
+	"devDependencies": {
+		"es3ify": "*"
+	},
+	"browserify": {
+		"transform": [
+			"es3ify"
+		]
 	}
 }
