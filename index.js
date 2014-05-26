@@ -18,7 +18,7 @@
 
 //TODO: call http equivalent if http adapter.
 
-var extend = require("extend");
+var extend = require("pouchdb-extend");
 
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
