@@ -16,7 +16,7 @@
 
 "use strict";
 
-var extend = require("extend");
+var extend = require("pouchdb-extend");
 var isEmpty = require("is-empty");
 
 var coucheval = require("couchdb-eval");
@@ -178,7 +178,8 @@ function buildProvidesCtx() {
           reason: [
             "the format option is set to '",
             req.query.format,
-            "', but there's no provider registered for that format."
+            //the + thing for es3ify
+            "'" + ", but there's no provider registered for that format."
           ].join("")
         };
       }

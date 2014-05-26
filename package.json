@@ -2,8 +2,16 @@
 	"name": "couchdb-render",
 	"main": "index.js",
 	"dependencies": {
-		"extend": "*",
+		"pouchdb-extend": "*",
 		"is-empty": "*",
 		"couchdb-eval": "*"
+	},
+	"devDependencies": {
+		"es3ify": "*"
+	},
+	"browserify": {
+		"transform": [
+			"es3ify"
+		]
 	}
 }
