@@ -16,8 +16,6 @@
 
 "use strict";
 
-//TODO: call http equivalent if http adapter
-
 var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
@@ -68,6 +66,12 @@ function doValidation(db, newDoc, options, callback) {
       resolve();
     }
 
+    var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
+    if (isHttp && !options.checkHttp) {
+      //CouchDB does the checking for itself. Validate succesful.
+      resolve();
+      return;
+    }
     if ((newDoc._id || "").indexOf("_design/") === 0) {
       //a design document -> always validates succesful.
       resolve();
