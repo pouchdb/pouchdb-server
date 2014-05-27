@@ -58,6 +58,7 @@ function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
     userCtx: userCtx,
     uuid: uuid
   };
+  //set id
   if (["_show", "_update"].indexOf(path[3]) === -1) {
     result.id = null;
   } else {
@@ -67,11 +68,7 @@ function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
     }
   }
 
-  if (options.format) {
-    result.query.format = options.format;
-  }
-
-  extend(true, result, options.reqObjStub || {});
+  extend(true, result, options);
 
   //add query string to requested_path if necessary
   var i = result.requested_path.length - 1;
