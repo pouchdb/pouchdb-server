@@ -16,25 +16,20 @@
 
 "use strict";
 
-//TODO: call http equivalent if http adapter
-
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
 var nodify = require("promise-nodify");
+var httpQuery = require("couchdb-req-http-query");
 
 exports.show = function (showPath, options, callback) {
-  //options:
-  //- reqObjStub
-  //- format
+  //options: values to end up in the request object of the show
+  //function (next to their defaults).
 
   if (typeof options === "function") {
     callback = options;
     options = {};
   }
   var db = this;
-  var PouchDB = db.constructor;
-  var Promise = PouchDB.utils.Promise;
-//  var ajax = PouchDB.utils.ajax;
 
   var splitted = showPath.split("/");
   var designDocName = splitted[0];
@@ -54,6 +49,20 @@ exports.show = function (showPath, options, callback) {
     return path;
   });
   var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
+  return reqPromise.then(function (req) {
+    var promise;
+    if (["http", "https"].indexOf(db.type()) === -1) {
+      promise = offlineQuery(db, designDocName, showName, docId, req, options);
+    } else {
+      promise = httpQuery(db, req);
+    }
+    nodify(promise, callback);
+    return promise;
+  });
+};
+
+function offlineQuery(db, designDocName, showName, docId, req, options) {
+  var Promise = db.constructor.utils.Promise;
 
   //get the documents involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
@@ -66,20 +75,17 @@ exports.show = function (showPath, options, callback) {
     }
     return designDoc;
   });
-  var docPromise = db.get(docId).catch(function () {
+  var docPromise = db.get(docId, options).catch(function () {
     //doc might not exist - that's ok and expected.
     return null;
   });
-  var promise = Promise.all([ddocPromise, docPromise, reqPromise]).then(function (args) {
+  return Promise.all([ddocPromise, docPromise]).then(function (args) {
     //all data collected - do the magic that is a show function
     var designDoc = args[0];
     var doc = args[1];
-    var req = args[2];
 
     var source = designDoc.shows[showName];
 
     return render(source, designDoc, doc, req);
   });
-  nodify(promise, callback);
-  return promise;
-};
+}
