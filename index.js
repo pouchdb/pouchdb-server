@@ -69,8 +69,8 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
     if (!(designDoc.shows || {}).hasOwnProperty(showName)) {
       throw {
         status: 404,
-        error: "not_found",
-        reason: "missing show function " + showName + " on design doc _design/" + designDocName
+        name: "not_found",
+        message: "missing show function " + showName + " on design doc _design/" + designDocName
       };
     }
     return designDoc;
