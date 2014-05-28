@@ -64,9 +64,9 @@ exports.evaluate = function (requireContext, extraVars, program) {
     }
   } catch (e) {
     throw {
-      "error": "compilation_error",
+      "name": "compilation_error",
       "status": 500,
-      "reason": "Expression does not eval to a function. " + program
+      "message": "Expression does not eval to a function. " + program
     };
   }
   return func;
@@ -74,8 +74,8 @@ exports.evaluate = function (requireContext, extraVars, program) {
 
 exports.wrapExecutionError = function (e) {
   return {
-    error: e.name,
-    reason: e.toString() + "\n\n" + e.stack,
+    name: e.name,
+    message: e.toString() + "\n\n" + e.stack,
     status: 500
   };
 };
