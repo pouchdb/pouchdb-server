@@ -1,15 +1,15 @@
 {
   "name": "pouchdb-server",
   "description": "A standalone REST interface server for PouchDB.",
-  "version": "0.2.2",
-  "homepage": "https://github.com/nick-thompson/pouchdb-server",
+  "version": "0.2.3",
+  "homepage": "https://github.com/pouchdb/pouchdb-server",
   "author": {
     "name": "Nick Thompson",
     "email": "ncthom91@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/nick-thompson/pouchdb-server.git"
+    "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
   "bin": {
     "pouchdb-server": "./bin/pouchdb-server"
