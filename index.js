@@ -89,7 +89,7 @@ app.get('/_utils', function (req, res, next) {
 app.get('/_uuids', function (req, res, next) {
   var count = typeof req.query.count === 'number' ? req.query.count : 1;
   res.send(200, {
-    uuids: uuids.getFirst(count)
+    uuids: uuids(count)
   });
 });
 
@@ -465,7 +465,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 
 // Create a document
 app.post('/:db', function (req, res, next) {
-  req.body._id = uuids.dequeue();
+  req.body._id = uuids(1)[0];
   req.db.put(req.body, req.query, function (err, response) {
     if (err) return res.send(409, err);
     res.send(201, response);
