@@ -24,6 +24,7 @@
     "express": "4.x",
     "express-pouchdb": "*",
     "couchdb-harness": "*",
+    "memdown": "0.10.1",
     "optimist": "~0.3.5",
     "corser": "~1.2.0",
     "morgan": "^1.1.1"
