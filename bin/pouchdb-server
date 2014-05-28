@@ -27,17 +27,15 @@ if (argv.h || argv.help) {
   process.exit(1);
 }
 
-app.configure(function () {
-  app.use(express.logger(logger));
-  app.use(function (req, res, next) {
-    corserRequestListener(req, res, function () {
-      if (req.method == 'OPTIONS') {
-        // End CORS preflight request.
-        res.writeHead(204);
-        return res.end();
-      }
-      next();
-    });
+app.use(require('morgan')(logger));
+app.use(function (req, res, next) {
+  corserRequestListener(req, res, function () {
+    if (req.method == 'OPTIONS') {
+      // End CORS preflight request.
+      res.writeHead(204);
+      return res.end();
+    }
+    next();
   });
 });
 
