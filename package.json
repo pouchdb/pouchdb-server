@@ -1,0 +1,16 @@
+{
+	"name": "couchdb-resp-completer",
+	"main": "index.js",
+	"dependencies": {
+		"extend": "*",
+		"is-empty": "*"
+	},
+	"devDependencies": {
+		"es3ify": "*"
+	},
+	"browserify": {
+		"transform": [
+			"es3ify"
+		]
+	}
+}
