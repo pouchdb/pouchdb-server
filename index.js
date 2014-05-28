@@ -16,14 +16,12 @@
 
 "use strict";
 
-//TODO: call http equivalent if http adapter
-
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
+var httpQuery = require("couchdb-req-http-query");
 
 function doUpdating(methodName, db, query, options, callback) {
-  var Promise = db.constructor.utils.Promise;
   if (typeof options === "function") {
     callback = options;
     options = {};
@@ -43,6 +41,21 @@ function doUpdating(methodName, db, query, options, callback) {
     return path;
   });
   var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
+  return reqPromise.then(function (req) {
+    var promise;
+    if (["http", "https"].indexOf(db.type()) === -1) {
+      promise = offlineQuery(methodName, db, designDocName, updateName, docId, req, options);
+    } else {
+      promise = httpQuery(db, req);
+    }
+
+    nodify(promise, callback);
+    return promise;
+  });
+}
+
+function offlineQuery(methodName, db, designDocName, updateName, docId, req, options) {
+  var Promise = db.constructor.utils.Promise;
 
   //get the documents involved
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
@@ -60,10 +73,9 @@ function doUpdating(methodName, db, query, options, callback) {
     return null;
   });
 
-  var promise = Promise.all([reqPromise, ddocPromise, docPromise]).then(function (args) {
-    var req = args[0];
-    var designDoc = args[1];
-    var doc = args[2];
+  return Promise.all([ddocPromise, docPromise]).then(function (args) {
+    var designDoc = args[0];
+    var doc = args[1];
 
     //run update function
     var func = coucheval.evaluate(designDoc, {}, designDoc.updates[updateName]);
@@ -75,19 +87,18 @@ function doUpdating(methodName, db, query, options, callback) {
     }
     //save result if necessary
     if (result[0] !== null) {
-      return db[methodName](result[0]).then(function () {
+      return db[methodName](result[0], options).then(function () {
         return result[1];
       });
     }
     return result[1];
   });
-  nodify(promise, callback);
-  return promise;
 }
 
 exports.updatingPut = function (query, options, callback) {
   var db = this;
   var methodName = options.withValidation ? "validatingPut" : "put";
+  options.method = "PUT";
   return doUpdating(methodName, db, query, options, callback);
 };
 
@@ -96,5 +107,6 @@ exports.updatingPut = function (query, options, callback) {
 exports.updatingPost = function (query, options, callback) {
   var db = this;
   var methodName = options.withValidation ? "validatingPost" : "post";
+  options.method = "POST";
   return doUpdating(methodName, db, query, options, callback);
 };
