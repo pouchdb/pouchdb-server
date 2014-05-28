@@ -64,9 +64,20 @@ if (useAuth) {
 }
 
 app.use(require('express-pouchdb'));
-app.listen(port);
-console.log('pouchdb-server listening on port ' + port + '.\n');
+app.listen(port, function () {
+  console.log('\npouchdb-server listening on port ' + port + '.');
+  console.log('navigate to http://localhost:' + port + '/_utils for the Fauxton UI.\n');
+}).on('error', function (e) {
+  if (e.code === 'EADDRINUSE') {
+    console.error('\nError: Port ' + port + ' is already in use.')
+    console.error('Try another one, e.g. pouchdb-server -p ' +
+      (parseInt(port) + 1) + '\n');
+  } else {
+    console.error('Uncaught error: ' + e);
+    console.error(e.stack);
+  }
+});
 
 process.on('SIGINT', function () {
   process.exit(0)
-})
+});
