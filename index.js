@@ -20,6 +20,7 @@ var extend = require("extend");
 var isEmpty = require("is-empty");
 
 var coucheval = require("couchdb-eval");
+var completeRespObj = require("couchdb-resp-completer");
 
 function isObject(value) {
   return Object.prototype.toString.call(value) === "[object Object]";
@@ -46,28 +47,7 @@ module.exports = function render(source, designDoc, data, req, extraVars) {
     contentType = resp[1];
   }
 
-  if (typeof result === "string") {
-    result = {body: result};
-  }
-  if (!isObject(result)) {
-    result = {body: ""};
-  }
-  result.code = result.code || 200;
-  result.headers = result.headers || {};
-  result.headers.Vary = result.headers.Vary || "Accept";
-  //if a content type is known by now, use it.
-  result.headers["Content-Type"] = result.headers["Content-Type"] || contentType;
-  if (result.json) {
-    result.body = JSON.stringify(result.json);
-    result.headers["Content-Type"] = result.headers["Content-Type"] || "application/json";
-  }
-  if (result.base64) {
-    result.headers["Content-Type"] = result.headers["Content-Type"] || "application/binary";
-  }
-  //the default content type
-  result.headers["Content-Type"] = result.headers["Content-Type"] || "text/html; charset=utf-8";
-
-  return result;
+  return completeRespObj(result, contentType);
 };
 
 function buildProvidesCtx() {
@@ -152,8 +132,8 @@ function buildProvidesCtx() {
     //no match was found
     throw {
       status: 406,
-      error: "not_acceptable",
-      reason: [
+      name: "not_acceptable",
+      message: [
         "Content-Type(s)",
         requestedMimes.join(", "),
         "not supported, try one of:",
@@ -174,8 +154,8 @@ function buildProvidesCtx() {
       if (!providesFuncs.hasOwnProperty(req.query.format)) {
         throw {
           status: 500,
-          error: "render_error",
-          reason: [
+          name: "render_error",
+          message: [
             "the format option is set to '",
             req.query.format,
             //the + thing for es3ify
