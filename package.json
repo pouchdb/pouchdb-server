@@ -2,7 +2,7 @@
 	"name": "couchdb-render",
 	"main": "index.js",
 	"dependencies": {
-		"pouchdb-extend": "*",
+		"extend": "*",
 		"is-empty": "*",
 		"couchdb-eval": "*"
 	},

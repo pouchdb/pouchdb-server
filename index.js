@@ -16,7 +16,7 @@
 
 "use strict";
 
-var extend = require("pouchdb-extend");
+var extend = require("extend");
 var isEmpty = require("is-empty");
 
 var coucheval = require("couchdb-eval");
