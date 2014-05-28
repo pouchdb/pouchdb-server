@@ -20,8 +20,9 @@ var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
 var httpQuery = require("couchdb-req-http-query");
+var completeRespObj = require("couchdb-resp-completer");
 
-function doUpdating(methodName, db, query, options, callback) {
+function doUpdating(db, query, options, callback) {
   if (typeof options === "function") {
     callback = options;
     options = {};
@@ -42,9 +43,12 @@ function doUpdating(methodName, db, query, options, callback) {
   });
   var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
   return reqPromise.then(function (req) {
+    //the only option that isn't related to the request object.
+    delete req.withValidation;
+
     var promise;
     if (["http", "https"].indexOf(db.type()) === -1) {
-      promise = offlineQuery(methodName, db, designDocName, updateName, docId, req, options);
+      promise = offlineQuery(db, designDocName, updateName, docId, req, options);
     } else {
       promise = httpQuery(db, req);
     }
@@ -54,7 +58,7 @@ function doUpdating(methodName, db, query, options, callback) {
   });
 }
 
-function offlineQuery(methodName, db, designDocName, updateName, docId, req, options) {
+function offlineQuery(db, designDocName, updateName, docId, req, options) {
   var Promise = db.constructor.utils.Promise;
 
   //get the documents involved
@@ -62,8 +66,8 @@ function offlineQuery(methodName, db, designDocName, updateName, docId, req, opt
     if (!(designDoc.updates || {}).hasOwnProperty(updateName)) {
       throw {
         status: 404,
-        error: "not_found",
-        reason: "missing update function " + updateName + " on design doc _design/" + designDocName
+        name: "not_found",
+        message: "missing update function " + updateName + " on design doc _design/" + designDocName
       };
     }
     return designDoc;
@@ -85,28 +89,26 @@ function offlineQuery(methodName, db, designDocName, updateName, docId, req, opt
     } catch (e) {
       throw coucheval.wrapExecutionError(e);
     }
+    var resp = completeRespObj(result[1]);
     //save result if necessary
-    if (result[0] !== null) {
-      return db[methodName](result[0], options).then(function () {
-        return result[1];
-      });
+    if (result[0] === null) {
+      return resp;
     }
-    return result[1];
+    var methodName = options.withValidation ? "validatingPut" : "put";
+    return db[methodName](result[0], options).then(function () {
+      return resp;
+    });
   });
 }
 
 exports.updatingPut = function (query, options, callback) {
   var db = this;
-  var methodName = options.withValidation ? "validatingPut" : "put";
   options.method = "PUT";
-  return doUpdating(methodName, db, query, options, callback);
+  return doUpdating(db, query, options, callback);
 };
 
-//TODO: Shouldn't this method add an 'id' itself if not already there
-//and then afterwards just call exports.updatingPut?
 exports.updatingPost = function (query, options, callback) {
   var db = this;
-  var methodName = options.withValidation ? "validatingPost" : "post";
   options.method = "POST";
-  return doUpdating(methodName, db, query, options, callback);
+  return doUpdating(db, query, options, callback);
 };
