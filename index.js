@@ -16,7 +16,7 @@
 
 "use strict";
 
-var extend = require("pouchdb-extend");
+var extend = require("extend");
 var nodify = require("promise-nodify");
 
 var couchdb_objects = require("couchdb-objects");
@@ -60,6 +60,14 @@ exports.list = function (listPath, options, callback) {
 
 function offlineQuery(db, designDocName, listName, viewName, req, options) {
   var Promise = db.constructor.utils.Promise;
+
+  if (req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json") {
+    return Promise.reject({
+      status: 400,
+      name: "bad_request",
+      message: "invalid_json"
+    });
+  }
 
   //get the data involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
