@@ -74,8 +74,8 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
     if (!(designDoc.lists || {}).hasOwnProperty(listName)) {
       throw {
         status: 404,
-        error: "not_found",
-        reason: "missing list function " + listName + " on design doc _design/" + designDocName
+        name: "not_found",
+        message: "missing list function " + listName + " on design doc _design/" + designDocName
       };
     }
     return designDoc;
