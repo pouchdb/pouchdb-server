@@ -21,7 +21,7 @@ var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 
 function addOldDoc(db, id, args) {
-  return db.get(id).then(function (doc) {
+  return db.get(id, {revs: true}).then(function (doc) {
     args.push(doc);
     return args;
   }, function (err) {
@@ -40,6 +40,8 @@ function doValidation(db, newDoc, options, callback) {
       var newOptions = args[1];
       var oldDoc = args[2];
 
+      newDoc._revisions = (oldDoc || {})._revisions;
+
       try {
         validationFuncs.forEach(function (validationFunc) {
           validationFunc(newDoc, oldDoc, newOptions.userCtx, newOptions.secObj);
@@ -47,14 +49,14 @@ function doValidation(db, newDoc, options, callback) {
       } catch (e) {
         if (typeof e.unauthorized !== "undefined") {
           reject({
-            error: "unauthorized",
-            reason: e.unauthorized,
+            name: "unauthorized",
+            message: e.unauthorized,
             status: 401
           });
         } else if (typeof e.forbidden !== "undefined") {
           reject({
-            error: "forbidden",
-            reason: e.forbidden,
+            name: "forbidden",
+            message: e.forbidden,
             status: 403
           });
         } else {
@@ -159,10 +161,20 @@ exports.validatingPut = function (doc, options, callback) {
 };
 
 exports.validatingPost = function (doc, options, callback) {
-  //fixme: see bulkDocs: set id if not one already early.
   var args = processArgs(this, callback, options);
-  var promise = doValidation(args.db, doc, args.options).then(function () {
-    return args.db.post(doc, args.options);
+  var Promise = args.db.constructor.utils.Promise;
+
+  var idPromise;
+  if (doc._id) {
+    idPromise = Promise.resolve(doc._id);
+  } else {
+    idPromise = args.db.id();
+  }
+  var promise = idPromise.then(function (id) {
+    doc._id = id;
+    return doValidation(args.db, doc, args.options).then(function () {
+      return args.db.post(doc, args.options);
+    });
   });
   nodify(promise, callback);
   return promise;
@@ -187,21 +199,28 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   var Promise = args.db.constructor.utils.Promise;
 
   var done = [];
-  var todo = [];
+  var notYetDone = [];
 
   var validations = bulkDocs.docs.map(function (doc) {
-    return doValidation(args.db, doc, args.options).then(function (resp) {
-      todo.push(doc);
-    }, function (err) {
-      //FIXME: _id should be set by this moment. As should it in
-      //post. Fix that (using db.id(), which is private but I guess
-      //acceptable in this case.)
+    var idPromise;
+    if (doc._id) {
+      idPromise = Promise.resolve(doc._id);
+    } else {
+      idPromise = args.db.id();
+    }
+    return idPromise.then(function (id) {
+      doc._id = id;
+
+      return doValidation(args.db, doc, args.options);
+    }).then(function (resp) {
+      notYetDone.push(doc);
+    }).catch(function (err) {
       err.id = doc._id;
       done.push(err);
     });
   });
   var promise = Promise.all(validations).then(function () {
-    return args.db.bulkDocs({docs: todo}, args.options);
+    return args.db.bulkDocs({docs: notYetDone}, args.options);
   }).then(function (insertedDocs) {
     return done.concat(insertedDocs);
   });
@@ -213,9 +232,7 @@ var vpa = function (docId, attachmentId, rev, attachment, type, options, callbac
   var args = processArgs(this, callback, options);
 
   //get the doc
-  var promise = args.db.get(docId, {rev: rev}).catch(function (err) {
-    //TODO: check if the thingy should have a _rev already here.
-    //and is that even possible?
+  var promise = args.db.get(docId, {rev: rev, revs: true}).catch(function (err) {
     return {_id: docId};
   }).then(function (doc) {
     //validate the doc + attachment
@@ -237,7 +254,7 @@ exports.validatingPutAttachment = vpa;
 var vra = function (docId, attachmentId, rev, options, callback) {
   var args = processArgs(this, callback, options);
   //get the doc
-  var promise = args.db.get(docId, {rev: rev}).then(function (doc) {
+  var promise = args.db.get(docId, {rev: rev, revs: true}).then(function (doc) {
     //validate the doc without attachment
     delete doc._attachments[attachmentId];
 
