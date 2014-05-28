@@ -16,7 +16,7 @@
 
 "use strict";
 
-var extend = require("pouchdb-extend");
+var extend = require("extend");
 
 var isEmpty = require("is-empty");
 var querystring = require("querystring");
@@ -82,15 +82,16 @@ function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
   }
 
   //update body based on form & add content-type & content-length
-  //header accordingly if necessary. Also switch to POST (most common
-  //if not already either POST, PUT or PATCH.
+  //header accordingly if necessary.
   if (!isEmpty(result.form) && result.body === "undefined") {
     result.body = querystring.stringify(result.form);
     result.headers["Content-Type"] = "application/x-www-form-urlencoded";
     result.headers["Content-Length"] = result.body.length.toString();
-    if (["POST", "PUT", "PATCH"].indexOf(result.method) === -1) {
-      result.method = "POST";
-    }
+  }
+  //switch to POST (most common) if not already either POST, PUT or
+  //PATCH and having a body.
+  if (result.body !== "undefined" && ["POST", "PUT", "PATCH"].indexOf(result.method) === -1) {
+    result.method = "POST";
   }
 
   return result;

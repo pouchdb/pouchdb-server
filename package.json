@@ -3,7 +3,7 @@
 	"main": "index.js",
 	"dependencies": {
 		"is-empty": "*",
-		"pouchdb-extend": "*"
+		"extend": "*"
 	},
 	"devDependencies": {
 		"es3ify": "*"
