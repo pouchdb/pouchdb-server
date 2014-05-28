@@ -2,11 +2,13 @@
 
 var express = require('express')
   , corser  = require('corser')
+  , path    = require('path')
   , argv    = require('optimist').argv
   , port    = +(argv.p || argv.port || 5984)
   , logger  = argv.l || argv.log || 'dev'
   , user    = argv.u || argv.user
   , pass    = argv.s || argv.pass
+  , dbpath  = argv.d || argv.dir || argv.directory || ''
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -61,7 +63,11 @@ if (useAuth) {
   });
 }
 
-app.use(require('express-pouchdb'));
+var expressPouchDB = require('express-pouchdb');
+if (dbpath) {
+  expressPouchDB.setPath(dbpath);
+}
+app.use(expressPouchDB);
 app.listen(port);
 console.log('pouchdb-server listening on port ' + port + '.\n');
 
