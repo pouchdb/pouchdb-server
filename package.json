@@ -1,10 +1,15 @@
 {
 	"name": "pouchdb-show",
 	"main": "index.js",
+	"description": "A PouchDB plug-in that allows you to re-use your CouchDB show functions on the client side.",
+	"repository": {
+		"type": "bzr",
+		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
+	},
 	"dependencies": {
 		"couchdb-objects": "*",
 		"couchdb-render": "*",
-		"couchdb-req-http-query": "*",
+		"pouchdb-req-http-query": "*",
 		"promise-nodify": "*"
 	},
 	"devDependencies": {
