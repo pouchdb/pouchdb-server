@@ -1,6 +1,11 @@
 {
 	"name": "couchdb-objects",
 	"main": "index.js",
+	"description": "Aids in the construction of JSON objects as used by CouchDB.",
+	"repository": {
+		"type": "bzr",
+		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
+	},
 	"dependencies": {
 		"is-empty": "*",
 		"extend": "*"
