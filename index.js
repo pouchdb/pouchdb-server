@@ -19,7 +19,7 @@
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
 var nodify = require("promise-nodify");
-var httpQuery = require("couchdb-req-http-query");
+var httpQuery = require("pouchdb-req-http-query");
 
 exports.show = function (showPath, options, callback) {
   //options: values to end up in the request object of the show
