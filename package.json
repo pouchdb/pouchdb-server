@@ -1,6 +1,11 @@
 {
 	"name": "couchdb-render",
 	"main": "index.js",
+	"description": "Given the code of a CouchDB show/list function (and some other stuff), this module runs it and returns the result.",
+	"repository": {
+		"type": "bzr",
+		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
+	},
 	"dependencies": {
 		"extend": "*",
 		"is-empty": "*",
