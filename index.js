@@ -19,7 +19,7 @@
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
-var httpQuery = require("couchdb-req-http-query");
+var httpQuery = require("pouchdb-req-http-query");
 var completeRespObj = require("couchdb-resp-completer");
 
 function doUpdating(db, query, options, callback) {
