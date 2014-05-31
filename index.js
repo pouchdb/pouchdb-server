@@ -55,6 +55,8 @@ exports.evaluate = function (requireContext, extraVars, program) {
     }
   }
 
+  //Strip trailing ';'s to make it more likely to be a valid expression
+  program = program.replace(/;\s*$/, "");
   var func;
   try {
     func = eval(statements + "(" + program + ");");
