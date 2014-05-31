@@ -2,11 +2,15 @@
 
 var express = require('express')
   , corser  = require('corser')
+  , path    = require('path')
+  , mkdirp  = require('mkdirp')
   , argv    = require('optimist').argv
   , port    = +(argv.p || argv.port || 5984)
   , logger  = argv.l || argv.log || 'dev'
   , user    = argv.u || argv.user
   , pass    = argv.s || argv.pass
+  , dbpath  = argv.d || argv.dir || argv.directory || ''
+  , inMem   = argv.m || argv['in-memory']
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -61,10 +65,25 @@ if (useAuth) {
   });
 }
 
-app.use(require('express-pouchdb'));
+var expressPouchDB = require('express-pouchdb');
+var opts = {};
+if (dbpath) {
+  opts.prefix = path.resolve(dbpath) + path.sep;
+  mkdirp.sync(opts.prefix);
+}
+if (inMem) {
+  opts.db = require('memdown');
+}
+var PouchDB = require('pouchdb').defaults(opts);
+app.use(expressPouchDB(PouchDB));
 app.listen(port, function () {
   console.log('\npouchdb-server listening on port ' + port + '.');
-  console.log('navigate to http://localhost:' + port + '/_utils for the Fauxton UI.\n');
+  if (inMem) {
+    console.log('database is in-memory; no changes will be saved.');
+  } else if (dbpath) {
+    console.log('database files will be saved to ' + opts.prefix);
+  }
+  console.log('\nnavigate to http://localhost:' + port + '/_utils for the Fauxton UI.\n');
 }).on('error', function (e) {
   if (e.code === 'EADDRINUSE') {
     console.error('\nError: Port ' + port + ' is already in use.')
