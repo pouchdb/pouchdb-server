@@ -37,7 +37,7 @@ module.exports = function render(source, designDoc, data, req, extraVars) {
 
   var result, contentType;
   try {
-    result = func(data, req);
+    result = func.call(designDoc, data, req);
   } catch (e) {
     throw coucheval.wrapExecutionError(e);
   }
