@@ -20,80 +20,66 @@ var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 
-function addOldDoc(db, id, args) {
-  return db.get(id, {revs: true}).then(function (doc) {
-    args.push(doc);
-    return args;
-  }, function (err) {
-    args.push(null);
-    return args;
+function oldDoc(db, id) {
+  return db.get(id, {revs: true}).catch(function () {
+    return null;
   });
+}
+
+function validate(validationFuncs, newDoc, oldDoc, options) {
+  newDoc._revisions = (oldDoc || {})._revisions;
+
+  try {
+    validationFuncs.forEach(function (validationFuncInfo) {
+      var func = validationFuncInfo.func;
+      var designDoc = validationFuncInfo.designDoc;
+      func.call(designDoc, newDoc, oldDoc, options.userCtx, options.secObj);
+    });
+  } catch (e) {
+    if (typeof e.unauthorized !== "undefined") {
+      throw {
+        name: "unauthorized",
+        message: e.unauthorized,
+        status: 401
+      };
+    } else if (typeof e.forbidden !== "undefined") {
+      throw {
+        name: "forbidden",
+        message: e.forbidden,
+        status: 403
+      };
+    } else {
+      throw coucheval.wrapExecutionError(e);
+    }
+  }
+  //passed all validation functions (no errors thrown) -> success
 }
 
 function doValidation(db, newDoc, options, callback) {
   var Promise = db.constructor.utils.Promise;
-  //a new promise because sometimes it's possible to declare a
-  //document valid early on in the process.
-  return new Promise(function (resolve, reject) {
-    function doActualValidation(args) {
-      var validationFuncs = args[0];
-      var newOptions = args[1];
-      var oldDoc = args[2];
 
-      newDoc._revisions = (oldDoc || {})._revisions;
-
-      try {
-        validationFuncs.forEach(function (validationFunc) {
-          validationFunc(newDoc, oldDoc, newOptions.userCtx, newOptions.secObj);
-        });
-      } catch (e) {
-        if (typeof e.unauthorized !== "undefined") {
-          reject({
-            name: "unauthorized",
-            message: e.unauthorized,
-            status: 401
-          });
-        } else if (typeof e.forbidden !== "undefined") {
-          reject({
-            name: "forbidden",
-            message: e.forbidden,
-            status: 403
-          });
-        } else {
-          reject(coucheval.wrapExecutionError(e));
-        }
-        throw "done";
-      }
-      //passed all validation functions -> success
-      resolve();
-    }
-
-    var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
-    if (isHttp && !options.checkHttp) {
-      //CouchDB does the checking for itself. Validate succesful.
-      resolve();
+  var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
+  if (isHttp && !options.checkHttp) {
+    //CouchDB does the checking for itself. Validate succesful.
+    return Promise.resolve();
+  }
+  if ((newDoc._id || "").indexOf("_design/") === 0) {
+    //a design document -> always validates succesful.
+    return Promise.resolve();
+  }
+  return getValidationFunctions(db).then(function (validationFuncs) {
+    if (!validationFuncs.length) {
+      //no validation functions, so valid!
       return;
     }
-    if ((newDoc._id || "").indexOf("_design/") === 0) {
-      //a design document -> always validates succesful.
-      resolve();
-      //done
-      return;
-    }
-    //gather required data
-    var validationFuncsPromise = getValidationFunctions(db).then(function (validationFuncs) {
-      if (!validationFuncs.length) {
-        resolve();
-        throw "done";
-      }
-      return validationFuncs;
-    });
     var completeOptionsPromise = completeValidationOptions(db, options);
+    var oldDocPromise = oldDoc(db, newDoc._id);
 
-    Promise.all([validationFuncsPromise, completeOptionsPromise]).then(function (args) {
-      //gather last piece of data & start the actual validation
-      addOldDoc(db, newDoc._id, args).then(doActualValidation);
-    }).catch(reject);
+    return Promise.all([completeOptionsPromise, oldDocPromise]).then(function (args) {
+      var completeOptions = args[0];
+      var oldDoc = args[1];
+      return validate(validationFuncs, newDoc, oldDoc, completeOptions);
+    });
   });
 }
 
@@ -104,14 +90,19 @@ function completeValidationOptions(db, options) {
   if (!options.secObj) {
     options.secObj = couchdb_objects.buildSecurityObject();
   }
-  if (!options.userCtx) {
+
+  var Promise = db.constructor.utils.Promise;
+  var userCtxPromise;
+  if (options.userCtx) {
+    userCtxPromise = Promise.resolve(options.userCtx);
+  } else {
     var buildUserContext = couchdb_objects.buildUserContextObject;
-    return db.info().then(buildUserContext).then(function (userCtx) {
-      options.userCtx = userCtx;
-      return options;
-    });
+    userCtxPromise = db.info().then(buildUserContext);
   }
-  return db.constructor.utils.Promise.resolve(options);
+  return userCtxPromise.then(function (userCtx) {
+    options.userCtx = userCtx;
+    return options;
+  });
 }
 
 function getValidationFunctions(db, callback) {
@@ -125,16 +116,16 @@ function getValidationFunctions(db, callback) {
 function parseValidationFunctions(resp) {
   var validationFuncs = resp.rows.map(function (row) {
     return {
-      doc: row.doc,
-      func: row.doc.validate_doc_update
+      designDoc: row.doc,
+      code: row.doc.validate_doc_update
     };
   });
   validationFuncs = validationFuncs.filter(function (info) {
-    return typeof info.func !== "undefined";
+    return typeof info.code !== "undefined";
   });
-  validationFuncs = validationFuncs.map(function (info) {
+  validationFuncs.forEach(function (info) {
     //convert str -> function
-    return coucheval.evaluate(info.doc, {}, info.func);
+    info.func = coucheval.evaluate(info.designDoc, {}, info.code);
   });
   return validationFuncs;
 }
@@ -162,19 +153,11 @@ exports.validatingPut = function (doc, options, callback) {
 
 exports.validatingPost = function (doc, options, callback) {
   var args = processArgs(this, callback, options);
-  var Promise = args.db.constructor.utils.Promise;
+  var PouchDB = args.db.constructor;
 
-  var idPromise;
-  if (doc._id) {
-    idPromise = Promise.resolve(doc._id);
-  } else {
-    idPromise = args.db.id();
-  }
-  var promise = idPromise.then(function (id) {
-    doc._id = id;
-    return doValidation(args.db, doc, args.options).then(function () {
-      return args.db.post(doc, args.options);
-    });
+  doc._id = doc._id || PouchDB.utils.uuid();
+  var promise = doValidation(args.db, doc, args.options).then(function () {
+    return args.db.post(doc, args.options);
   });
   nodify(promise, callback);
   return promise;
@@ -196,36 +179,30 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   //Also, the result array might not be in the same order as
   //``bulkDocs.docs``
   var args = processArgs(this, callback, options);
-  var Promise = args.db.constructor.utils.Promise;
+  var PouchDB = args.db.constructor;
+  var Promise = PouchDB.utils.Promise;
 
   var done = [];
   var notYetDone = [];
 
   var validations = bulkDocs.docs.map(function (doc) {
-    var idPromise;
-    if (doc._id) {
-      idPromise = Promise.resolve(doc._id);
-    } else {
-      idPromise = args.db.id();
-    }
-    return idPromise.then(function (id) {
-      doc._id = id;
+    doc._id = doc._id || PouchDB.utils.uuid();
+    var validationPromise = doValidation(args.db, doc, args.options);
 
-      return doValidation(args.db, doc, args.options);
-    }).then(function (resp) {
+    return validationPromise.then(function (resp) {
       notYetDone.push(doc);
     }).catch(function (err) {
       err.id = doc._id;
       done.push(err);
     });
   });
-  var promise = Promise.all(validations).then(function () {
+  var allValidationsPromise = Promise.all(validations).then(function () {
     return args.db.bulkDocs({docs: notYetDone}, args.options);
   }).then(function (insertedDocs) {
     return done.concat(insertedDocs);
   });
-  nodify(promise, callback);
-  return promise;
+  nodify(allValidationsPromise, callback);
+  return allValidationsPromise;
 };
 
 var vpa = function (docId, attachmentId, rev, attachment, type, options, callback) {
