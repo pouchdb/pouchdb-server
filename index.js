@@ -22,11 +22,12 @@ var coucheval = require("couchdb-eval");
 var httpQuery = require("pouchdb-req-http-query");
 var completeRespObj = require("couchdb-resp-completer");
 
-function doUpdating(db, query, options, callback) {
-  if (typeof options === "function") {
+function doUpdating(method, db, query, options, callback) {
+  if (["function", "undefined"].indexOf(typeof options) !== -1) {
     callback = options;
     options = {};
   }
+  options.method = method;
 
   var designDocName = query.split("/")[0];
   var updateName = query.split("/")[1];
@@ -85,30 +86,29 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
     var func = coucheval.evaluate(designDoc, {}, designDoc.updates[updateName]);
     var result;
     try {
-      result = func(doc, req);
+      result = func.call(designDoc, doc, req);
     } catch (e) {
       throw coucheval.wrapExecutionError(e);
     }
-    var resp = completeRespObj(result[1]);
-    //save result if necessary
+    var savePromise;
+    //save result[0] if necessary
     if (result[0] === null) {
-      return resp;
+      savePromise = Promise.resolve();
+    } else {
+      var methodName = options.withValidation ? "validatingPut" : "put";
+      savePromise = db[methodName](result[0], options);
     }
-    var methodName = options.withValidation ? "validatingPut" : "put";
-    return db[methodName](result[0], options).then(function () {
-      return resp;
+    //then return the result
+    return savePromise.then(function () {
+      return completeRespObj(result[1]);
     });
   });
 }
 
 exports.updatingPut = function (query, options, callback) {
-  var db = this;
-  options.method = "PUT";
-  return doUpdating(db, query, options, callback);
+  return doUpdating("PUT", this, query, options, callback);
 };
 
 exports.updatingPost = function (query, options, callback) {
-  var db = this;
-  options.method = "POST";
-  return doUpdating(db, query, options, callback);
+  return doUpdating("POST", this, query, options, callback);
 };
