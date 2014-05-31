@@ -24,13 +24,14 @@ var buildUserContextObject = require("./couchusercontextobject.js");
 var buildSecurityObject = require("./couchsecurityobject.js");
 
 module.exports = function buildRequestObject(options, pathPromise, infoPromise, db) {
-  var Promise = db.constructor.utils.Promise;
+  var PouchDB = db.constructor;
+  var Promise = PouchDB.utils.Promise;
   var userCtxPromise = infoPromise.then(buildUserContextObject);
-  var uuidPromise = db.id();
 
-  return Promise.all([pathPromise, infoPromise, userCtxPromise, uuidPromise]).then(function (args) {
+  return Promise.all([pathPromise, infoPromise, userCtxPromise]).then(function (args) {
     //add the options in the front & pass on
     args.unshift(options);
+    args.push(PouchDB.utils.uuid());
     return actuallyBuildRequestObject.apply(null, args);
   });
 };
