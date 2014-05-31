@@ -6,8 +6,14 @@
 		"type": "bzr",
 		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
 	},
+	"dependencies": {
+		"xhr2": "*"
+	},
 	"devDependencies": {
 		"es3ify": "*"
+	},
+	"browser": {
+		"xhr2": false
 	},
 	"browserify": {
 		"transform": [

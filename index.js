@@ -14,18 +14,32 @@
   limitations under the License.
 */
 
+/*global XMLHttpRequest */
+
 "use strict";
 
+if (typeof global.XMLHttpRequest === "undefined") {
+  global.XMLHttpRequest = require("xhr2");
+}
+
 module.exports = function httpQuery(db, req) {
-  var ajax = db.constructor.utils.ajax;
   var Promise = db.constructor.utils.Promise;
 
   return new Promise(function (resolve, reject) {
-    function callback(err, body, xhr) {
-      if (err) {
-        reject(err);
+    function callback() {
+      if (xhr.readyState !== 4) {
         return;
       }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        var err = JSON.parse(xhr.responseText);
+        reject({
+          "name": err.error,
+          "message": err.reason,
+          "status": xhr.status
+        });
+        return;
+      }
+
       var headers = {};
       xhr.getAllResponseHeaders().split("\r\n").forEach(function (line) {
         if (line) {
@@ -45,14 +59,17 @@ module.exports = function httpQuery(db, req) {
 
     //strips the database from the requested_path
     var relativeUrl = req.requested_path.slice(1).join("/");
-    ajax({
-      method: req.method,
-      url: db.getUrl() + relativeUrl,
-      headers: req.headers,
-      body: req.body === "undefined" ? null : req.body,
-      cache: true,
-      processData: false,
-      json: false
-    }, callback);
+    var url = db.getUrl() + relativeUrl;
+
+    var xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
+    xhr.onreadystatechange = callback;
+    xhr.open(req.method, url, true);
+    for (var name in req.headers) {
+      if (req.headers.hasOwnProperty(name)) {
+        xhr.setRequestHeader(name, req.headers[name]);
+      }
+    }
+    xhr.send(req.body === "undefined" ? null : req.body);
   });
 };
