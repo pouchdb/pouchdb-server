@@ -26,12 +26,11 @@ Here's a sample Express app, which we'll name `app.js`.
 
 ```javascript
 var express = require('express')
-  , app     = express();
+  , app     = express()
+  , PouchDB = require('pouchdb');
 
-app.configure(function () {
-  app.use(express.logger('tiny'));
-  app.use('/db', require('express-pouchdb'));
-});
+app.use(express.logger('tiny'));
+app.use('/db', require('express-pouchdb')(PouchDB));
 
 app.listen(3000);
 ```
@@ -54,11 +53,51 @@ you can use `express.urlencoded()` and `express.multipart()` alongside the **exp
 and you should find the results to be the same as you would have expected with `express.bodyParser()`.
 
 ```javascript
-app.configure(function () {
-  app.use(express.urlencoded());
-  app.use(express.multipart());
-  app.use(require('express-pouchdb'));
-});
+app.use(express.urlencoded());
+app.use(express.multipart());
+app.use(require('express-pouchdb')(require('pouchdb')));
+```
+
+### Using your own PouchDB
+
+Since you pass in the `PouchDB` that you would like to use with express-pouchb, you can drop
+express-pouchdb into an existing Node-based PouchDB application and get all the benefits of the HTTP interface without having to change your code.
+
+```js
+var express = require('express')
+  , app     = express()
+  , PouchDB = require('pouchdb');
+
+app.use('/db', require('express-pouchdb')(PouchDB));
+
+var myPouch = new PouchDB('foo');
+
+// myPouch is now modifiable in your own code, and it's also
+// available via HTTP at /db/foo
+```
+
+### PouchDB defaults
+
+When you use your own PouchDB code in tandem with express-pouchdb, the `PouchDB.defaults()` API can be very convenient for specifying some default settings for how PouchDB databases are created.
+
+For instance, if you want to use an in-memory [MemDOWN](https://github.com/rvagg/memdown)-backed pouch, you can simply do:
+
+```js
+var InMemPouchDB = PouchDB.defaults({db: require('memdown')});
+
+app.use('/db', require('express-pouchdb')(InMemPouchDB));
+
+var myPouch = new InMemPouchDB('foo');
+```
+
+Similarly, if you want to place all database files in a folder other than the `pwd`, you can do:
+
+```js
+var TempPouchDB = PouchDB.defaults({prefix: '/tmp/my-temp-pouch/'});
+
+app.use('/db', require('express-pouchdb')(TempPouchDB));
+
+var myPouch = new TempPouchDB('foo');
 ```
 
 ## Contributing
@@ -78,6 +117,7 @@ I haven't defined a formal styleguide, so please take care to maintain the exist
 A huge thanks goes out to all of the following people for helping me get this to where it is now.
 
 * Dale Harvey ([@daleharvey](https://github.com/daleharvey))
+* Nolan Lawson ([@nolanlawson](https://github.com/nolanlawson)) 
 * Ryan Ramage ([@ryanramage](https://github.com/ryanramage))
 * Garren Smith ([@garrensmith](https://github.com/garrensmith))
 * ([@copongcopong](https://github.com/copongcopong))

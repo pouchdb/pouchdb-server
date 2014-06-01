@@ -13,13 +13,14 @@
   },
   "main": "./index.js",
   "dependencies": {
-    "pouchdb": "pouchdb/pouchdb",
-    "raw-body": "^1.1.5",
     "node-uuid": "1.4.1",
-    "extend": "^1.2.1"
+    "extend": "^1.2.1",
+    "pouchdb-all-dbs": "^0.1.0",
+    "raw-body": "^1.1.5"
   },
   "devDependencies": {
     "express": "4.x",
+    "pouchdb": "pouchdb/pouchdb",
     "morgan": "^1.0.1"
   },
   "peerDependencies": {

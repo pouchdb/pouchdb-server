@@ -2,19 +2,24 @@
 var express   = require('express')
   , rawBody   = require('raw-body')
   , fs        = require('fs')
+  , path      = require('path')
   , extend    = require('extend')
   , pkg       = require('./package.json')
   , dbs       = {}
   , uuids     = require('./uuids')
-  , allDbs    = require('./all-dbs')
   , histories = {}
-  , app       = module.exports = express()
-  , Pouch     = module.exports.Pouch = require('pouchdb');
+  , app       = express();
+
+var Pouch;
+module.exports = function(PouchToUse) {
+  Pouch = PouchToUse;
+  require('pouchdb-all-dbs')(Pouch);
+  return app;
+};
 
 function isPouchError(obj) {
   return obj.error && obj.error === true;
 }
-
 
 app.use('/js', express.static(__dirname + '/fauxton/js'));
 app.use('/css', express.static(__dirname + '/fauxton/css'));
@@ -95,7 +100,7 @@ app.get('/_uuids', function (req, res, next) {
 
 // List all databases.
 app.get('/_all_dbs', function (req, res, next) {
-  allDbs(function (err, response) {
+  Pouch.allDbs(function (err, response) {
     if (err) res.send(500, Pouch.UNKNOWN_ERROR);
     res.send(200, response);
   });
@@ -160,6 +165,7 @@ app.get('/_active_tasks', function (req, res, next) {
 // Create a database.
 app.put('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
+
   if (name in dbs) {
     return res.send(412, {
       'error': 'file_exists',
@@ -167,7 +173,7 @@ app.put('/:db', function (req, res, next) {
     });
   }
 
-  Pouch(name, function (err, db) {
+  new Pouch(name, function (err, db) {
     if (err) return res.send(412, err);
     dbs[name] = db;
     var loc = req.protocol
@@ -201,24 +207,22 @@ app.delete('/:db', function (req, res, next) {
       return next();
     }
 
-    // Check for the data stores, and rebuild a Pouch instance if able
-    fs.stat(name, function (err, stats) {
-      if (err && err.code == 'ENOENT') {
+    Pouch.allDbs(function (err, dbs) {
+      if (err) {
+        return res.send(500, err);
+      } else if (dbs.indexOf(name) === -1) {
         return res.send(404, {
           status: 404,
           error: 'not_found',
           reason: 'no_db_file'
         });
       }
-
-      if (stats.isDirectory()) {
-        Pouch(name, function (err, db) {
-          if (err) return res.send(412, err);
-          dbs[name] = db;
-          req.db = db;
-          return next();
-        });
-      }
+      new Pouch(name, function (err, db) {
+        if (err) return res.send(412, err);
+        dbs[name] = db;
+        req.db = db;
+        return next();
+      });
     });
   });
 });
