@@ -22,30 +22,33 @@ var coucheval = require("couchdb-eval");
 var httpQuery = require("pouchdb-req-http-query");
 var completeRespObj = require("couchdb-resp-completer");
 
-function doUpdating(method, db, query, options, callback) {
+exports.update = function (query, options, callback) {
   if (["function", "undefined"].indexOf(typeof options) !== -1) {
     callback = options;
     options = {};
   }
-  options.method = method;
+  var db = this;
+
+  //better default than GET.
+  options.method = options.method || "POST";
 
   var designDocName = query.split("/")[0];
   var updateName = query.split("/")[1];
   var docId = query.split("/")[2];
 
   //build request object
-  var infoPromise = db.info();
-  var pathPromise = infoPromise.then(function (info) {
-    var path = [info.db_name, "_design", designDocName, "_update", updateName];
-    if (docId) {
-      path.push(docId);
-    }
-    return path;
-  });
-  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
+  var pathEnd = ["_design", designDocName, "_update", updateName];
+  if (docId) {
+    pathEnd.push.apply(pathEnd, docId.split("/"));
+  }
+  var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
   return reqPromise.then(function (req) {
     //the only option that isn't related to the request object.
     delete req.withValidation;
+
+    //because we might have set method -> POST, also set a Content-Type
+    //to prevent a Qt warning in case there isn't one.
+    req.headers["Content-Type"] = req.headers["Content-Type"] || "application/x-www-form-urlencoded";
 
     var promise;
     if (["http", "https"].indexOf(db.type()) === -1) {
@@ -57,7 +60,7 @@ function doUpdating(method, db, query, options, callback) {
     nodify(promise, callback);
     return promise;
   });
-}
+};
 
 function offlineQuery(db, designDocName, updateName, docId, req, options) {
   var Promise = db.constructor.utils.Promise;
@@ -104,11 +107,3 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
     });
   });
 }
-
-exports.updatingPut = function (query, options, callback) {
-  return doUpdating("PUT", this, query, options, callback);
-};
-
-exports.updatingPost = function (query, options, callback) {
-  return doUpdating("POST", this, query, options, callback);
-};
