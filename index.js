@@ -40,15 +40,11 @@ exports.show = function (showPath, options, callback) {
   }
 
   //build request object
-  var infoPromise = db.info();
-  var pathPromise = infoPromise.then(function (info) {
-    var path = [info.db_name, "_design", designDocName, "_show", showName];
-    if (docId) {
-      path.push.apply(path, docId.split("/"));
-    }
-    return path;
-  });
-  var reqPromise = couchdb_objects.buildRequestObject(options, pathPromise, infoPromise, db);
+  var pathEnd = ["_design", designDocName, "_show", showName];
+  if (docId) {
+    pathEnd.push.apply(pathEnd, docId.split("/"));
+  }
+  var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
   return reqPromise.then(function (req) {
     var promise;
     if (["http", "https"].indexOf(db.type()) === -1) {
