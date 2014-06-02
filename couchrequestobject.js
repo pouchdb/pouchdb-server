@@ -23,20 +23,25 @@ var querystring = require("querystring");
 var buildUserContextObject = require("./couchusercontextobject.js");
 var buildSecurityObject = require("./couchsecurityobject.js");
 
-module.exports = function buildRequestObject(options, pathPromise, infoPromise, db) {
+module.exports = function buildRequestObject(db, pathEnd, options) {
   var PouchDB = db.constructor;
   var Promise = PouchDB.utils.Promise;
+
+  var infoPromise = db.info();
+  var pathPromise = infoPromise.then(function (info) {
+    pathEnd.unshift(encodeURIComponent(info.db_name));
+    return pathEnd;
+  });
   var userCtxPromise = infoPromise.then(buildUserContextObject);
 
   return Promise.all([pathPromise, infoPromise, userCtxPromise]).then(function (args) {
-    //add the options in the front & pass on
-    args.unshift(options);
     args.push(PouchDB.utils.uuid());
+    args.push(options);
     return actuallyBuildRequestObject.apply(null, args);
   });
 };
 
-function actuallyBuildRequestObject(options, path, info, userCtx, uuid) {
+function actuallyBuildRequestObject(path, info, userCtx, uuid, options) {
   //documentation: http://couchdb.readthedocs.org/en/latest/json-structure.html#request-object
   var result = {
     body: "undefined",
