@@ -41,7 +41,12 @@ exports.evaluate = function (requireContext, extraVars, program) {
   }
   var isArray = Array.isArray;
   var toJSON = JSON.stringify;
-  var log = console.log.bind(console);
+  var log = function (message) {
+    if (typeof message != "string") {
+      message = JSON.stringify(message);
+    }
+    console.log("EVALUATED FUNCTION LOGS: " + message);
+  };
   var sum = function (array) {
     return array.reduce(function (a, b) {
       return a + b;
