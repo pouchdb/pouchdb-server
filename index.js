@@ -76,11 +76,19 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
     }
     return designDoc;
   });
-  var viewPromise = db.query(designDocName + "/" + viewName, options);
+  var viewPromise = db.query(designDocName + "/" + viewName, options.query);
 
-  return Promise.all([ddocPromise, viewPromise]).then(function (args) {
-    var designDoc = args[0];
-    var viewResp = args[1];
+  //not Promise.all because the order matters.
+  var args = [];
+  return viewPromise.then(function (viewResp) {
+    args.push(viewResp);
+
+    return ddocPromise;
+  }).then(function (ddoc) {
+    args.push(ddoc);
+  }).then(function () {
+    var viewResp = args[0];
+    var designDoc = args[1];
 
     var head = {
       offset: viewResp.offset,
