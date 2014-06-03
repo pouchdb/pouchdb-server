@@ -14,19 +14,30 @@
 	limitations under the License.
 */
 
+/*
+  Nice extras/TODO:
+
+  - secure_rewrite; false by default is ok, but it might be nice to be
+    able to set it to true as an option.
+  - set x-couchdb-requested-path header in the request object.
+  - loop protection.
+
+  Tests for all those can be found in the final part of the CouchDB
+  rewrite tests, which haven't (yet) been ported to Python/this plug-in.
+*/
+
 "use strict";
 
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 var extend = require("extend");
-//TODO: replace with something smaller/with less dependencies - maybe
-//just port couchdb's normalize_path1?
-var normalizeUrl = require("normalizeurl");
 
 exports.rewriteResultRequestObject = function (rewritePath, options, callback) {
   var args = parseArgs(this, rewritePath, options, callback);
-  return buildRewriteResultReqObj(args.db, args.designDocName, args.rewriteUrl, args.options);
+  var p = buildRewriteResultReqObj(args.db, args.designDocName, args.rewriteUrl, args.options);
+  nodify(p, callback);
+  return p;
 };
 
 function parseArgs(db, rewritePath, options, callback) {
@@ -43,9 +54,13 @@ function parseArgs(db, rewritePath, options, callback) {
   };
 }
 
+function splitUrl(url) {
+  return url.split("/").filter(function (part) {
+    return part;
+  });
+}
+
 function buildRewriteResultReqObj(db, designDocName, rewriteUrl, options) {
-  //error: bad_request, reason: Exceeded rewrite recursion limit if more
-  //than 100 rewrites in a request.
   return db.get("_design/" + designDocName).then(function (ddoc) {
     //rewrite algorithm source:
     //https://github.com/apache/couchdb/blob/master/src/couchdb/couch_httpd_rewrite.erl
@@ -75,8 +90,7 @@ function buildRewriteResultReqObj(db, designDocName, rewriteUrl, options) {
 
     var pathEnd = ["_design", designDocName];
     pathEnd.push.apply(pathEnd, match.url);
-    pathEnd = normalizeUrl(pathEnd.join("/"));
-    pathEnd = splitUrl(pathEnd);
+    pathEnd = normalizePath(pathEnd);
 
     options.query = match.query;
 
@@ -92,11 +106,16 @@ function tryToFindMatch(input, rules) {
   if (methodMatch(rules[0].method, input.method)) {
     var match = pathMatch(rules[0].from, input.url, bindings);
     if (match.ok) {
-      var query = extend({}, bindings, input.query);
+      var allBindings = extend(bindings, input.query);
+
       var url = [];
-      url.push.apply(url, replacePathBindings(rules[0].to, bindings));
+      url.push.apply(url, replacePathBindings(rules[0].to, allBindings));
       url.push.apply(url, match.remaining);
-      extend(query, replaceQueryBindings(rules[0].query, bindings));
+
+      var ruleQueryArgs = replaceQueryBindings(rules[0].query, allBindings);
+      var query = extend(allBindings, ruleQueryArgs);
+      delete query["*"];
+
       return {
         url: url,
         query: query
@@ -110,14 +129,7 @@ function tryToFindMatch(input, rules) {
 }
 
 function arrayEquals(a, b) {
-  //check items
-  for (var i = 0; i < a.length; i += 1) {
-    if (a[i] !== b[i]) {
-      return false;
-    }
-  }
-  //check if all the items have been checked
-  return a.length === b.length;
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function methodMatch(required, given) {
@@ -137,8 +149,8 @@ function pathMatch(required, given, bindings) {
   if (arrayEquals(given, [])) {
     return {ok: false};
   }
-  if (required[0][0] === ":") {
-    bindings[required[0]] = given[0];
+  if ((required[0] || "")[0] === ":") {
+    bindings[required[0].slice(1)] = given[0];
     return pathMatch(required.slice(1), given.slice(1), bindings);
   }
   if (required[0] === given[0]) {
@@ -147,16 +159,17 @@ function pathMatch(required, given, bindings) {
   return {ok: false};
 }
 
-function splitUrl(url) {
-  return url.split("/").filter(function (part) {
-    return part;
-  });
-}
-
 function replacePathBindings(path, bindings) {
   for (var i = 0; i < path.length; i += 1) {
-    if (path[i][0] === ":") {
-      path[i] = bindings[path[i].slice(1)] || "undefined";
+    if (typeof path[i] !== "string") {
+      continue;
+    }
+    var bindingName = path[i];
+    if (bindingName[0] === ":") {
+      bindingName = bindingName.slice(1);
+    }
+    if (bindings.hasOwnProperty(bindingName)) {
+      path[i] = bindings[bindingName];
     }
   }
   return path;
@@ -164,11 +177,50 @@ function replacePathBindings(path, bindings) {
 
 function replaceQueryBindings(query, bindings) {
   for (var key in query) {
-    if (query.hasOwnProperty(key) && query[key][0] === ":") {
-      query[key] = bindings[query[key].slice(1)] || "undefined";
+    if (!query.hasOwnProperty(key)) {
+      continue;
+    }
+    if (typeof query[key] === "object") {
+      query[key] = replaceQueryBindings(query[key], bindings);
+    } else if (typeof query[key] === "string") {
+      var bindingKey = query[key];
+      if (bindingKey[0] === ":") {
+        bindingKey = bindingKey.slice(1);
+      }
+      if (bindings.hasOwnProperty(bindingKey)) {
+        var val = bindings[bindingKey];
+        try {
+          val = JSON.parse(val);
+        } catch (e) {}
+        query[key] = val;
+      }
     }
   }
   return query;
+}
+
+function normalizePath(path) {
+  //based on path-browserify's normalizeArray function.
+  //https://github.com/substack/path-browserify/blob/master/index.js#L26
+  var up = 0;
+  for (var i = path.length - 1; i >= 0; i--) {
+    var last = path[i];
+    if (last === ".") {
+      path.splice(i, 1);
+    } else if (last === "..") {
+      path.splice(i, 1);
+      up++;
+    } else if (up) {
+      path.splice(i, 1);
+      up--;
+    }
+  }
+
+  for (; up--; up) {
+    path.unshift("..");
+  }
+
+  return path;
 }
 
 exports.rewrite = function (rewritePath, options, callback) {
@@ -197,7 +249,7 @@ function offlineRewrite(currentDb, designDocName, rewriteUrl, options) {
   return resultReqPromise.then(function (req) {
     //Mapping urls to PouchDB/plug-in functions. Based on:
     //http://docs.couchdb.org/en/latest/http-api.html
-    if (req.path[0] === "_all_dbs" && db.allDbs) {
+    if (PouchDB.allDbs && req.path[0] === "_all_dbs") {
       return PouchDB.allDbs(req.query);
     }
     if (req.path[0] === "_replicate") {
@@ -207,6 +259,8 @@ function offlineRewrite(currentDb, designDocName, rewriteUrl, options) {
     if (req.path.length === 1) {
       if (req.method === "DELETE") {
         return db.destroy();
+      } else if (req.method === "POST") {
+        return callNormally(db, req, withValidation ? db.validatingPost : db.post);
       }
       return db.info();
     }
@@ -227,7 +281,7 @@ function offlineRewrite(currentDb, designDocName, rewriteUrl, options) {
         return db.list(req.path[2] + "/" + req.path.slice(4).join("/"), req);
       }
       if (req.path[3] === "_rewrite") {
-        return db.show(req.path[2] + "/" + req.path.slice(4).join("/"), req);
+        return db.rewrite(req.path[2] + "/" + req.path.slice(4).join("/"), req);
       }
       if (db.search && req.path[3] === "_search") {
         return db.search(req.path[2] + "/" + req.path.slice(4).join("/"), req.query);
@@ -262,71 +316,64 @@ function offlineRewrite(currentDb, designDocName, rewriteUrl, options) {
   });
 }
 
+function callNormally(db, req, func) {
+  return func.call(db, JSON.parse(req.body), req.query);
+}
+
 function routeCRUD(db, docId, remainingPath, withValidation, req) {
+  function throw405() {
+    throw {
+      status: 405,
+      name: "method_not_allowed",
+      message: "method '" + req.method + "' not allowed."
+    };
+  }
+
+  //document level
   if (remainingPath.length === 0) {
-    if (req.method === "GET") {
-      return db.get(docId, req.query);
-    }
-    if (req.method === "PUT") {
-      var put = withValidation ? db.validatingPut : db.put;
-      return put(JSON.parse(req.body), req.query);
-    }
-    if (req.method === "POST") {
-      var post = withValidation ? db.validatingPost : db.put;
-      return post(JSON.parse(req.body), req.query);
-    }
-    if (req.method === "DELETE") {
-      var remove = withValidation ? db.validatingRemove : db.remove;
-      return remove(JSON.parse(req.body), req.query);
-    }
-    throw {
-      status: 405,
-      name: "method_not_allowed",
-      message: "method '" + req.method + "' not allowed."
-    };
+    return ({
+      "GET": function () {
+        return db.get(docId, req.query);
+      },
+      "PUT": callNormally.bind(null, db, req, withValidation ? db.validatingPut : db.put),
+      "DELETE": callNormally.bind(null, db, req, withValidation ? db.validatingRemove : db.remove),
+    }[req.method] || throw405)();
   }
+
+  function callAttachment(isPut) {
+    var funcs;
+    var args = [docId, remainingPath[0], req.query.rev];
+    if (isPut) {
+      args.push(req.body);
+      args.push(req.headers["Content-Type"]);
+
+      funcs = {
+        true: db.validatingPutAttachment,
+        false: db.putAttachment
+      };
+    } else {
+      funcs = {
+        true: db.validatingRemoveAttachment,
+        false: db.removeAttachment
+      };
+    }
+    if (withValidation) {
+      args.push(req.query);
+    }
+    return funcs[withValidation].apply(db, args);
+  }
+  //attachment level
   if (remainingPath.length === 1) {
-    if (req.method === "GET") {
-      return db.getAttachment(docId, remainingPath[0], req.query);
-    }
-    if (req.method === "PUT") {
-      var putAttachment;
-      if (withValidation) {
-        putAttachment = function () {
-          var args = Array.prototype.slice.call(arguments);
-          args.push(req.query.opts);
-          return db.validatingPutAttachment.apply(db, args);
-        };
-      } else {
-        putAttachment = db.putAttachment;
-      }
-      return putAttachment(
-        docId,
-        remainingPath[0],
-        req.body,
-        req.headers["Content-Type"],
-        req.query.rev
-      );
-    }
-    if (req.method === "DELETE") {
-      var removeAttachment;
-      if (withValidation) {
-        removeAttachment = function () {
-          var args = Array.prototype.slice.call(arguments);
-          args.push(req.query.opts);
-          return db.validatingRemoveAttachment.apply(db, args);
-        };
-      } else {
-        removeAttachment = db.removeAttachment;
-      }
-      return removeAttachment(docId, remainingPath[0], req.query.rev);
-    }
-    throw {
-      status: 405,
-      name: "method_not_allowed",
-      message: "method '" + req.method + "' not allowed."
-    };
+    return ({
+      "GET": function () {
+        return db.getAttachment(docId, remainingPath[0], req.query);
+      },
+      "PUT": callAttachment.bind(null, true),
+      "DELETE": callAttachment.bind(null, false),
+
+    }[req.method] || throw405)();
   }
+  //not document & not attachment level
   throw {status: 404, name: "not_found", message: "missing"};
 }
 
