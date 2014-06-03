@@ -48,7 +48,8 @@ exports.update = function (query, options, callback) {
 
     //because we might have set method -> POST, also set a Content-Type
     //to prevent a Qt warning in case there isn't one.
-    req.headers["Content-Type"] = req.headers["Content-Type"] || "application/x-www-form-urlencoded";
+    var h = req.headers;
+    h["Content-Type"] = h["Content-Type"] || "application/x-www-form-urlencoded";
 
     var promise;
     if (["http", "https"].indexOf(db.type()) === -1) {
@@ -96,14 +97,18 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
     var savePromise;
     //save result[0] if necessary
     if (result[0] === null) {
-      savePromise = Promise.resolve();
+      savePromise = Promise.resolve(200);
     } else {
       var methodName = options.withValidation ? "validatingPut" : "put";
-      savePromise = db[methodName](result[0], options);
+      savePromise = db[methodName](result[0], options).then(function () {
+        return 201;
+      });
     }
     //then return the result
-    return savePromise.then(function () {
-      return completeRespObj(result[1]);
+    return savePromise.then(function (status) {
+      var resp = completeRespObj(result[1]);
+      resp.code = status;
+      return resp;
     });
   });
 }
