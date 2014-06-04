@@ -23,7 +23,7 @@ $ npm install -g pouchdb-server
    Options:
      -p, --port           Port on which to run the server.
      -d, --dir            Where to store database files (defaults to current directory)
-     -m, --in-memory      Use a pure in-memory database (will be deleted upon reboot!)
+     -m, --in-memory      Use a pure in-memory database (will be deleted upon restart!)
      -l, --log            Connect log format.
      -h, --help           Show this usage information.
      -u, --user           Set Basic Auth username. (Both user and pass required for Basic Auth).
