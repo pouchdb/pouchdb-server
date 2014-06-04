@@ -22,7 +22,7 @@ var coucheval = require("couchdb-eval");
 var httpQuery = require("pouchdb-req-http-query");
 var completeRespObj = require("couchdb-resp-completer");
 
-exports.update = function (query, options, callback) {
+exports.update = function (updatePath, options, callback) {
   if (["function", "undefined"].indexOf(typeof options) !== -1) {
     callback = options;
     options = {};
@@ -32,9 +32,9 @@ exports.update = function (query, options, callback) {
   //better default than GET.
   options.method = options.method || "POST";
 
-  var designDocName = query.split("/")[0];
-  var updateName = query.split("/")[1];
-  var docId = query.split("/")[2];
+  var designDocName = updatePath.split("/")[0];
+  var updateName = updatePath.split("/")[1];
+  var docId = updatePath.split("/")[2];
 
   //build request object
   var pathEnd = ["_design", designDocName, "_update", updateName];
