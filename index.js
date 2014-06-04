@@ -90,6 +90,20 @@ app.get('/_utils', function (req, res, next) {
   res.sendfile(__dirname + '/fauxton/index.html');
 });
 
+// Config (stub for now)
+app.get('/_config', function (req, res, next) {
+  res.send(200, {
+    facts: { 
+        "pouchdb-server has no config": true,
+        "if you use pouchdb-server, you are awesome": true
+      }
+  });
+});
+
+app.put('/_config/:key/:value(*)', function (req, res, next) {
+  res.send(200, {ok: true, 'pouchdb-server has no config': true});
+});
+
 // Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
   var count = typeof req.query.count === 'number' ? req.query.count : 1;
