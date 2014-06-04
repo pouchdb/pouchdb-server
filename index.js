@@ -28,7 +28,7 @@ exports.list = function (listPath, options, callback) {
   //function (next to their defaults).
   var db = this;
 
-  if (typeof options === "function") {
+  if (["function", "undefined"].indexOf(typeof options) !== -1) {
     callback = options;
     options = {};
   }
