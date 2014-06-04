@@ -30,7 +30,7 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
   var infoPromise = db.info();
   var pathPromise = infoPromise.then(function (info) {
     pathEnd.unshift(encodeURIComponent(info.db_name));
-    return pathEnd;
+    return normalizePath(pathEnd);
   });
   var userCtxPromise = infoPromise.then(buildUserContextObject);
 
@@ -40,6 +40,30 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
     return actuallyBuildRequestObject.apply(null, args);
   });
 };
+
+function normalizePath(path) {
+  //based on path-browserify's normalizeArray function.
+  //https://github.com/substack/path-browserify/blob/master/index.js#L26
+  var up = 0;
+  for (var i = path.length - 1; i >= 0; i--) {
+    var last = path[i];
+    if (last === ".") {
+      path.splice(i, 1);
+    } else if (last === "..") {
+      path.splice(i, 1);
+      up++;
+    } else if (up) {
+      path.splice(i, 1);
+      up--;
+    }
+  }
+
+  for (; up--; up) {
+    path.unshift("..");
+  }
+
+  return path;
+}
 
 function actuallyBuildRequestObject(path, info, userCtx, uuid, options) {
   //documentation: http://couchdb.readthedocs.org/en/latest/json-structure.html#request-object
