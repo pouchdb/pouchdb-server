@@ -20,13 +20,12 @@ var extend = require("extend");
 
 var isEmpty = require("is-empty");
 var querystring = require("querystring");
+var Promise = require("pouchdb-promise");
+var uuid = require("node-uuid");
 var buildUserContextObject = require("./couchusercontextobject.js");
 var buildSecurityObject = require("./couchsecurityobject.js");
 
 module.exports = function buildRequestObject(db, pathEnd, options) {
-  var PouchDB = db.constructor;
-  var Promise = PouchDB.utils.Promise;
-
   var infoPromise = db.info();
   var pathPromise = infoPromise.then(function (info) {
     pathEnd.unshift(encodeURIComponent(info.db_name));
@@ -35,7 +34,7 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
   var userCtxPromise = infoPromise.then(buildUserContextObject);
 
   return Promise.all([pathPromise, infoPromise, userCtxPromise]).then(function (args) {
-    args.push(PouchDB.utils.uuid());
+    args.push(uuid.v4());
     args.push(options);
     return actuallyBuildRequestObject.apply(null, args);
   });
