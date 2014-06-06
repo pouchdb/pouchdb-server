@@ -20,6 +20,9 @@ var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 
+var uuid = require("node-uuid");
+var Promise = require("pouchdb-promise");
+
 function oldDoc(db, id) {
   return db.get(id, {revs: true}).catch(function () {
     return null;
@@ -56,8 +59,6 @@ function validate(validationFuncs, newDoc, oldDoc, options) {
 }
 
 function doValidation(db, newDoc, options, callback) {
-  var Promise = db.constructor.utils.Promise;
-
   var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
   if (isHttp && !options.checkHttp) {
     //CouchDB does the checking for itself. Validate succesful.
@@ -91,7 +92,6 @@ function completeValidationOptions(db, options) {
     options.secObj = couchdb_objects.buildSecurityObject();
   }
 
-  var Promise = db.constructor.utils.Promise;
   var userCtxPromise;
   if (options.userCtx) {
     userCtxPromise = Promise.resolve(options.userCtx);
@@ -153,9 +153,8 @@ exports.validatingPut = function (doc, options, callback) {
 
 exports.validatingPost = function (doc, options, callback) {
   var args = processArgs(this, callback, options);
-  var PouchDB = args.db.constructor;
 
-  doc._id = doc._id || PouchDB.utils.uuid();
+  doc._id = doc._id || uuid.v4();
   var promise = doValidation(args.db, doc, args.options).then(function () {
     return args.db.post(doc, args.options);
   });
@@ -179,14 +178,12 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   //Also, the result array might not be in the same order as
   //``bulkDocs.docs``
   var args = processArgs(this, callback, options);
-  var PouchDB = args.db.constructor;
-  var Promise = PouchDB.utils.Promise;
 
   var done = [];
   var notYetDone = [];
 
   var validations = bulkDocs.docs.map(function (doc) {
-    doc._id = doc._id || PouchDB.utils.uuid();
+    doc._id = doc._id || uuid.v4();
     var validationPromise = doValidation(args.db, doc, args.options);
 
     return validationPromise.then(function (resp) {
