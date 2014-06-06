@@ -18,13 +18,13 @@
 
 "use strict";
 
+var Promise = require("pouchdb-promise");
+
 if (typeof global.XMLHttpRequest === "undefined") {
   global.XMLHttpRequest = require("xhr2");
 }
 
 module.exports = function httpQuery(db, req) {
-  var Promise = db.constructor.utils.Promise;
-
   return new Promise(function (resolve, reject) {
     function callback() {
       if (xhr.readyState !== 4) {
