@@ -21,6 +21,8 @@ var render = require("couchdb-render");
 var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 
+var Promise = require("pouchdb-promise");
+
 exports.show = function (showPath, options, callback) {
   //options: values to end up in the request object of the show
   //function (next to their defaults).
@@ -58,8 +60,6 @@ exports.show = function (showPath, options, callback) {
 };
 
 function offlineQuery(db, designDocName, showName, docId, req, options) {
-  var Promise = db.constructor.utils.Promise;
-
   //get the documents involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.shows || {}).hasOwnProperty(showName)) {
