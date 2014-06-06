@@ -16,6 +16,8 @@
 
 "use strict";
 
+var Promise = require("pouchdb-promise");
+
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
@@ -64,8 +66,6 @@ exports.update = function (updatePath, options, callback) {
 };
 
 function offlineQuery(db, designDocName, updateName, docId, req, options) {
-  var Promise = db.constructor.utils.Promise;
-
   //get the documents involved
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.updates || {}).hasOwnProperty(updateName)) {
