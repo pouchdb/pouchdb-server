@@ -1,0 +1,41 @@
+language: node_js
+
+
+node_js:
+  - "0.10"
+
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - "sleep 5"
+
+    # Workaround for Selenium #3280 issue
+  - "sudo sed -i 's/^127\\.0\\.0\\.1.*$/127.0.0.1 localhost/' /etc/hosts"
+
+script: npm run $COMMAND
+
+env:
+  global:
+  - secure: "WYQbfTXYwPfqz7t3ycqpXIDQdZ7C9kQJAP+08OF0cuR8eqhm7HxCiu9LjSNqoLAdlDmc55ygeS16Kn3Oht3zZ/i2Y7Gm75HcQfzUIb1sDv1xVm3aQmqZDJfAQ/r7fN8upBCLii/W8IUkJr1k717MpbdsTerIjyfPOb27hw0kJTM="
+  - secure: "Ut9pRqzbVJHxg8vt1Cx0bTv4HAroBkvOLjtHF+11f/OzfNnAORIEPnJFHqGbOTozCPOizmzgwvCGqq9gYL8SakrfiI0wBfaL+lk0ub/FPuJ1+hwrLDU0Ju4O5reL0OSu0JB+OTmXfILuRQQkD9/7uwUEbLDFId4phSq3cz1UsK0="
+  - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
+
+  matrix:
+  - CLIENT=node COMMAND=test-pouchdb
+
+  # Test in firefox/phantomjs running on travis
+  - CLIENT=selenium:firefox COMMAND=test-pouchdb
+  - CLIENT=selenium:phantomjs ES5_SHIM=true COMMAND=test-pouchdb
+
+  # Test against the couchdb harness
+  - COMMAND=test-couchdb
+ 
+matrix:
+  allow_failures:
+  - env: CLIENT=node COMMAND=test-pouchdb
+  - env: COMMAND=test-couchdb
+
+branches:
+  only:
+  - master
+  - /^pull*$/

@@ -67,24 +67,30 @@ If you need a more involved authentication option, it's encouraged that you moun
 
 ## Testing
 
-One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself.
-To do that, you can simply,
+One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself. To do that, you can simply,
 
 ```bash
-$ pouchdb-server &
-$ grunt test:pouchdb
+$ npm run test-pouchdb
+```
+
+Or to test in Firefox (IndexedDB):
+
+```bash
+$ CLIENT=selenium:firefox npm run test-pouchdb
+```
+
+Or to test in PhantomJS (WebSQL):
+
+```bash
+$ CLIENT=selenium:phantomjs ES5_SHIM=true npm run test-pouchdb
 ```
 
 Additionally, we've started porting CouchDB's JavaScript test harness to 
-[a simple Node module](https://github.com/nick-thompson/couchdb-harness), which can be run against PouchDB via
-**pouchdb-server**.
+[a simple Node module](https://github.com/nick-thompson/couchdb-harness), which can be run against PouchDB via **pouchdb-server**.
 
 ```bash
-$ pouchdb-server &
-$ grunt test:couchdb
+$ npm run test-couchdb
 ```
-
-**Note**, you can also specify specific test files to run from CouchDB's harness: `$ grunt test:couchdb:basics:all_docs`
 
 ## Contributing
 

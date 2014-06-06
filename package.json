@@ -15,7 +15,9 @@
     "pouchdb-server": "./bin/pouchdb-server"
   },
   "scripts": {
-    "start": "node ./bin/pouchdb-server"
+    "start": "node ./bin/pouchdb-server",
+    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-couchdb": "./bin/test-couchdb.sh"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -30,9 +32,5 @@
     "morgan": "^1.1.1",
     "optimist": "~0.3.5",
     "pouchdb": "pouchdb/pouchdb"
-  },
-  "devDependencies": {
-    "grunt": "~0.4.0",
-    "grunt-contrib-clean": "~0.4.0"
   }
 }

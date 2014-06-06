@@ -3,3 +3,4 @@ testdb_*
 test_*
 _pouch_*
 _allDbs
+npm-debug.log
