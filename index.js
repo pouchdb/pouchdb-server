@@ -18,6 +18,7 @@
 
 var extend = require("extend");
 var nodify = require("promise-nodify");
+var Promise = require("pouchdb-promise");
 
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
@@ -55,8 +56,6 @@ exports.list = function (listPath, options, callback) {
 };
 
 function offlineQuery(db, designDocName, listName, viewName, req, options) {
-  var Promise = db.constructor.utils.Promise;
-
   if (req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json") {
     return Promise.reject({
       status: 400,
