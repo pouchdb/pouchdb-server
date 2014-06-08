@@ -204,7 +204,7 @@ app.put('/:db', function (req, res, next) {
 app.delete('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
   Pouch.destroy(name, function (err, info) {
-    if (err) return res.send(404, err);
+    if (err) return res.send(err.status || 500, err);
     delete dbs[name];
     res.send(200, { ok: true });
   });
@@ -469,7 +469,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
   req.db.put(req.body, req.query, function (err, response) {
     console.log('hey heres an error');
     console.log(err);
-    if (err) return res.send(500, err);
+    if (err) return res.send(err.status || 500, err);
     var loc = req.protocol
       + '://'
       + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
