@@ -16,6 +16,7 @@
     "node-uuid": "1.4.1",
     "extend": "^1.2.1",
     "pouchdb-all-dbs": "^0.1.0",
+    "pouchdb-rewrite": "^1.0.0",
     "raw-body": "^1.1.5"
   },
   "devDependencies": {

@@ -14,11 +14,39 @@ var Pouch;
 module.exports = function(PouchToUse) {
   Pouch = PouchToUse;
   require('pouchdb-all-dbs')(Pouch);
+  Pouch.plugin(require('pouchdb-rewrite'));
   return app;
 };
 
 function isPouchError(obj) {
   return obj.error && obj.error === true;
+}
+
+function setDBOnReq(db_name, req, res, next) {
+  var name = encodeURIComponent(db_name);
+
+  if (name in dbs) {
+    req.db = dbs[name];
+    return next();
+  }
+
+  Pouch.allDbs(function (err, dbs) {
+    if (err) {
+      return res.send(500, err);
+    } else if (dbs.indexOf(name) === -1) {
+      return res.send(404, {
+        status: 404,
+        error: 'not_found',
+        reason: 'no_db_file'
+      });
+    }
+    new Pouch(name, function (err, db) {
+      if (err) return res.send(412, err);
+      dbs[name] = db;
+      req.db = db;
+      return next();
+    });
+  });
 }
 
 app.use('/js', express.static(__dirname + '/fauxton/js'));
@@ -73,6 +101,40 @@ app.use(function (req, res, next) {
   next();
 });
 
+// Query design document rewrite handler
+app.use(function (req, res, next) {
+  // Prefers regex over setting the first argument of app.use(), because
+  // the last makes req.url relative, which in turn makes most rewrites
+  // impossible.
+  var match = /\/([^\/]*)\/_design\/([^\/]*)\/_rewrite(.*)/.exec(req.url);
+  if (!match) {
+    return next();
+  }
+  setDBOnReq(match[1], req, res, function () {
+    var query = match[2] + "/" + match[3];
+    var opts = {
+      body: req.rawBody || "undefined",
+      cookie: req.cookies || {},
+      headers: req.headers,
+      method: req.method,
+      peer: req.ip,
+      query: req.query
+    };
+    req.db.rewriteResultRequestObject(query, opts, function (err, resp) {
+      if (err) return res.send(err.status, err);
+      req.rawBody = resp.body;
+      req.cookies = resp.cookie;
+      req.headers = resp.headers;
+      req.method = resp.method;
+      req.ip = resp.peer;
+      req.url = "/" + resp.path.join("/");
+      req.query = resp.query;
+
+      //handle the newly generated request.
+      next();
+    });
+  });
+});
 
 // Root route, return welcome message
 app.get('/', function (req, res, next) {
@@ -214,30 +276,7 @@ app.delete('/:db', function (req, res, next) {
 // correct Pouch instance.
 ['/:db/*','/:db'].forEach(function (route) {
   app.all(route, function (req, res, next) {
-    var name = encodeURIComponent(req.params.db);
-
-    if (name in dbs) {
-      req.db = dbs[name];
-      return next();
-    }
-
-    Pouch.allDbs(function (err, dbs) {
-      if (err) {
-        return res.send(500, err);
-      } else if (dbs.indexOf(name) === -1) {
-        return res.send(404, {
-          status: 404,
-          error: 'not_found',
-          reason: 'no_db_file'
-        });
-      }
-      new Pouch(name, function (err, db) {
-        if (err) return res.send(412, err);
-        dbs[name] = db;
-        req.db = db;
-        return next();
-      });
-    });
+    setDBOnReq(req.params.db, req, res, next);
   });
 });
 
@@ -382,11 +421,6 @@ app.get('/:db/_design/:id/_show(*)', function (req, res, next) {
 
 // Query design document update handler; Not implemented.
 app.get('/:db/_design/:id/_update(*)', function (req, res, next) {
-  res.send(501);
-});
-
-// Query design document rewrite handler; Not implemented.
-app.get('/:db/_design/:id/_rewrite(*)', function (req, res, next) {
   res.send(501);
 });
 
