@@ -11,6 +11,7 @@ var express = require('express')
   , pass    = argv.s || argv.pass
   , dbpath  = argv.d || argv.dir || argv.directory || ''
   , inMem   = argv.m || argv['in-memory']
+  , sqlite  = argv.sqlite
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -73,6 +74,8 @@ if (dbpath) {
 }
 if (inMem) {
   opts.db = require('memdown');
+} else if (sqlite) {
+  opts.db = require('sqldown');
 }
 var PouchDB = require('pouchdb').defaults(opts);
 app.use(expressPouchDB(PouchDB));
