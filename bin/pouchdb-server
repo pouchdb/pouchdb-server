@@ -11,6 +11,7 @@ var express = require('express')
   , pass    = argv.s || argv.pass
   , dbpath  = argv.d || argv.dir || argv.directory || ''
   , inMem   = argv.m || argv['in-memory']
+  , redis   = argv.redis
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -73,6 +74,8 @@ if (dbpath) {
 }
 if (inMem) {
   opts.db = require('memdown');
+} else if (redis) {
+  opts.db = require('redisdown');
 }
 var PouchDB = require('pouchdb').defaults(opts);
 app.use(expressPouchDB(PouchDB));
