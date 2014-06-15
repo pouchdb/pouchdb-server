@@ -11,6 +11,7 @@ var express = require('express')
   , pass    = argv.s || argv.pass
   , dbpath  = argv.d || argv.dir || argv.directory || ''
   , inMem   = argv.m || argv['in-memory']
+  , mysql   = argv.mysql
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -73,7 +74,15 @@ if (dbpath) {
 }
 if (inMem) {
   opts.db = require('memdown');
+} else if (mysql) {
+  var MysqlDOWN = require('mysqldown');
+  opts.db = function (location) { return new MysqlDOWN(location); };
+  if (mysql[mysql.length - 1] !== '/') {
+    mysql += '/';
+  }
+  opts.prefix = mysql;
 }
+
 var PouchDB = require('pouchdb').defaults(opts);
 app.use(expressPouchDB(PouchDB));
 app.listen(port, function () {
