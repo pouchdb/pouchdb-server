@@ -11,6 +11,8 @@ var express = require('express')
   , pass    = argv.s || argv.pass
   , dbpath  = argv.d || argv.dir || argv.directory || ''
   , inMem   = argv.m || argv['in-memory']
+  , levelBackend = argv['level-backend']
+  , levelPrefix  = argv['level-prefix']
   , useAuth = user && pass
   , app     = express()
   , corserRequestListener = corser.create({
@@ -70,10 +72,15 @@ var opts = {};
 if (dbpath) {
   opts.prefix = path.resolve(dbpath) + path.sep;
   mkdirp.sync(opts.prefix);
+} else if (levelPrefix) {
+  opts.prefix = levelPrefix;
 }
 if (inMem) {
   opts.db = require('memdown');
+} else if (levelBackend) {
+  opts.db = require(levelBackend);
 }
+
 var PouchDB = require('pouchdb').defaults(opts);
 app.use(expressPouchDB(PouchDB));
 app.listen(port, function () {
