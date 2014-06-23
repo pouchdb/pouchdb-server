@@ -29,6 +29,11 @@ $ npm install -g pouchdb-server
      -u, --user           Set Basic Auth username. (Both user and pass required for Basic Auth).
      -s, --pass           Set Basic Auth password. (Both user and pass required for Basic Auth).
 
+   Advanced Options:
+     --level-backend      Alternate LevelDOWN backend (e.g. memdown, riakdown, redisdown)
+                          Note that you'll need to manually npm install it first.
+     --level-prefix       Prefix to use for all database names, useful for URLs in
+                          alternate backends, e.g. riak://localhost:8087/ for riakdown
 ```
 
 A simple example might be,
@@ -71,6 +76,12 @@ One of the primary benefits of **pouchdb-server** is the ability to run PouchDB'
 
 ```bash
 $ npm run test-pouchdb
+```
+
+Whatever args you provide as `SERVER_ARGS` will be passed to `pouchdb-server` itself:
+
+```bash
+$ SERVER_ARGS='--in-memory' npm run test-pouchdb
 ```
 
 Or to test in Firefox (IndexedDB):
