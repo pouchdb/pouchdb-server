@@ -431,9 +431,6 @@ app.put('/:db/:id/:attachment(*)', function (req, res, next) {
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
-  console.log('raw body');
-  console.log(req.rawBody);
-  console.log(JSON.stringify(req.rawBody));
   var name = req.params.id
     , attachment = req.params.attachment
     , rev = req.query.rev
@@ -501,8 +498,6 @@ app.put('/:db/:id(*)', function (req, res, next) {
       : null;
   }
   req.db.put(req.body, req.query, function (err, response) {
-    console.log('hey heres an error');
-    console.log(err);
     if (err) return res.send(err.status || 500, err);
     var loc = req.protocol
       + '://'
