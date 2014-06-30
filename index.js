@@ -23,6 +23,43 @@ var nodify = require("promise-nodify");
 var uuid = require("node-uuid");
 var Promise = require("pouchdb-promise");
 
+function PouchError(opts) {
+  this.status = opts.status;
+  this.name = opts.name;
+  this.message = opts.message;
+  this.error = true;
+}
+
+PouchError.prototype__proto__ = Error.prototype;
+
+PouchError.prototype.toString = function () {
+  return JSON.stringify({
+    status: this.status,
+    name: this.name,
+    message: this.message
+  });
+};
+
+var dbs = [];
+var methodNames = ["put", "post", "remove", "bulkDocs", "putAttachment", "removeAttachment"];
+var methodsByDbsIdx = [];
+
+function methods(db) {
+  var index = dbs.indexOf(db);
+  if (index === -1) {
+    return methodsFromDb(db);
+  }
+  return methodsByDbsIdx[index];
+}
+
+function methodsFromDb(db) {
+  var meths = {};
+  methodNames.forEach(function (name) {
+    meths[name] = db[name].bind(db);
+  });
+  return meths;
+}
+
 function oldDoc(db, id) {
   return db.get(id, {revs: true}).catch(function () {
     return null;
@@ -60,7 +97,7 @@ function validate(validationFuncs, newDoc, oldDoc, options) {
 
 function doValidation(db, newDoc, options, callback) {
   var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
-  if (isHttp && !options.checkHttp) {
+  if (isHttp && !(options || {}).checkHttp) {
     //CouchDB does the checking for itself. Validate succesful.
     return Promise.resolve();
   }
@@ -145,7 +182,7 @@ function processArgs(db, callback, options) {
 exports.validatingPut = function (doc, options, callback) {
   var args = processArgs(this, callback, options);
   var promise = doValidation(args.db, doc, args.options).then(function () {
-    return args.db.put(doc, args.options);
+    return methods(args.db).put(doc, args.options);
   });
   nodify(promise, callback);
   return promise;
@@ -156,7 +193,7 @@ exports.validatingPost = function (doc, options, callback) {
 
   doc._id = doc._id || uuid.v4();
   var promise = doValidation(args.db, doc, args.options).then(function () {
-    return args.db.post(doc, args.options);
+    return methods(args.db).post(doc, args.options);
   });
   nodify(promise, callback);
   return promise;
@@ -167,7 +204,7 @@ exports.validatingRemove = function (doc, options, callback) {
 
   doc._deleted = true;
   var promise = doValidation(args.db, doc, args.options).then(function () {
-    return args.db.remove(doc, args.options);
+    return methods(args.db).remove(doc, args.options);
   });
   nodify(promise, callback);
   return promise;
@@ -194,7 +231,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
     });
   });
   var allValidationsPromise = Promise.all(validations).then(function () {
-    return args.db.bulkDocs({docs: notYetDone}, args.options);
+    return methods(args.db).bulkDocs({docs: notYetDone}, args.options);
   }).then(function (insertedDocs) {
     return done.concat(insertedDocs);
   });
@@ -218,7 +255,7 @@ var vpa = function (docId, attachmentId, rev, attachment, type, options, callbac
     return doValidation(args.db, doc, args.options);
   }).then(function () {
     //save the attachment
-    return args.db.putAttachment(docId, attachmentId, rev, attachment, type);
+    return methods(args.db).putAttachment(docId, attachmentId, rev, attachment, type);
   });
   nodify(promise, callback);
   return promise;
@@ -235,9 +272,44 @@ var vra = function (docId, attachmentId, rev, options, callback) {
     return doValidation(args.db, doc, args.options);
   }).then(function () {
     //remove the attachment
-    return args.db.removeAttachment(docId, attachmentId, rev);
+    return methods(args.db).removeAttachment(docId, attachmentId, rev);
   });
   nodify(promise, callback);
   return promise;
 };
 exports.validatingRemoveAttachment = vra;
+
+exports.installValidationMethods = function () {
+  var db = this;
+
+  if (dbs.indexOf(db) !== -1) {
+    throw new PouchError({
+      status: 500,
+      name: "already_installed",
+      message: "Validation methods are already installed on this database."
+    });
+  }
+
+  dbs.push(db);
+  methodsByDbsIdx.push(methodsFromDb(db));
+  methodNames.forEach(function (name) {
+    db[name] = exports["validating" + name[0].toUpperCase() + name.substr(1)].bind(db);
+  });
+};
+
+exports.uninstallValidationMethods = function () {
+  var db = this;
+
+  var index = dbs.indexOf(db);
+  if (index === -1) {
+    throw new PouchError({
+      status: 500,
+      name: "already_not_installed",
+      message: "Validation methods are already not installed on this database."
+    });
+  }
+  var meths = methods(db);
+  methodNames.forEach(function (name) {
+    db[name] = meths[name];
+  });
+};
