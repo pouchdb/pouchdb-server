@@ -15,6 +15,9 @@ module.exports = function(PouchToUse) {
   Pouch = PouchToUse;
   require('pouchdb-all-dbs')(Pouch);
   Pouch.plugin(require('pouchdb-rewrite'));
+  Pouch.plugin(require('pouchdb-list'));
+  Pouch.plugin(require('pouchdb-show'));
+  Pouch.plugin(require('pouchdb-update'));
   return app;
 };
 
@@ -47,6 +50,30 @@ function setDBOnReq(db_name, req, res, next) {
       return next();
     });
   });
+}
+
+function expressReqToCouchDBReq(req) {
+  return {
+    body: req.rawBody || "undefined",
+    cookie: req.cookies || {},
+    headers: req.headers,
+    method: req.method,
+    peer: req.ip,
+    query: req.query
+  };
+}
+
+function sendCouchDBResp(res, err, couchResp) {
+    if (err) return res.send(err.status, err);
+
+    res.set(couchResp.headers);
+    var body;
+    if (couchResp.base64) {
+      body = new Buffer(couchResp.base64, 'base64');
+    } else {
+      body = couchResp.body;
+    }
+    res.send(couchResp.code, body);
 }
 
 app.use('/js', express.static(__dirname + '/fauxton/js'));
@@ -112,14 +139,7 @@ app.use(function (req, res, next) {
   }
   setDBOnReq(match[1], req, res, function () {
     var query = match[2] + "/" + match[3];
-    var opts = {
-      body: req.rawBody || "undefined",
-      cookie: req.cookies || {},
-      headers: req.headers,
-      method: req.method,
-      peer: req.ip,
-      query: req.query
-    };
+    var opts = expressReqToCouchDBReq(req);
     req.db.rewriteResultRequestObject(query, opts, function (err, resp) {
       if (err) return res.send(err.status, err);
       req.rawBody = resp.body;
@@ -409,19 +429,25 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
   });
 });
 
-// Query design document list handler; Not implemented.
-app.get('/:db/_design/:id/_list(*)', function (req, res, next) {
-  res.send(501);
+// Query design document list handler
+app.all('/:db/_design/:id/_list/:func/:view', function (req, res, next) {
+  var query = [req.params.id, req.params.func, req.params.view].join("/");
+  var opts = expressReqToCouchDBReq(req);
+  req.db.list(query, opts, sendCouchDBResp.bind(null, res));
 });
 
-// Query design document show handler; Not implemented.
-app.get('/:db/_design/:id/_show(*)', function (req, res, next) {
-  res.send(501);
+// Query design document show handler
+app.all('/:db/_design/:id/_show/:func/:docid?', function (req, res, next) {
+  var query = [req.params.id, req.params.func, req.params.docid].join("/");
+  var opts = expressReqToCouchDBReq(req);
+  req.db.show(query, opts, sendCouchDBResp.bind(null, res));
 });
 
-// Query design document update handler; Not implemented.
-app.get('/:db/_design/:id/_update(*)', function (req, res, next) {
-  res.send(501);
+// Query design document update handler
+app.all('/:db/_design/:id/_update/:func/:docid?', function (req, res, next) {
+  var query = [req.params.id, req.params.func, req.params.docid].join("/");
+  var opts = expressReqToCouchDBReq(req);
+  req.db.update(query, opts, sendCouchDBResp.bind(null, res));
 });
 
 // Put a document attachment
