@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-req-http-query",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"main": "index.js",
 	"description": "Given a CouchDB request object, make a similar http request on a given PouchDB database.",
 	"repository": {
