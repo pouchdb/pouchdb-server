@@ -23,7 +23,6 @@ var querystring = require("querystring");
 var Promise = require("pouchdb-promise");
 var uuid = require("node-uuid");
 var buildUserContextObject = require("./couchusercontextobject.js");
-var buildSecurityObject = require("./couchsecurityobject.js");
 
 module.exports = function buildRequestObject(db, pathEnd, options) {
   var infoPromise = db.info();
@@ -83,7 +82,7 @@ function actuallyBuildRequestObject(path, info, userCtx, uuid, options) {
     query: {},
     requested_path: path.slice(0),
     raw_path: "/" + path.join("/"),
-    secObj: buildSecurityObject(),
+    secObj: {},
     userCtx: userCtx,
     uuid: uuid
   };
