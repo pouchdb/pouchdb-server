@@ -22,156 +22,18 @@ var uuid = require("node-uuid");
 var Validation = require("pouchdb-validation");
 var equals = require("equals");
 var extend = require("extend");
+var PouchPluginError = require("pouchdb-plugin-error");
 
-//CouchDB _users validation function
-function validate_doc_update(newDoc, oldDoc, userCtx) {
-  function reportError(error_msg) {
-    console.log('Error writing document `' + newDoc._id +
-      '\' to the replicator database: ' + error_msg);
-    throw({forbidden: error_msg});
-  }
+//to update: http://localhost:5984/_replicator/_design/_replicator & remove _rev.
+var DESIGN_DOC = require("./designdoc.js");
 
-  function validateEndpoint(endpoint, fieldName) {
-    if ((typeof endpoint !== 'string') &&
-      ((typeof endpoint !== 'object') || (endpoint === null))) {
-
-      reportError('The `' + fieldName + '\' property must exist' +
-        ' and be either a string or an object.');
-    }
-
-    if (typeof endpoint === 'object') {
-      if ((typeof endpoint.url !== 'string') || !endpoint.url) {
-        reportError('The url property must exist in the `' +
-          fieldName + '\' field and must be a non-empty string.');
-      }
-
-      if ((typeof endpoint.auth !== 'undefined') &&
-        ((typeof endpoint.auth !== 'object') ||
-          endpoint.auth === null)) {
-
-        reportError('`' + fieldName +
-          '.auth\' must be a non-null object.');
-      }
-
-      if ((typeof endpoint.headers !== 'undefined') &&
-        ((typeof endpoint.headers !== 'object') ||
-          endpoint.headers === null)) {
-
-        reportError('`' + fieldName +
-          '.headers\' must be a non-null object.');
-      }
-    }
-  }
-
-  var isReplicator = (userCtx.roles.indexOf('_replicator') >= 0);
-  var isAdmin = (userCtx.roles.indexOf('_admin') >= 0);
-
-  if (oldDoc && !newDoc._deleted && !isReplicator &&
-    (oldDoc._replication_state === 'triggered')) {
-    reportError('Only the replicator can edit replication documents ' +
-      'that are in the triggered state.');
-  }
-
-  if (!newDoc._deleted) {
-    validateEndpoint(newDoc.source, 'source');
-    validateEndpoint(newDoc.target, 'target');
-
-    if ((typeof newDoc.create_target !== 'undefined') &&
-      (typeof newDoc.create_target !== 'boolean')) {
-
-      reportError('The `create_target\' field must be a boolean.');
-    }
-
-    if ((typeof newDoc.continuous !== 'undefined') &&
-      (typeof newDoc.continuous !== 'boolean')) {
-
-      reportError('The `continuous\' field must be a boolean.');
-    }
-
-    if ((typeof newDoc.doc_ids !== 'undefined') &&
-      !Array.isArray(newDoc.doc_ids)) {
-
-      reportError('The `doc_ids\' field must be an array of strings.');
-    }
-
-    if ((typeof newDoc.filter !== 'undefined') &&
-      ((typeof newDoc.filter !== 'string') || !newDoc.filter)) {
-
-      reportError('The `filter\' field must be a non-empty string.');
-    }
-
-    if ((typeof newDoc.query_params !== 'undefined') &&
-      ((typeof newDoc.query_params !== 'object') ||
-        newDoc.query_params === null)) {
-
-      reportError('The `query_params\' field must be an object.');
-    }
-
-    if (newDoc.user_ctx) {
-      var user_ctx = newDoc.user_ctx;
-
-      if ((typeof user_ctx !== 'object') || (user_ctx === null)) {
-        reportError('The `user_ctx\' property must be a ' +
-          'non-null object.');
-      }
-
-      if (!(user_ctx.name === null ||
-        (typeof user_ctx.name === 'undefined') ||
-        ((typeof user_ctx.name === 'string') &&
-          user_ctx.name.length > 0))) {
-
-        reportError('The `user_ctx.name\' property must be a ' +
-          'non-empty string or null.');
-      }
-
-      if (!isAdmin && (user_ctx.name !== userCtx.name)) {
-        reportError('The given `user_ctx.name\' is not valid');
-      }
-
-      if (user_ctx.roles && !Array.isArray(user_ctx.roles)) {
-        reportError('The `user_ctx.roles\' property must be ' +
-          'an array of strings.');
-      }
-
-      if (!isAdmin && user_ctx.roles) {
-        for (var i = 0; i < user_ctx.roles.length; i++) {
-          var role = user_ctx.roles[i];
-
-          if (typeof role !== 'string' || role.length === 0) {
-            reportError('Roles must be non-empty strings.');
-          }
-          if (userCtx.roles.indexOf(role) === -1) {
-            reportError('Invalid role (`' + role +
-              '\') in the `user_ctx\'');
-          }
-        }
-      }
-    } else {
-      if (!isAdmin) {
-        reportError('The `user_ctx\' property is missing (it is ' +
-           'optional for admins only).');
-      }
-    }
-  } else {
-    if (!isAdmin) {
-      if (!oldDoc.user_ctx || (oldDoc.user_ctx.name !== userCtx.name)) {
-        reportError('Replication documents can only be deleted by ' +
-          'admins or by the users who created them.');
-      }
-    }
-  }
-}
-
-var DESIGN_DOC = {
-  _id: "_design/_replicator",
-  language: "javascript",
-  validate_doc_update: validate_doc_update.toString()
+var dbData = {
+  dbs: [],
+  changesByDbIdx: [],
+  activeReplicationsByDbIdxAndId: [],
+  activeReplicationSignaturesByDbIdxAndRepId: [],
+  changedByReplicatorByDbIdx: [],
 };
-
-var dbs = [];
-var changesCancelFuncsByDbIdx = [];
-var activeReplicationCancelsByDbIdxAndRepId = [];
-var activeReplicationSignaturesByDbIdxAndRepId = [];
 
 exports.startReplicator = function (callback) {
   //When the replicator is started:
@@ -183,165 +45,252 @@ exports.startReplicator = function (callback) {
   //  behind the screens) come into effect for the database.
   var db = this;
 
-  if (dbs.indexOf(db) !== -1) {
-    return Promise.reject({
-      error: true,
+  try {
+    Validation.installValidationMethods.call(db);
+  } catch (err) {
+    return Promise.reject(new PouchPluginError({
       status: 500,
       name: "already_active",
       message: "Replicator already active on this database."
-    });
+    }));
   }
-  Validation.installValidationMethods.call(db);
+
+  dbData.dbs.push(db);
+  dbData.activeReplicationsByDbIdxAndId.push({});
+  dbData.activeReplicationSignaturesByDbIdxAndRepId.push({});
+  dbData.changedByReplicatorByDbIdx.push([]);
 
   var promise = db.put(DESIGN_DOC)
     .catch(function () {/*that's fine, probably already there*/})
     .then(function () {
       return db.allDocs({
-        include_docs: true,
-        startkey: "_design0",
+        include_docs: true
       });
     })
     .then(function (allDocs) {
-      //start listening for changes on the replicator db
-      var cancelable = db.changes({
-        since: "now",
-        live: true,
-        returnDocs: false
-      }).on("change", function (change) {
-        onChanged(db, change.doc);
-      });
-      dbs.push(db);
-      activeReplicationCancelsByDbIdxAndRepId.push({});
-      activeReplicationSignaturesByDbIdxAndRepId.push({});
-      changesCancelFuncsByDbIdx.push(cancelable.cancel.bind(cancelable));
-
       //start replication for current docs
       allDocs.rows.forEach(function (row) {
         onChanged(db, row.doc);
       });
+    })
+    .then(function () {
+      //start listening for changes on the replicator db
+      var changes = db.changes({
+        since: "now",
+        live: true,
+        returnDocs: false,
+        include_docs: true
+      });
+      changes.on("change", function (change) {
+        onChanged(db, change.doc);
+      });
+      dbData.changesByDbIdx.push(changes);
     });
 
   nodify(promise, callback);
   return promise;
 };
 
-exports.stopReplicator = function () {
-  //synchronous method; stops all replications & listening to future
-  //changes & relaxes the validation rules for the database again.
-  var db = this;
-  var index = dbs.indexOf(db);
-  if (index === -1) {
-    throw {
-      error: true,
-      status: 500,
-      name: "already_inactive",
-      message: "Replicator already inactive on this database."
-    };
-  }
-  changesCancelFuncsByDbIdx.splice(index, 1)[0]();
-  activeReplicationSignaturesByDbIdxAndRepId.splice(index, 1);
-
-  var activeReplicationCancelsByRepId = activeReplicationCancelsByDbIdxAndRepId.splice(index, 1)[0];
-  for (var key in activeReplicationCancelsByRepId) {
-    if (activeReplicationCancelsByRepId.hasOwnProperty(key)) {
-      activeReplicationCancelsByRepId[key]();
-    }
-  }
-
-  Validation.uninstallValidationMethods.call(db);
-};
-
-var replicatorChangeActive = false;
-
-function putAsReplicatorChange(db, doc) {
-  if (doc._replication_state) {
-    doc._replication_state_time = Date.now();
-  }
-
-  replicatorChangeActive = true;
-  db.put(doc);
-  replicatorChangeActive = false;
-}
-
 function onChanged(db, doc) {
   //Stops/starts replication as required by the description in ``doc``.
 
-  var PouchDB = db.constructor;
-  var currentSignature;
+  var data = dataFor(db);
 
-  if (replicatorChangeActive) {
-    //prevent recursion
+  var isReplicatorChange = data.changedByReplicator.indexOf(doc._id) !== -1;
+  if (isReplicatorChange) {
+    data.changedByReplicator.splice(doc._id, 1);
+  }
+  if (isReplicatorChange || doc._id.indexOf("_design") === 0) {
+    //prevent recursion & design docs respectively
     return;
   }
-  var dbIdx = dbs.indexOf(db);
-  var activeReplicationCancelsByRepId = activeReplicationCancelsByDbIdxAndRepId[dbIdx];
-  var activeReplicationSignaturesByRepId = activeReplicationSignaturesByDbIdxAndRepId[dbIdx];
+  var currentSignature;
+  var docCopy = extend({}, doc);
 
-  if (doc._replication_id && doc._replication_state === "triggered") {
-    //stop the replication
-    var cancel = activeReplicationCancelsByRepId[doc._replication_id];
-    cancel();
-    currentSignature = activeReplicationSignaturesByRepId[doc._replication_id];
-
-    cleanupReplicationData(db, doc);
+  //stop an ongoing replication (if one)
+  var oldReplication = data.activeReplicationsById[doc._id];
+  if (oldReplication) {
+    oldReplication.cancel();
   }
-  if (!doc._replication_id) {
+  if (doc.replication_id) {
+    currentSignature = data.activeReplicationSignaturesByRepId[doc.replication_id];
+  }
+  //removes the data used to get cancel & currentSignature now it's no
+  //longer necessary
+  cleanupReplicationData(db, doc);
+
+  if (!doc._deleted) {
+    //update doc so it's ready to be replicated (if necessary).
     currentSignature = extend({}, doc);
     delete currentSignature._id;
     delete currentSignature._rev;
 
-    var done = false;
-    //check if the signatures match ({repId: signature} format)
-    for (var repId in activeReplicationSignaturesByRepId) {
-      if (activeReplicationSignaturesByRepId.hasOwnProperty(repId)) {
-        var signature = activeReplicationCancelsByRepId[repId];
-        if (equals(signature, currentSignature)) {
-          doc._replication_id = repId;
-          done = true;
-        }
-      }
-    }
-    if (!done) {
-      doc._replication_id = uuid.v4();
-      doc._replication_state = "triggered";
+    //check if the signatures match ({repId: signature} format). If it
+    //does, it's a duplicate replication which means that it just gets
+    //the id assigned of the already active replication and nothing else
+    //happens.
+    var repId = getMatchingSignatureId(db, currentSignature);
+    if (repId) {
+      doc.replication_id = repId;
+    } else {
+      doc.replication_id = uuid.v4();
+      doc.replication_state = "triggered";
     }
   }
-  if (doc._replication_state === "triggered") {
+  if (doc.replication_state === "triggered") {
+    //(re)start actual replication
+    var PouchDB = db.constructor;
     var replication = PouchDB.replicate(doc.source, doc.target, doc);
-    activeReplicationCancelsByRepId[doc._replication_id] = replication.cancel.bind(replication);
-    activeReplicationSignaturesByRepId[doc._replication_id] = currentSignature;
+    data.activeReplicationsById[doc._id] = replication;
+    data.activeReplicationSignaturesByRepId[doc.replication_id] = currentSignature;
     replication.on("complete", onReplicationComplete.bind(null, db, doc._id));
-    replication.on("change", onReplicationError.bind(null, db, doc._id));
+    replication.on("error", onReplicationError.bind(null, db, doc._id));
   }
 
-  putAsReplicatorChange(doc);
+  if (!equals(doc, docCopy)) {
+    putAsReplicatorChange(db, doc);
+  }
+}
+
+function dataFor(db) {
+  var dbIdx = dbData.dbs.indexOf(db);
+  if (dbIdx === -1) {
+    throw new Error("db doesn't exist");
+  }
+  return {
+    changes: dbData.changesByDbIdx[dbIdx],
+    activeReplicationsById: dbData.activeReplicationsByDbIdxAndId[dbIdx],
+    activeReplicationSignaturesByRepId: dbData.activeReplicationSignaturesByDbIdxAndRepId[dbIdx],
+    changedByReplicator: dbData.changedByReplicatorByDbIdx[dbIdx]
+  };
 }
 
 function cleanupReplicationData(db, doc) {
   //cleanup replication data which is now no longer necessary
-  var dbIdx = dbs.indexOf(db);
-  var activeReplicationCancelsByRepId = activeReplicationCancelsByDbIdxAndRepId[dbIdx];
-  var activeReplicationSignaturesByRepId = activeReplicationSignaturesByDbIdxAndRepId[dbIdx];
+  var data = dataFor(db);
 
-  delete activeReplicationCancelsByRepId[doc._replication_id];
-  delete activeReplicationSignaturesByRepId[doc._replication_id];
+  delete data.activeReplicationsById[doc._id];
+  delete data.activeReplicationSignaturesByRepId[doc.replication_id];
+}
+
+function getMatchingSignatureId(db, searchedSignature) {
+  var data = dataFor(db);
+
+  for (var repId in data.activeReplicationSignaturesByRepId) {
+    if (data.activeReplicationSignaturesByRepId.hasOwnProperty(repId)) {
+      var signature = data.activeReplicationSignaturesByRepId[repId];
+      if (equals(signature, searchedSignature)) {
+        return repId;
+      }
+    }
+  }
 }
 
 function onReplicationComplete(db, docId, info) {
+  delete info.status;
+  delete info.ok;
+  updateExistingDoc(db, docId, function (doc) {
+    doc.replication_state = "completed";
+    doc.replication_stats = info;
+  });
+}
+
+function updateExistingDoc(db, docId, func) {
   db.get(docId).then(function (doc) {
     cleanupReplicationData(db, doc);
 
-    doc._replication_state = "completed";
-    putAsReplicatorChange(doc);
+    func(doc);
+    putAsReplicatorChange(db, doc).catch(function (err) {
+      if (err.status === 409) {
+        updateExistingDoc(db, docId, func);
+      } else {
+        throw err;
+      }
+    });
+  });
+}
+
+function putAsReplicatorChange(db, doc) {
+  if (doc.replication_state) {
+    doc.replication_state_time = Date.now();
+  }
+
+  var data = dataFor(db);
+  data.changedByReplicator.push(doc._id);
+
+  return db.put(doc, {
+    userCtx: {
+      roles: ["_replicator", "_admin"],
+    }
+  }).catch(function (err) {
+    var idx = data.changedByReplicator.indexOf(doc._id);
+    data.changedByReplicator.splice(idx, 1);
+
+    throw err;
   });
 }
 
 function onReplicationError(db, docId, info) {
-  db.get(docId).then(function (doc) {
-    cleanupReplicationData(db, doc);
-
-    doc._replication_state = "error";
-    doc._replication_state_reason = info.message;
-    putAsReplicatorChange(doc);
+  updateExistingDoc(db, docId, function (doc) {
+    doc.replication_state = "error";
+    doc.replication_state_reason = info.message;
   });
 }
+
+exports.stopReplicator = function (callback) {
+  //Stops all replications & listening to future changes & relaxes the
+  //validation rules for the database again.
+  var db = this;
+  var data;
+  try {
+    data = dataFor(db);
+  } catch (err) {
+    return Promise.reject(new PouchPluginError({
+      status: 500,
+      name: "already_inactive",
+      message: "Replicator already inactive on this database."
+    }));
+  }
+  var index = dbData.dbs.indexOf(db);
+  //clean up
+  dbData.dbs.splice(index, 1);
+  dbData.changesByDbIdx.splice(index, 1);
+  dbData.activeReplicationSignaturesByDbIdxAndRepId.splice(index, 1);
+  dbData.activeReplicationsByDbIdxAndId.splice(index, 1);
+  dbData.changedByReplicatorByDbIdx.splice(index, 1);
+
+  var promise = new Promise(function (resolve, reject) {
+    //cancel changes/replications
+    var stillCancellingCount = 0;
+    function doneCancelling(eventEmitter) {
+      //listening is no longer necessary.
+      eventEmitter.removeAllListeners();
+
+      stillCancellingCount -= 1;
+      if (stillCancellingCount === 0) {
+        resolve();
+      }
+    }
+    function cancel(cancelable) {
+      cancelable.on("complete", doneCancelling.bind(null, cancelable));
+      cancelable.on("error", doneCancelling.bind(null, cancelable));
+      process.nextTick(cancelable.cancel.bind(cancelable));
+      stillCancellingCount += 1;
+    }
+    cancel(data.changes);
+    data.changes.removeAllListeners("change");
+
+    for (var id in data.activeReplicationsById) {
+      if (data.activeReplicationsById.hasOwnProperty(id)) {
+        cancel(data.activeReplicationsById[id]);
+      }
+    }
+  }).then(function () {
+    //validation - last because startReplicator checks if the replicator
+    //is already running by checking if validation is active.
+    Validation.uninstallValidationMethods.call(db);
+  });
+
+  nodify(promise, callback);
+  return promise;
+};
