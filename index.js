@@ -22,23 +22,7 @@ var nodify = require("promise-nodify");
 
 var uuid = require("node-uuid");
 var Promise = require("pouchdb-promise");
-
-function PouchError(opts) {
-  this.status = opts.status;
-  this.name = opts.name;
-  this.message = opts.message;
-  this.error = true;
-}
-
-PouchError.prototype__proto__ = Error.prototype;
-
-PouchError.prototype.toString = function () {
-  return JSON.stringify({
-    status: this.status,
-    name: this.name,
-    message: this.message
-  });
-};
+var PouchPluginError = require("pouchdb-plugin-error");
 
 var dbs = [];
 var methodNames = ["put", "post", "remove", "bulkDocs", "putAttachment", "removeAttachment"];
@@ -126,7 +110,7 @@ function completeValidationOptions(db, options) {
     options = {};
   }
   if (!options.secObj) {
-    options.secObj = couchdb_objects.buildSecurityObject();
+    options.secObj = {};
   }
 
   var userCtxPromise;
@@ -283,7 +267,7 @@ exports.installValidationMethods = function () {
   var db = this;
 
   if (dbs.indexOf(db) !== -1) {
-    throw new PouchError({
+    throw new PouchPluginError({
       status: 500,
       name: "already_installed",
       message: "Validation methods are already installed on this database."
@@ -302,7 +286,7 @@ exports.uninstallValidationMethods = function () {
 
   var index = dbs.indexOf(db);
   if (index === -1) {
-    throw new PouchError({
+    throw new PouchPluginError({
       status: 500,
       name: "already_not_installed",
       message: "Validation methods are already not installed on this database."
@@ -312,4 +296,8 @@ exports.uninstallValidationMethods = function () {
   methodNames.forEach(function (name) {
     db[name] = meths[name];
   });
+
+  //cleanup
+  dbs.splice(index, 1);
+  methodsByDbsIdx.splice(index, 1);
 };
