@@ -78,6 +78,8 @@ var myPouch = new PouchDB('foo');
 
 ### PouchDB defaults
 
+**Warning: this feature will be added in PouchDB 3.0.0. Use the PouchDB master branch if you can't wait.**
+
 When you use your own PouchDB code in tandem with express-pouchdb, the `PouchDB.defaults()` API can be very convenient for specifying some default settings for how PouchDB databases are created.
 
 For instance, if you want to use an in-memory [MemDOWN](https://github.com/rvagg/memdown)-backed pouch, you can simply do:
@@ -111,6 +113,10 @@ Want to help me make this thing awesome? Great! Here's how you should get starte
 
 Please make your changes on a separate branch whose name reflects your changes, push them to your fork, and open a pull request!
 I haven't defined a formal styleguide, so please take care to maintain the existing coding style.
+
+### Fauxton
+
+The custom Fauxton theme, with the PouchDB Server name and logo, are kept [in a Fauxton fork](https://github.com/nolanlawson/couchdb-fauxton) for the time being.
 
 ## Contributors
 
