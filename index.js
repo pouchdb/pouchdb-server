@@ -186,6 +186,23 @@ app.put('/_config/:key/:value(*)', function (req, res, next) {
   res.send(200, {ok: true, 'pouchdb-server has no config': true});
 });
 
+// Log (stub for now)
+app.get('/_log', function (req, res, next) {
+  // TODO: implement
+  res.send(200, '_log is not implemented yet. PRs welcome!');
+});
+
+// Log (stub for now)
+app.get('/_stats', function (req, res, next) {
+  // TODO: implement
+  res.send(200, {'pouchdb-server' : 'has not impemented _stats yet. PRs welcome!'});
+});
+
+app.get('/_active_tasks', function (req, res, next) {
+  // TODO: implement
+  res.send(200, []);
+});
+
 // Generate UUIDs
 app.get('/_uuids', function (req, res, next) {
   var count = typeof req.query.count === 'number' ? req.query.count : 1;
@@ -252,10 +269,6 @@ app.post('/_replicate', function (req, res, next) {
     res.send(200, { ok : true });
   }
 
-});
-
-app.get('/_active_tasks', function (req, res, next) {
-  res.send(200, []);
 });
 
 // Create a database.
