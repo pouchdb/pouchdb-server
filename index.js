@@ -20,6 +20,7 @@ var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
 var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 var Promise = require("pouchdb-promise");
 
@@ -63,11 +64,11 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
   //get the documents involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.shows || {}).hasOwnProperty(showName)) {
-      throw {
+      throw new PouchPluginError({
         status: 404,
         name: "not_found",
         message: "missing show function " + showName + " on design doc _design/" + designDocName
-      };
+      });
     }
     return designDoc;
   });
