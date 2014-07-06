@@ -18,6 +18,7 @@
 
 var extend = require("extend");
 var isEmpty = require("is-empty");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 module.exports = function completeRespObj(resp, contentType) {
   //contentType may be undefined (if unknown). Resp may be anything
@@ -39,17 +40,17 @@ module.exports = function completeRespObj(resp, contentType) {
   delete copy.stop;
   if (!isEmpty(copy)) {
     var key = Object.keys(copy)[0];
-    throw {
+    throw new PouchPluginError({
       "status": 500,
       "name": "external_response_error",
-      "message": (
-        "Invalid data from external server: {<<" +
-        JSON.stringify(key) +
-        ">>,<<" +
-        JSON.stringify(copy[key]) +
+      "message": [
+        "Invalid data from external server: {<<",
+        JSON.stringify(key),
+        ">>,<<",
+        JSON.stringify(copy[key]),
         ">>}"
-      )
-    };
+      ].join("")
+    });
   }
   resp.code = resp.code || 200;
   resp.headers = resp.headers || {};

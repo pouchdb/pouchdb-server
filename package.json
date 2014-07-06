@@ -1,6 +1,6 @@
 {
 	"name": "couchdb-resp-completer",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"main": "index.js",
 	"description": "Builds a complete CouchDB-like response object from a very marginal one. (Can be just a string at first.)",
 	"repository": {
@@ -20,7 +20,8 @@
 	"author": "Marten de Vries",
 	"dependencies": {
 		"extend": "^1.2.1",
-		"is-empty": "^0.0.1"
+		"is-empty": "^0.0.1",
+		"pouchdb-plugin-error": "^0.2.0"
 	},
 	"devDependencies": {
 		"es3ify": "^0.1.3"
