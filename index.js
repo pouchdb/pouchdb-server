@@ -61,17 +61,17 @@ function validate(validationFuncs, newDoc, oldDoc, options) {
     });
   } catch (e) {
     if (typeof e.unauthorized !== "undefined") {
-      throw {
+      throw new PouchPluginError({
         name: "unauthorized",
         message: e.unauthorized,
         status: 401
-      };
+      });
     } else if (typeof e.forbidden !== "undefined") {
-      throw {
+      throw new PouchPluginError({
         name: "forbidden",
         message: e.forbidden,
         status: 403
-      };
+      });
     } else {
       throw coucheval.wrapExecutionError(e);
     }
@@ -203,7 +203,11 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   var done = [];
   var notYetDone = [];
 
-  var validations = bulkDocs.docs.map(function (doc) {
+  if (!Array.isArray(bulkDocs)) {
+    bulkDocs = bulkDocs.docs;
+  }
+
+  var validations = bulkDocs.map(function (doc) {
     doc._id = doc._id || uuid.v4();
     var validationPromise = doValidation(args.db, doc, args.options);
 
@@ -215,7 +219,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
     });
   });
   var allValidationsPromise = Promise.all(validations).then(function () {
-    return methods(args.db).bulkDocs({docs: notYetDone}, args.options);
+    return methods(args.db).bulkDocs(notYetDone, args.options);
   }).then(function (insertedDocs) {
     return done.concat(insertedDocs);
   });
