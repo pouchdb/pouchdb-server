@@ -16,6 +16,8 @@
 
 "use strict";
 
+var PouchPluginError = require("pouchdb-plugin-error");
+
 exports.evaluate = function (requireContext, extraVars, program) {
   /*jshint evil:true, unused: false */
   var require;
@@ -70,19 +72,19 @@ exports.evaluate = function (requireContext, extraVars, program) {
       throw "no function";
     }
   } catch (e) {
-    throw {
+    throw new PouchPluginError({
       "name": "compilation_error",
       "status": 500,
       "message": "Expression does not eval to a function. " + program
-    };
+    });
   }
   return func;
 };
 
 exports.wrapExecutionError = function (e) {
-  return {
+  return new PouchPluginError({
     name: e.name,
     message: e.toString() + "\n\n" + e.stack,
     status: 500
-  };
+  });
 };

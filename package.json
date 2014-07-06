@@ -1,7 +1,7 @@
 {
 	"name": "couchdb-eval",
 	"main": "index.js",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Compiles a piece of code to a function object, providing a CouchDB-like JavaScript context.",
 	"repository": {
 		"type": "bzr",
@@ -17,6 +17,9 @@
 	],
 	"license": "Apache-2.0",
 	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-plugin-error": "^0.2.0"
+	},
 	"devDependencies": {
 		"es3ify": "^0.1.3"
 	},
