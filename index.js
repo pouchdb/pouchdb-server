@@ -23,6 +23,7 @@ var Promise = require("pouchdb-promise");
 var couchdb_objects = require("couchdb-objects");
 var render = require("couchdb-render");
 var httpQuery = require("pouchdb-req-http-query");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 exports.list = function (listPath, options, callback) {
   //options: values to end up in the request object of the list
@@ -57,21 +58,21 @@ exports.list = function (listPath, options, callback) {
 
 function offlineQuery(db, designDocName, listName, viewName, req, options) {
   if (req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json") {
-    return Promise.reject({
+    return Promise.reject(new PouchPluginError({
       status: 400,
       name: "bad_request",
       message: "invalid_json"
-    });
+    }));
   }
 
   //get the data involved.
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.lists || {}).hasOwnProperty(listName)) {
-      throw {
+      throw new PouchPluginError({
         status: 404,
         name: "not_found",
         message: "missing list function " + listName + " on design doc _design/" + designDocName
-      };
+      });
     }
     return designDoc;
   });
