@@ -32,6 +32,7 @@ var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 var extend = require("extend");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 exports.rewriteResultRequestObject = function (rewritePath, options, callback) {
   var args = parseArgs(this, rewritePath, options, callback);
@@ -66,14 +67,26 @@ function buildRewriteResultReqObj(db, designDocName, rewriteUrl, options) {
     //https://github.com/apache/couchdb/blob/master/src/couchdb/couch_httpd_rewrite.erl
     var rewrites = ddoc.rewrites;
     if (typeof rewrites === "undefined") {
-      throw {status: 404, name: "rewrite_error", message:"Invalid path."};
+      throw new PouchPluginError({
+        status: 404,
+        name: "rewrite_error",
+        message:"Invalid path."
+      });
     }
     if (!Array.isArray(rewrites)) {
-      throw {status: 400, name: "rewrite_error", message: "Rewrite rules should be a JSON Array."};
+      throw new PouchPluginError({
+        status: 400,
+        name: "rewrite_error",
+        message: "Rewrite rules should be a JSON Array."
+      });
     }
     var rules = rewrites.map(function (rewrite) {
       if (typeof rewrite.to === "undefined") {
-        throw {status: 500, name:"error", message:"invalid_rewrite_target"};
+        throw new PouchPluginError({
+          status: 500,
+          name:"error",
+          message:"invalid_rewrite_target"
+        });
       }
       return {
         method: rewrite.method || "*",
@@ -128,7 +141,7 @@ function tryToFindMatch(input, rules) {
 }
 
 function throw404() {
-  throw {status: 404, name: "not_found", message: "missing"};
+  throw new PouchPluginError({status: 404, name: "not_found", message: "missing"});
 }
 
 function arrayEquals(a, b) {
@@ -285,11 +298,11 @@ function callWithBody(db, req, func) {
 
 function routeCRUD(db, withValidation, req, docId, remainingPath) {
   function throw405() {
-    throw {
+    throw new PouchPluginError({
       status: 405,
       name: "method_not_allowed",
       message: "method '" + req.method + "' not allowed."
-    };
+    });
   }
   function callAttachment(isPut) {
     var funcs;
