@@ -1,6 +1,6 @@
 {
 	"name": "couchdb-render",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"main": "index.js",
 	"description": "Given the code of a CouchDB show/list function (and some other stuff), this module runs it and returns the result.",
 	"repository": {
@@ -23,7 +23,8 @@
 		"extend": "^1.2.1",
 		"is-empty": "^0.0.1",
 		"couchdb-eval": "^1.0.0",
-		"couchdb-resp-completer": "^0.1.0"
+		"couchdb-resp-completer": "^0.1.0",
+		"pouchdb-plugin-error": "^0.2.0"
 	},
 	"devDependencies": {
 		"es3ify": "^0.1.3"

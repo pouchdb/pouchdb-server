@@ -21,6 +21,7 @@ var isEmpty = require("is-empty");
 
 var coucheval = require("couchdb-eval");
 var completeRespObj = require("couchdb-resp-completer");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 function isObject(value) {
   return Object.prototype.toString.call(value) === "[object Object]";
@@ -130,7 +131,7 @@ function buildProvidesCtx() {
       }
     }
     //no match was found
-    throw {
+    throw new PouchPluginError({
       status: 406,
       name: "not_acceptable",
       message: [
@@ -139,7 +140,7 @@ function buildProvidesCtx() {
         "not supported, try one of:",
         Object.keys(providesFuncs).map(contentTypeFor)
       ].join(" ")
-    };
+    });
   }
 
   function provides(type, func) {
@@ -152,7 +153,7 @@ function buildProvidesCtx() {
     }
     if (req.query.format) {
       if (!providesFuncs.hasOwnProperty(req.query.format)) {
-        throw {
+        throw new PouchPluginError({
           status: 500,
           name: "render_error",
           message: [
@@ -161,7 +162,7 @@ function buildProvidesCtx() {
             //the + thing for es3ify
             "'" + ", but there's no provider registered for that format."
           ].join("")
-        };
+        });
       }
       //everything fine
       return [execute(req.query.format), contentTypeFor(req.query.format)];
