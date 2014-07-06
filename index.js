@@ -23,6 +23,7 @@ var nodify = require("promise-nodify");
 var coucheval = require("couchdb-eval");
 var httpQuery = require("pouchdb-req-http-query");
 var completeRespObj = require("couchdb-resp-completer");
+var PouchPluginError = require('pouchdb-plugin-error');
 
 exports.update = function (updatePath, options, callback) {
   if (["function", "undefined"].indexOf(typeof options) !== -1) {
@@ -69,11 +70,11 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
   //get the documents involved
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.updates || {}).hasOwnProperty(updateName)) {
-      throw {
+      throw new PouchPluginError({
         status: 404,
         name: "not_found",
         message: "missing update function " + updateName + " on design doc _design/" + designDocName
-      };
+      });
     }
     return designDoc;
   });
