@@ -21,9 +21,8 @@ function PouchPluginError(opts) {
   this.name = opts.name;
   this.message = opts.message;
   this.error = true;
+  this.stack = (new Error()).stack;
 }
-
-PouchPluginError.prototype = new Error();
 
 PouchPluginError.prototype.toString = function () {
   return JSON.stringify({
