@@ -19,6 +19,7 @@
 "use strict";
 
 var Promise = require("pouchdb-promise");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 if (typeof global.XMLHttpRequest === "undefined") {
   global.XMLHttpRequest = require("xhr2");
@@ -32,11 +33,11 @@ module.exports = function httpQuery(db, req) {
       }
       if (xhr.status < 200 || xhr.status >= 300) {
         var err = JSON.parse(xhr.responseText);
-        reject({
+        reject(new PouchPluginError({
           "name": err.error,
           "message": err.reason,
           "status": xhr.status
-        });
+        }));
         return;
       }
 
