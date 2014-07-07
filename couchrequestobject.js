@@ -23,6 +23,8 @@ var querystring = require("querystring");
 var Promise = require("pouchdb-promise");
 var uuid = require("node-uuid");
 var buildUserContextObject = require("./couchusercontextobject.js");
+var url = require("url");
+var normalizeHeaderCase = require("header-case-normalizer");
 
 module.exports = function buildRequestObject(db, pathEnd, options) {
   var infoPromise = db.info();
@@ -33,11 +35,20 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
   var userCtxPromise = infoPromise.then(buildUserContextObject);
 
   return Promise.all([pathPromise, infoPromise, userCtxPromise]).then(function (args) {
+    args.push(getHost(db));
     args.push(uuid.v4());
     args.push(options);
     return actuallyBuildRequestObject.apply(null, args);
   });
 };
+
+function getHost(db) {
+  try {
+    return url.parse(db.getUrl()).host;
+  } catch (err) {
+    return "localhost:5984";
+  }
+}
 
 function normalizePath(path) {
   //based on path-browserify's normalizeArray function.
@@ -63,14 +74,14 @@ function normalizePath(path) {
   return path;
 }
 
-function actuallyBuildRequestObject(path, info, userCtx, uuid, options) {
+function actuallyBuildRequestObject(path, info, userCtx, host, uuid, options) {
   //documentation: http://couchdb.readthedocs.org/en/latest/json-structure.html#request-object
   var result = {
     body: "undefined",
     cookie: {},
     form: {},
     headers: {
-      "Host": "localhost:5984",
+      "Host": host,
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": buildAcceptLanguage(),
       "User-Agent": buildUserAgent()
@@ -95,6 +106,13 @@ function actuallyBuildRequestObject(path, info, userCtx, uuid, options) {
       result.id += "/" + path[6];
     }
   }
+
+  for (var header in options.headers) {
+    if (options.headers.hasOwnProperty(header)) {
+      result.headers[normalizeHeaderCase(header)] = options.headers[header];
+    }
+  }
+  delete options.headers;
 
   extend(true, result, options);
 
