@@ -107,12 +107,14 @@ function actuallyBuildRequestObject(path, info, userCtx, host, uuid, options) {
     }
   }
 
-  for (var header in options.headers) {
-    if (options.headers.hasOwnProperty(header)) {
-      result.headers[normalizeHeaderCase(header)] = options.headers[header];
+  if (options && options.headers) {
+    for (var header in options.headers) {
+      if (options.headers.hasOwnProperty(header)) {
+        result.headers[normalizeHeaderCase(header)] = options.headers[header];
+      }
     }
+    delete options.headers;
   }
-  delete options.headers;
 
   extend(true, result, options);
 
