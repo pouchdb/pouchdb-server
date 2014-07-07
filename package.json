@@ -1,0 +1,44 @@
+{
+	"name": "pouchdb-auth",
+	"version": "0.1.0",
+	"main": "index.js",
+	"description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
+	"repository": {
+		"type": "bzr",
+		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
+	},
+	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"users",
+		"authentication",
+		"auth"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-promise": "^0.0.0",
+		"extend": "^1.3.0",
+		"promise-nodify": "^1.0.0",
+		"pouchdb-validation": "^1.1.0",
+		"pouchdb-plugin-error": "^0.2.0"
+	},
+	"devDependencies": {
+		"browserify": "^4.1.8",
+		"uglify-js": "^2.4.13",
+		"es3ify": "^0.1.3"
+	},
+	"scripts": {
+		"build-js": "mkdir -p ../../dist && browserify index.js -s Auth -o ../../dist/pouchdb-auth.js",
+		"build": "npm run build-js; cd ../../dist; uglifyjs pouchdb-auth.js -mc > pouchdb-auth.min.js"
+	},
+	"browserify": {
+		"transform": [
+			"es3ify"
+		]
+	}
+}
