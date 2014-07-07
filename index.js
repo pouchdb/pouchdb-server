@@ -85,7 +85,7 @@ function doValidation(db, newDoc, options, callback) {
     //CouchDB does the checking for itself. Validate succesful.
     return Promise.resolve();
   }
-  if ((newDoc._id || "").indexOf("_design/") === 0) {
+  if (String(newDoc._id).indexOf("_design/") === 0) {
     //a design document -> always validates succesful.
     return Promise.resolve();
   }
@@ -168,7 +168,7 @@ exports.validatingPut = function (doc, options, callback) {
   var promise = doValidation(args.db, doc, args.options).then(function () {
     return methods(args.db).put(doc, args.options);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -179,7 +179,7 @@ exports.validatingPost = function (doc, options, callback) {
   var promise = doValidation(args.db, doc, args.options).then(function () {
     return methods(args.db).post(doc, args.options);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -190,7 +190,7 @@ exports.validatingRemove = function (doc, options, callback) {
   var promise = doValidation(args.db, doc, args.options).then(function () {
     return methods(args.db).remove(doc, args.options);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -223,7 +223,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   }).then(function (insertedDocs) {
     return done.concat(insertedDocs);
   });
-  nodify(allValidationsPromise, callback);
+  nodify(allValidationsPromise, args.callback);
   return allValidationsPromise;
 };
 
@@ -245,7 +245,7 @@ var vpa = function (docId, attachmentId, rev, attachment, type, options, callbac
     //save the attachment
     return methods(args.db).putAttachment(docId, attachmentId, rev, attachment, type);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 exports.validatingPutAttachment = vpa;
@@ -262,7 +262,7 @@ var vra = function (docId, attachmentId, rev, options, callback) {
     //remove the attachment
     return methods(args.db).removeAttachment(docId, attachmentId, rev);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 exports.validatingRemoveAttachment = vra;
