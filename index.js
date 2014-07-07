@@ -18,11 +18,17 @@ module.exports = function(PouchToUse) {
   Pouch.plugin(require('pouchdb-list'));
   Pouch.plugin(require('pouchdb-show'));
   Pouch.plugin(require('pouchdb-update'));
+  Pouch.plugin(require('pouchdb-validation'));
   return app;
 };
 
 function isPouchError(obj) {
   return obj.error && obj.error === true;
+}
+
+function registerDB(name, db) {
+  db.installValidationMethods();
+  dbs[name] = db;
 }
 
 function setDBOnReq(db_name, req, res, next) {
@@ -45,7 +51,7 @@ function setDBOnReq(db_name, req, res, next) {
     }
     new Pouch(name, function (err, db) {
       if (err) return res.send(412, err);
-      dbs[name] = db;
+      registerDB(name, db);
       req.db = db;
       return next();
     });
@@ -284,7 +290,7 @@ app.put('/:db', function (req, res, next) {
 
   new Pouch(name, function (err, db) {
     if (err) return res.send(412, err);
-    dbs[name] = db;
+    registerDB(name, db);
     var loc = req.protocol
       + '://'
       + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')

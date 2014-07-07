@@ -20,6 +20,7 @@
     "pouchdb-show": "^1.0.0",
     "pouchdb-list": "^1.0.0",
     "pouchdb-update": "^1.0.0",
+    "pouchdb-validation": "^1.1.5",
     "raw-body": "^1.1.5"
   },
   "devDependencies": {
