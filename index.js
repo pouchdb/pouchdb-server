@@ -20,6 +20,7 @@
 
 var Promise = require("pouchdb-promise");
 var PouchPluginError = require("pouchdb-plugin-error");
+var normalizeHeaderCase = require("header-case-normalizer");
 
 if (typeof global.XMLHttpRequest === "undefined") {
   global.XMLHttpRequest = require("xhr2");
@@ -44,7 +45,8 @@ module.exports = function httpQuery(db, req) {
       var headers = {};
       xhr.getAllResponseHeaders().split("\r\n").forEach(function (line) {
         if (line) {
-          headers[line.split(":")[0].toLowerCase()] = line.split(":")[1].trim();
+          var splittedHeader = line.split(":");
+          headers[normalizeHeaderCase(splittedHeader[0]).trim()] = splittedHeader[1].trim();
         }
       });
       var result = {
