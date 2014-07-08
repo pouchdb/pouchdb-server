@@ -102,8 +102,7 @@ app.use(function (req, res, next) {
   // on 'malformed' requests, and also because we need the
   // rawBody for attachments
   rawBody(req, {
-    length: req.headers['content-length'],
-    encoding: 'binary'
+    length: req.headers['content-length']
   }, function (err, string) {
     if (err)
       return next(err)
@@ -337,6 +336,13 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
     ? { new_edits: req.body.new_edits }
     : null;
 
+  if (Array.isArray(req.body)) {
+    return res.send(400, {
+      error: "bad_request",
+      reason: "Request body must be a JSON object"
+    });
+  }
+
   req.db.bulkDocs(req.body, opts, function (err, response) {
     if (err) return res.send(500, err);
     res.send(201, response);
@@ -559,7 +565,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 app.post('/:db', function (req, res, next) {
   req.body._id = uuids(1)[0];
   req.db.put(req.body, req.query, function (err, response) {
-    if (err) return res.send(409, err);
+    if (err) return res.send(err.status || 500, err);
     res.send(201, response);
   });
 });
