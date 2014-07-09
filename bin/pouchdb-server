@@ -31,6 +31,7 @@ if (argv.h || argv.help) {
   process.exit(1);
 }
 
+app.use('/favicon.ico', express.static(__dirname + '/../favicon.ico'));
 app.use(require('morgan')(logger));
 app.use(function (req, res, next) {
   corserRequestListener(req, res, function () {
