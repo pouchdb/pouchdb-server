@@ -32,7 +32,6 @@ env:
  
 matrix:
   allow_failures:
-  - env: CLIENT=node COMMAND=test-pouchdb
   - env: COMMAND=test-couchdb
 
 branches:
