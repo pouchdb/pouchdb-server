@@ -61,8 +61,7 @@ module.exports = function httpQuery(db, req) {
     }
 
     //strips the database from the requested_path
-    var relativeUrl = req.requested_path.slice(1).join("/");
-    var url = db.getUrl() + relativeUrl;
+    var url = db.getUrl().split("/").slice(0, -2).join("/") + req.raw_path;
 
     var xhr = new XMLHttpRequest();
     xhr.withCredentials = true;
