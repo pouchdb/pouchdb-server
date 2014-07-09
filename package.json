@@ -25,7 +25,8 @@
 		"extend": "^1.3.0",
 		"promise-nodify": "^1.0.0",
 		"pouchdb-validation": "^1.1.0",
-		"pouchdb-plugin-error": "^0.2.0"
+		"pouchdb-plugin-error": "^0.2.0",
+		"pouchdb-req-http-query": "^0.1.5"
 	},
 	"devDependencies": {
 		"browserify": "^4.1.8",
