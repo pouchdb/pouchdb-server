@@ -23,6 +23,7 @@ var extend = require("extend");
 var nodify = require("promise-nodify");
 var Validation = require("pouchdb-validation");
 var PouchPluginError = require("pouchdb-plugin-error");
+var httpQuery = require("pouchdb-req-http-query");
 
 //to update: http://localhost:5984/_users/_design/_auth & remove _rev.
 var DESIGN_DOC = require("./designdoc.js");
@@ -39,10 +40,14 @@ function sessionDBForDB(db) {
   return sessionDBsByDBIdx[dbs.indexOf(db)];
 }
 
-exports.installAuthMethods = function (callback) {
+exports.useAsAuthenticationDB = function (callback) {
   var db = this;
 
-  Validation.installValidationMethods.call(db);
+  try {
+    Validation.installValidationMethods.call(db);
+  } catch (err) {
+    throw new Error("Already in use as an authentication database.");
+  }
 
   dbs.push(db);
   originalMethodsByDbIdx.push({
@@ -51,38 +56,65 @@ exports.installAuthMethods = function (callback) {
     bulkDocs: db.bulkDocs.bind(db)
   });
 
-  for (var name in api) {
-    db[name] = api[name].bind(db);
+  var newMethods = extend({}, api);
+  if (!isOnlineAuthDB(db)) {
+    newMethods = extend(newMethods, docApi);
+  }
+  for (var name in newMethods) {
+    db[name] = newMethods[name].bind(db);
   }
 
-  var promise = db.info()
-    .then(function (info) {
-      return "-session-" + info.db_name;
-    })
-    .then(db.registerDependentDatabase)
-    .then(function (db) {
-      sessionDBsByDBIdx.push(db);
+  var promise;
+  if (isOnlineAuthDB(db)) {
+    promise = Promise.resolve();
+  } else {
+    promise = db.info()
+      .then(function (info) {
+        return "-session-" + info.db_name;
+      })
+      .then(function (sessionDBName) {
+        sessionDBsByDBIdx.push(new db.constructor(sessionDBName));
 
-      return db.put(DESIGN_DOC);
-    })
-    .catch(function (err) {
-      if (err.status !== 409) {
-        throw err;
-      }
-    })
-    .then(function () {
-      //empty success value
-    });
+        return db.put(DESIGN_DOC);
+      })
+      .catch(function (err) {
+        if (err.status !== 409) {
+          throw err;
+        }
+      })
+      .then(function () {
+        //empty success value
+      });
+  }
 
   nodify(promise, callback);
   return promise;
 };
 
+function isOnlineAuthDB(db) {
+  return ["http", "https"].indexOf(db.type()) !== -1;
+}
+
+function processArgs(db, opts, callback) {
+  if (typeof opts === "function") {
+    callback = opts;
+    opts = {};
+  }
+  opts.sessionID = opts.sessionID || "default";
+  return {
+    db: db,
+    opts: opts,
+    callback: callback
+  };
+}
+
+var docApi = {};
 var api = {};
 
-api.put = function (doc, opts, callback) {
+docApi.put = function (doc, opts, callback) {
+  var db = this;
   var promise = modifyDoc(doc).then(function (newDoc) {
-    return originalMethodsForDB(this).put(newDoc, opts);
+    return originalMethodsForDB(db).put(newDoc, opts);
   });
   nodify(promise, callback);
   return promise;
@@ -98,6 +130,7 @@ function modifyDoc(doc) {
 
       return hashPassword(doc.password, doc.salt, doc.iterations);
     }).then(function (hash) {
+      delete doc.password;
       doc.derived_key = hash;
 
       return doc;
@@ -124,28 +157,30 @@ function hashPassword(password, salt, iterations) {
       if (err) {
         reject(err);
       } else {
-        resolve(derived_key);
+        resolve(derived_key.toString("hex"));
       }
     });
   });
 }
 
-api.post = function (doc, opts, callback) {
+docApi.post = function (doc, opts, callback) {
+  var db = this;
   var promise = modifyDoc(doc).then(function (newDoc) {
-    return originalMethodsForDB(this).post(newDoc, opts);
+    return originalMethodsForDB(db).post(newDoc, opts);
   });
   nodify(promise, callback);
   return promise;
 };
 
-api.bulkDocs = function (docs, opts, callback) {
+docApi.bulkDocs = function (docs, opts, callback) {
+  var db = this;
   if (!Array.isArray(docs)) {
     docs = docs.docs;
   }
   var promise = Promise.all(docs.map(function (doc) {
     return modifyDoc(doc);
   })).then(function (newDocs) {
-    return originalMethodsForDB(this).bulkDocs(newDocs, opts);
+    return originalMethodsForDB(db).bulkDocs(newDocs, opts);
   });
   nodify(promise, callback);
   return promise;
@@ -153,17 +188,17 @@ api.bulkDocs = function (docs, opts, callback) {
 
 api.signUp = function (username, password, opts, callback) {
   //opts: roles
-  var db = this;
+  var args = processArgs(this, opts, callback);
 
   var doc = {
     _id: docId(username),
     type: 'user',
     name: username,
     password: password,
-    roles: opts.roles || []
+    roles: args.opts.roles || []
   };
 
-  var promise = db.put(doc);
+  var promise = args.db.put(doc);
   nodify(promise, callback);
   return promise;
 };
@@ -173,125 +208,150 @@ function docId(username) {
 }
 
 api.logIn = function (username, password, opts, callback) {
-  var userDoc;
-  var db = this;
-  var sessionDB = sessionDBForDB(db);
-  var args = processArgs(opts, callback);
+  var args = processArgs(this, opts, callback);
+  var promise;
 
-  var promise = db.get(docId(username))
-    .then(function (doc) {
-      userDoc = doc;
-      return hashPassword(password, userDoc.salt, userDoc.iterations);
-    })
-    .then(function (derived_key) {
-      if (derived_key !== userDoc.derived_key) {
-        throw "invalid_password";
+  if (isOnlineAuthDB(args.db)) {
+    promise = httpQuery(args.db, {
+      method: "POST",
+      raw_path: "/_session",
+      body: JSON.stringify({
+        name: username,
+        password: password
+      }),
+      headers: {
+        "Content-Type": "application/json"
       }
-      return sessionDB.get(args.opts.sessionID).catch(function () {
-        //non-existing doc is fine
-        return {_id: args.opts.sessionID};
-      });
-    })
-    .then(function (sessionDoc) {
-      sessionDoc.username = userDoc.name;
-
-      return sessionDB.put(sessionDoc);
-    })
-    .then(function () {
-        return {
-          ok: true,
-          name: userDoc.name,
-          roles: userDoc.roles
-        };
-    })
-    .catch(function () {
-      throw new PouchPluginError({
-        status: 401,
-        name: "unauthorized",
-        message: "Name or password is incorrect."
-      });
+    }).then(function (resp) {
+      return JSON.parse(resp.body);
     });
+  } else {
+    var userDoc;
+    var sessionDB = sessionDBForDB(args.db);
+
+    promise = args.db.get(docId(username))
+      .then(function (doc) {
+        userDoc = doc;
+        return hashPassword(password, userDoc.salt, userDoc.iterations);
+      })
+      .then(function (derived_key) {
+        if (derived_key !== userDoc.derived_key) {
+          throw "invalid_password";
+        }
+        return sessionDB.get(args.opts.sessionID).catch(function () {
+          //non-existing doc is fine
+          return {_id: args.opts.sessionID};
+        });
+      })
+      .then(function (sessionDoc) {
+        sessionDoc.username = userDoc.name;
+
+        return sessionDB.put(sessionDoc);
+      })
+      .then(function () {
+          return {
+            ok: true,
+            name: userDoc.name,
+            roles: userDoc.roles
+          };
+      })
+      .catch(function () {
+        throw new PouchPluginError({
+          status: 401,
+          name: "unauthorized",
+          message: "Name or password is incorrect."
+        });
+      });
+  }
 
   nodify(promise, args.callback);
   return promise;
 };
 
-function processArgs(opts, callback) {
-  if (typeof opts === "function") {
-    callback = opts;
-    opts = {};
-  }
-  opts.sessionID = opts.sessionID || "default";
-  return {
-    opts: opts,
-    callback: callback
-  };
-}
-
 api.logOut = function (opts, callback) {
-  var db = this;
-  var args = processArgs(opts, callback);
-  var sessionDB = sessionDBForDB(db);
+  var args = processArgs(this, opts, callback);
+  var promise;
 
-  var promise = sessionDB.get(args.opts.sesssionID)
-    .then(function (doc) {
-      return sessionDB.remove(doc);
-    })
-    .catch(function () {
-      //fine, no session means already logged out.
-    })
-    .then(function () {
-      return {ok: true};
+  if (isOnlineAuthDB(args.db)) {
+    promise = httpQuery(args.db, {
+      method: "DELETE",
+      raw_path: "/_session"
+    }).then(function (resp) {
+      return JSON.parse(resp.body);
     });
+  } else {
+    var sessionDB = sessionDBForDB(args.db);
+
+    promise = sessionDB.get(args.opts.sessionID)
+      .then(function (doc) {
+        return sessionDB.remove(doc);
+      })
+      .catch(function () {
+        //fine, no session means already logged out.
+      })
+      .then(function () {
+        return {ok: true};
+      });
+  }
   nodify(promise, args.callback);
   return promise;
 };
 
 api.session = function (opts, callback) {
-  var db = this;
-  var args = processArgs(opts, callback);
-  var sessionDB = sessionDBForDB(db);
-  var resp = {
-    ok: true,
-    userCtx: {
-      name: null,
-      roles: [],
-    },
-    info: {
-      authentication_handlers: ["api"]
-    }
-  };
-
-  var promise = db.info()
-    .then(function (info) {
-      resp.info.authentication_db = info.db_name;
-
-      return sessionDB.get(args.opts.sesssionID);
-    })
-    .then(function (sessionDoc) {
-      return db.get(docId(sessionDoc.username));
-    })
-    .then(function (userDoc) {
-      resp.info.authenticated = "api";
-      resp.userCtx.name = userDoc.name;
-      resp.userCtx.roles = userDoc.roles;
-    }).catch(function () {
-      //resp is valid in its current state for an error, so do nothing
-    }).then(function () {
-      return resp;
+  var args = processArgs(this, opts, callback);
+  var promise;
+  if (isOnlineAuthDB(args.db)) {
+    promise = httpQuery(args.db, {
+      raw_path: "/_session",
+      method: "GET",
+    }).then(function (resp) {
+      return JSON.parse(resp.body);
     });
+  } else {
+    var sessionDB = sessionDBForDB(args.db);
+    var resp = {
+      ok: true,
+      userCtx: {
+        name: null,
+        roles: [],
+      },
+      info: {
+        authentication_handlers: ["api"]
+      }
+    };
+
+    promise = args.db.info()
+      .then(function (info) {
+        resp.info.authentication_db = info.db_name;
+
+        return sessionDB.get(args.opts.sessionID);
+      })
+      .then(function (sessionDoc) {
+        return args.db.get(docId(sessionDoc.username));
+      })
+      .then(function (userDoc) {
+        resp.info.authenticated = "api";
+        resp.userCtx.name = userDoc.name;
+        resp.userCtx.roles = userDoc.roles;
+      }).catch(function () {
+        //resp is valid in its current state for an error, so do nothing
+      }).then(function () {
+        return resp;
+      });
+  }
   nodify(promise, args.callback);
   return promise;
 };
 
-exports.uninstallAuthMethods = function (callback) {
+exports.stopUsingAsAuthenticationDB = function (callback) {
   var db = this;
 
   var dbIdx = dbs.indexOf(db);
+  if (dbIdx === -1) {
+    throw new Error("Not an authentication database.");
+  }
   dbs.splice(dbIdx, 1);
   var originalMethods = originalMethodsByDbIdx.splice(dbIdx, 1)[0];
-  var sessionDB = sessionDBsByDBIdx.splice(dbIdx, 1)[0];
-
   for (var name in api) {
     if (api.hasOwnProperty(name)) {
       delete db[name];
@@ -301,10 +361,17 @@ exports.uninstallAuthMethods = function (callback) {
 
   Validation.uninstallValidationMethods.call(db);
 
-  var promise = sessionDB.destroy()
-    .then(function () {
-      //empty success value
-    });
+  var promise;
+  if (isOnlineAuthDB(db)) {
+    promise = Promise.resolve();
+  } else {
+    var sessionDB = sessionDBsByDBIdx.splice(dbIdx, 1)[0];
+
+    promise = sessionDB.destroy()
+      .then(function () {
+        //empty success value
+      });
+  }
   nodify(promise, callback);
   return promise;
 };
