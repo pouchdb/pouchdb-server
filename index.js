@@ -23,7 +23,7 @@ var PouchPluginError = require("pouchdb-plugin-error");
 var normalizeHeaderCase = require("header-case-normalizer");
 
 if (typeof global.XMLHttpRequest === "undefined") {
-  global.XMLHttpRequest = require("xhr2");
+  global.XMLHttpRequest = require("xhr2"); //coverage: ignore
 }
 
 module.exports = function httpQuery(db, req) {
