@@ -28,78 +28,83 @@ var httpQuery = require("pouchdb-req-http-query");
 //to update: http://localhost:5984/_users/_design/_auth & remove _rev.
 var DESIGN_DOC = require("./designdoc.js");
 
-var dbs = [];
-var originalMethodsByDbIdx = [];
-var sessionDBsByDBIdx = [];
-
-function originalMethodsForDB(db) {
-  return originalMethodsByDbIdx[dbs.indexOf(db)];
+var dbData = {
+  dbs: [],
+  methodsByDBIdx: [],
+  sessionDBsByDBIdx: [],
+  isOnlineAuthDBsByDBIdx: []
+};
+function dbDataFor(db) {
+  var i = dbData.dbs.indexOf(db);
+  return {
+    methods: dbData.methodsByDBIdx[i],
+    sessionDB: dbData.sessionDBsByDBIdx[i],
+    isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i],
+  }
 }
 
-function sessionDBForDB(db) {
-  return sessionDBsByDBIdx[dbs.indexOf(db)];
-}
-
-exports.useAsAuthenticationDB = function (callback) {
-  var db = this;
+exports.useAsAuthenticationDB = function (opts, callback) {
+  var args = processArgs(this, opts, callback);
 
   try {
-    Validation.installValidationMethods.call(db);
+    Validation.installValidationMethods.call(args.db);
   } catch (err) {
     throw new Error("Already in use as an authentication database.");
   }
 
-  dbs.push(db);
-  originalMethodsByDbIdx.push({
-    put: db.put.bind(db),
-    post: db.post.bind(db),
-    bulkDocs: db.bulkDocs.bind(db)
-  });
+  var i = dbData.dbs.push(args.db) -1;
+  dbData.methodsByDBIdx[i] = {
+    put: args.db.put.bind(args.db),
+    post: args.db.post.bind(args.db),
+    bulkDocs: args.db.bulkDocs.bind(args.db)
+  };
+  if (typeof args.opts.isOnlineAuthDB === "undefined") {
+    args.opts.isOnlineAuthDB = ["http", "https"].indexOf(args.db.type()) !== -1;
+  }
+  dbData.isOnlineAuthDBsByDBIdx[i] = args.opts.isOnlineAuthDB;
 
   var newMethods = extend({}, api);
-  if (!isOnlineAuthDB(db)) {
+  if (!args.opts.isOnlineAuthDB) {
     newMethods = extend(newMethods, docApi);
   }
   for (var name in newMethods) {
-    db[name] = newMethods[name].bind(db);
+    args.db[name] = newMethods[name].bind(args.db);
   }
 
   var promise;
-  if (isOnlineAuthDB(db)) {
+  if (args.opts.isOnlineAuthDB) {
     promise = Promise.resolve();
+    //keep the indexes in sync
+    dbData.sessionDBsByDBIdx[i] = null;
   } else {
-    promise = db.info()
+    promise = args.db.info()
       .then(function (info) {
         return "-session-" + info.db_name;
       })
       .then(function (sessionDBName) {
-        sessionDBsByDBIdx.push(new db.constructor(sessionDBName));
+        var PouchDB = args.db.constructor;
+        dbData.sessionDBsByDBIdx[i] = new PouchDB(sessionDBName);
 
-        return db.put(DESIGN_DOC);
+        return args.db.put(DESIGN_DOC);
       })
       .catch(function (err) {
         if (err.status !== 409) {
           throw err;
         }
       })
-      .then(function () {
-        //empty success value
-      });
+      .then(function () {/* empty success value */});
   }
 
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
-
-function isOnlineAuthDB(db) {
-  return ["http", "https"].indexOf(db.type()) !== -1;
-}
 
 function processArgs(db, opts, callback) {
   if (typeof opts === "function") {
     callback = opts;
     opts = {};
   }
+  opts = opts || {};
   opts.sessionID = opts.sessionID || "default";
   return {
     db: db,
@@ -112,11 +117,11 @@ var docApi = {};
 var api = {};
 
 docApi.put = function (doc, opts, callback) {
-  var db = this;
+  var args = processArgs(this, opts, callback);
   var promise = modifyDoc(doc).then(function (newDoc) {
-    return originalMethodsForDB(db).put(newDoc, opts);
+    return dbDataFor(args.db).methods.put(newDoc, args.opts);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -143,7 +148,7 @@ function generateSalt() {
   return new Promise(function (resolve, reject) {
     crypto.randomBytes(16, function (err, buf) {
       if (err) {
-        reject(err);
+        reject(err); //coverage: ignore
       } else {
         resolve(buf.toString("hex"));
       }
@@ -155,7 +160,7 @@ function hashPassword(password, salt, iterations) {
   return new Promise(function (resolve, reject) {
     crypto.pbkdf2(password, salt, iterations, 20, function (err, derived_key) {
       if (err) {
-        reject(err);
+        reject(err); //coverage: ignore
       } else {
         resolve(derived_key.toString("hex"));
       }
@@ -164,25 +169,25 @@ function hashPassword(password, salt, iterations) {
 }
 
 docApi.post = function (doc, opts, callback) {
-  var db = this;
+  var args = processArgs(this, opts, callback);
   var promise = modifyDoc(doc).then(function (newDoc) {
-    return originalMethodsForDB(db).post(newDoc, opts);
+    return dbDataFor(args.db).methods.post(newDoc, args.opts);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
 docApi.bulkDocs = function (docs, opts, callback) {
-  var db = this;
+  var args = processArgs(this, opts, callback);
   if (!Array.isArray(docs)) {
     docs = docs.docs;
   }
   var promise = Promise.all(docs.map(function (doc) {
     return modifyDoc(doc);
   })).then(function (newDocs) {
-    return originalMethodsForDB(db).bulkDocs(newDocs, opts);
+    return dbDataFor(args.db).methods.bulkDocs(newDocs, args.opts);
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -199,7 +204,7 @@ api.signUp = function (username, password, opts, callback) {
   };
 
   var promise = args.db.put(doc);
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -209,9 +214,10 @@ function docId(username) {
 
 api.logIn = function (username, password, opts, callback) {
   var args = processArgs(this, opts, callback);
+  var data = dbDataFor(args.db);
   var promise;
 
-  if (isOnlineAuthDB(args.db)) {
+  if (data.isOnlineAuthDB) {
     promise = httpQuery(args.db, {
       method: "POST",
       raw_path: "/_session",
@@ -227,7 +233,6 @@ api.logIn = function (username, password, opts, callback) {
     });
   } else {
     var userDoc;
-    var sessionDB = sessionDBForDB(args.db);
 
     promise = args.db.get(docId(username))
       .then(function (doc) {
@@ -238,7 +243,7 @@ api.logIn = function (username, password, opts, callback) {
         if (derived_key !== userDoc.derived_key) {
           throw "invalid_password";
         }
-        return sessionDB.get(args.opts.sessionID).catch(function () {
+        return data.sessionDB.get(args.opts.sessionID).catch(function () {
           //non-existing doc is fine
           return {_id: args.opts.sessionID};
         });
@@ -246,7 +251,7 @@ api.logIn = function (username, password, opts, callback) {
       .then(function (sessionDoc) {
         sessionDoc.username = userDoc.name;
 
-        return sessionDB.put(sessionDoc);
+        return data.sessionDB.put(sessionDoc);
       })
       .then(function () {
           return {
@@ -270,9 +275,10 @@ api.logIn = function (username, password, opts, callback) {
 
 api.logOut = function (opts, callback) {
   var args = processArgs(this, opts, callback);
+  var data = dbDataFor(args.db);
   var promise;
 
-  if (isOnlineAuthDB(args.db)) {
+  if (data.isOnlineAuthDB) {
     promise = httpQuery(args.db, {
       method: "DELETE",
       raw_path: "/_session"
@@ -280,15 +286,11 @@ api.logOut = function (opts, callback) {
       return JSON.parse(resp.body);
     });
   } else {
-    var sessionDB = sessionDBForDB(args.db);
-
-    promise = sessionDB.get(args.opts.sessionID)
+    promise = data.sessionDB.get(args.opts.sessionID)
       .then(function (doc) {
-        return sessionDB.remove(doc);
+        return data.sessionDB.remove(doc);
       })
-      .catch(function () {
-        //fine, no session means already logged out.
-      })
+      .catch(function () {/* fine, no session -> already logged out */})
       .then(function () {
         return {ok: true};
       });
@@ -299,8 +301,10 @@ api.logOut = function (opts, callback) {
 
 api.session = function (opts, callback) {
   var args = processArgs(this, opts, callback);
+  var data = dbDataFor(args.db);
+
   var promise;
-  if (isOnlineAuthDB(args.db)) {
+  if (data.isOnlineAuthDB) {
     promise = httpQuery(args.db, {
       raw_path: "/_session",
       method: "GET",
@@ -308,7 +312,6 @@ api.session = function (opts, callback) {
       return JSON.parse(resp.body);
     });
   } else {
-    var sessionDB = sessionDBForDB(args.db);
     var resp = {
       ok: true,
       userCtx: {
@@ -324,7 +327,7 @@ api.session = function (opts, callback) {
       .then(function (info) {
         resp.info.authentication_db = info.db_name;
 
-        return sessionDB.get(args.opts.sessionID);
+        return data.sessionDB.get(args.opts.sessionID);
       })
       .then(function (sessionDoc) {
         return args.db.get(docId(sessionDoc.username));
@@ -343,15 +346,15 @@ api.session = function (opts, callback) {
   return promise;
 };
 
-exports.stopUsingAsAuthenticationDB = function (callback) {
+exports.stopUsingAsAuthenticationDB = function (opts, callback) {
   var db = this;
 
-  var dbIdx = dbs.indexOf(db);
-  if (dbIdx === -1) {
+  var i = dbData.dbs.indexOf(db);
+  if (i === -1) {
     throw new Error("Not an authentication database.");
   }
-  dbs.splice(dbIdx, 1);
-  var originalMethods = originalMethodsByDbIdx.splice(dbIdx, 1)[0];
+  dbData.dbs.splice(i, 1);
+  var originalMethods = dbData.methodsByDBIdx.splice(i, 1)[0];
   for (var name in api) {
     if (api.hasOwnProperty(name)) {
       delete db[name];
@@ -361,16 +364,14 @@ exports.stopUsingAsAuthenticationDB = function (callback) {
 
   Validation.uninstallValidationMethods.call(db);
 
+  var sessionDB = dbData.sessionDBsByDBIdx.splice(i, 1)[0];
+  var isOnlineAuthDB = dbData.isOnlineAuthDBsByDBIdx.splice(i, 1)[0];
   var promise;
-  if (isOnlineAuthDB(db)) {
+  if (isOnlineAuthDB) {
     promise = Promise.resolve();
   } else {
-    var sessionDB = sessionDBsByDBIdx.splice(dbIdx, 1)[0];
-
     promise = sessionDB.destroy()
-      .then(function () {
-        //empty success value
-      });
+      .then(function () {/* empty success value */});
   }
   nodify(promise, callback);
   return promise;
