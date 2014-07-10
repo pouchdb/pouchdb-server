@@ -55,10 +55,10 @@ exports.startReplicator = function (callback) {
     }));
   }
 
-  dbData.dbs.push(db);
-  dbData.activeReplicationsByDbIdxAndId.push({});
-  dbData.activeReplicationSignaturesByDbIdxAndRepId.push({});
-  dbData.changedByReplicatorByDbIdx.push([]);
+  var i = dbData.dbs.push(db) - 1;
+  dbData.activeReplicationsByDbIdxAndId[i] = {};
+  dbData.activeReplicationSignaturesByDbIdxAndRepId[i] = {};
+  dbData.changedByReplicatorByDbIdx[i] = [];
 
   var promise = db.put(DESIGN_DOC)
     .catch(function () {/*that's fine, probably already there*/})
@@ -84,7 +84,7 @@ exports.startReplicator = function (callback) {
       changes.on("change", function (change) {
         onChanged(db, change.doc);
       });
-      dbData.changesByDbIdx.push(changes);
+      dbData.changesByDbIdx[i] = changes;
     });
 
   nodify(promise, callback);
