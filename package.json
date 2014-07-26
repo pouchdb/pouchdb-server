@@ -24,7 +24,7 @@
     "raw-body": "^1.1.5"
   },
   "devDependencies": {
-    "express": "4.x",
+    "express": "4.6.1",
     "morgan": "^1.0.1",
     "pouchdb": "pouchdb/pouchdb",
     "pouchdb-server": "^0.4.0"
