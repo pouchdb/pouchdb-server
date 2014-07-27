@@ -36,7 +36,7 @@ app.use(corser.create({
 }));
 
 if (useAuth) {
-  app.all('*', function (req, res, next) {
+  app.use(function (req, res, next) {
     var auth = req.headers.authorization;
     // Default read-only
     if (req.user || req.method === 'GET') return next();
