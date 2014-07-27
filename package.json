@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "corser": "~2.0.0",
+    "basic-auth": "~1.0.0",
     "couchdb-harness": "*",
     "express": "4.6.1",
     "express-pouchdb": "*",

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var express = require('express')
+  , auth    = require('basic-auth')
   , corser  = require('corser')
   , favicon = require('serve-favicon')
   , path    = require('path')
@@ -38,24 +39,11 @@ app.use(corser.create({
 
 if (useAuth) {
   app.use(function (req, res, next) {
-    var auth = req.headers.authorization;
     // Default read-only
     if (req.user || req.method === 'GET') return next();
     // Otherwise authenticate
-    if (!auth) return res.send(401);
-
-    var parts = auth.split(' ');
-    if (parts.length !== 2) return res.send(400);
-    var scheme = parts[0]
-      , credentials = new Buffer(parts[1], 'base64').toString()
-      , index = credentials.indexOf(':');
-
-    if (scheme !== 'Basic' || index < 0) return res.send(400);
-
-    var reqUser = credentials.slice(0, index)
-      , reqPass = credentials.slice(index + 1);
-
-    if (reqUser == user && reqPass == pass) return next();
+    var creds = auth(req);
+    if (creds && creds.name == user && creds.pass == pass) return next();
     res.send(401);
   });
 }
