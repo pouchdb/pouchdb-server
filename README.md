@@ -112,7 +112,8 @@ Want to help me make this thing awesome? Great! Here's how you should get starte
 4. `npm install`
 
 Please make your changes on a separate branch whose name reflects your changes, push them to your fork, and open a pull request!
-I haven't defined a formal styleguide, so please take care to maintain the existing coding style.
+
+For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](https://github.com/pouchdb/pouchdb/blob/master/CONTRIBUTING.md).
 
 ### Fauxton
 
