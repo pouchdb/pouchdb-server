@@ -2,6 +2,7 @@
 
 var express = require('express')
   , corser  = require('corser')
+  , favicon = require('serve-favicon')
   , path    = require('path')
   , mkdirp  = require('mkdirp')
   , argv    = require('optimist').argv
@@ -27,7 +28,7 @@ if (argv.h || argv.help) {
   process.exit(1);
 }
 
-app.use('/favicon.ico', express.static(__dirname + '/../favicon.ico'));
+app.use(favicon(__dirname + '/../favicon.ico'));
 app.use(require('morgan')(logger));
 app.use(corser.create({
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
