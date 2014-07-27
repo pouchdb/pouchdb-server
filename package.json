@@ -23,6 +23,7 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
+    "basic-auth": "~1.0.0",
     "corser": "~1.2.0",
     "couchdb-harness": "*",
     "express": "4.6.1",
