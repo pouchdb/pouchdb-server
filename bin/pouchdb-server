@@ -14,11 +14,7 @@ var express = require('express')
   , levelBackend = argv['level-backend']
   , levelPrefix  = argv['level-prefix']
   , useAuth = user && pass
-  , app     = express()
-  , corserRequestListener = corser.create({
-      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
-      supportsCredentials: true
-  });
+  , app     = express();
 
 // Help, display usage information
 if (argv.h || argv.help) {
@@ -33,16 +29,10 @@ if (argv.h || argv.help) {
 
 app.use('/favicon.ico', express.static(__dirname + '/../favicon.ico'));
 app.use(require('morgan')(logger));
-app.use(function (req, res, next) {
-  corserRequestListener(req, res, function () {
-    if (req.method == 'OPTIONS') {
-      // End CORS preflight request.
-      res.writeHead(204);
-      return res.end();
-    }
-    next();
-  });
-});
+app.use(corser.create({
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
+  supportsCredentials: true
+}));
 
 if (useAuth) {
   app.all('*', function (req, res, next) {

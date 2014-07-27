@@ -23,7 +23,7 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "corser": "~1.2.0",
+    "corser": "~2.0.0",
     "couchdb-harness": "*",
     "express": "4.6.1",
     "express-pouchdb": "*",
