@@ -32,7 +32,11 @@ if (argv.h || argv.help) {
 }
 
 app.use('/favicon.ico', express.static(__dirname + '/../favicon.ico'));
-app.use(require('morgan')(logger));
+
+if (logger !== 'off') {
+  app.use(require('morgan')(logger));
+}
+
 app.use(function (req, res, next) {
   corserRequestListener(req, res, function () {
     if (req.method == 'OPTIONS') {
