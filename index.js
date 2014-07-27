@@ -278,8 +278,8 @@ app.put('/:db', jsonParser, function (req, res, next) {
     registerDB(name, db);
     var loc = req.protocol
       + '://'
-      + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
-      + req.host
+      + ((req.hostname === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
+      + req.hostname
       + '/' + name;
     res.location(loc);
     res.send(201, { ok: true });
@@ -559,8 +559,8 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
     }
     var loc = req.protocol
       + '://'
-      + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
-      + req.host
+      + ((req.hostname === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
+      + req.hostname
       + '/' + req.params.db
       + '/' + response.id;
     res.location(loc);
