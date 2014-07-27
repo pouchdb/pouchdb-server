@@ -31,7 +31,8 @@ app.use('/favicon.ico', express.static(__dirname + '/../favicon.ico'));
 app.use(require('morgan')(logger));
 app.use(corser.create({
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
-  supportsCredentials: true
+  supportsCredentials: true,
+  requestHeaders: corser.simpleRequestHeaders.concat(["Authorization", "Origin", "Referer"])
 }));
 
 if (useAuth) {
