@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./bin/pouchdb-server -p 6984 -l off $SERVER_ARGS &
+./bin/pouchdb-server -p 6984 $SERVER_ARGS &
 POUCHDB_SERVER_PID=$!
 
 cd node_modules/pouchdb/
