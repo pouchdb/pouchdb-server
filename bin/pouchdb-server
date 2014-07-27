@@ -30,12 +30,15 @@ if (argv.h || argv.help) {
 }
 
 app.use(favicon(__dirname + '/../favicon.ico'));
-app.use(require('morgan')(logger));
 app.use(corser.create({
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
   supportsCredentials: true,
   requestHeaders: corser.simpleRequestHeaders.concat(["Authorization", "Origin", "Referer"])
 }));
+
+if (logger !== 'off') {
+  app.use(require('morgan')(logger));
+}
 
 if (useAuth) {
   app.use(function (req, res, next) {
