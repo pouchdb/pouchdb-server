@@ -25,10 +25,6 @@ module.exports = function(PouchToUse) {
   return app;
 };
 
-function isPouchError(obj) {
-  return obj.error && obj.error === true;
-}
-
 function registerDB(name, db) {
   db.installValidationMethods();
   dbs[name] = db;
@@ -122,7 +118,7 @@ app.use(function (req, res, next) {
   var send = res.send;
   res.send = function() {
     var args = Array.prototype.slice.call(arguments).map(function (arg) {
-      if (typeof arg === 'object' && isPouchError(arg)) {
+      if (arg && arg.name && arg.message) {
         var _arg = {
           error: arg.name,
           reason: arg.message
