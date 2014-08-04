@@ -1,10 +1,13 @@
 
-var express   = require('express')
+var startTime = new Date().getTime()
+  , express   = require('express')
   , rawBody   = require('raw-body')
   , fs        = require('fs')
   , path      = require('path')
   , extend    = require('extend')
   , pkg       = require('./package.json')
+  , multiparty= require('multiparty')
+  , Promise   = require('bluebird')
   , dbs       = {}
   , uuids     = require('./uuids')
   , histories = {}
@@ -322,6 +325,7 @@ app.delete('/:db', function (req, res, next) {
 app.get('/:db', function (req, res, next) {
   req.db.info(function (err, info) {
     if (err) return res.send(404, err);
+    info.instance_start_time = startTime.toString();
     res.send(200, info);
   });
 });
@@ -377,36 +381,28 @@ app.get('/:db/_changes', function (req, res, next) {
   // This is a pretty inefficient way to do it.. Revisit?
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
-  function longpoll(err, data) {
-    if (err) return res.send(err.status, err);
-    if (data.results && data.results.length) {
-      data.last_seq = Math.max.apply(Math, data.results.map(function (r) {
-        return r.seq;
-      }));
-      res.send(200, data);
-    } else {
-      delete req.query.complete;
-      req.query.live = true;
-      var query = req.db.changes(req.query);
-      query.once('change', function (change) {
-        res.send(200, change);
-        query.cancel();
-      });
-    }
-  }
-
-  if (req.query.feed) {
+  if (req.query.feed === 'continuous') {
     req.socket.setTimeout(86400 * 1000);
-    req.query.complete = longpoll;
-  } else {
+    var written = false;
+    req.db.changes(req.query).on('change', function (change) {
+      written = true;
+      res.write(JSON.stringify(change) + '\n');
+    }).on('complete', function (complete) {
+      written = true;
+      res.end();
+    }).on('error', function (err) {
+      if (!written) {
+        res.send(err.status || 500, err);
+      }
+    });
+    
+  } else { // straight shot, not continuous
     req.query.complete = function (err, response) {
       if (err) return res.send(err.status, err);
       res.send(200, response);
     };
+    req.db.changes(req.query);
   }
-
-  req.db.changes(req.query);
-
 });
 
 // DB Compaction
@@ -542,23 +538,69 @@ app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
 
 // Create or update document that has an ID
 app.put('/:db/:id(*)', function (req, res, next) {
-  req.body._id = req.body._id || req.query.id;
-  if (!req.body._id) {
-    req.body._id = (!!req.params.id && req.params.id !== 'null')
-      ? req.params.id
-      : null;
-  }
-  req.db.put(req.body, req.query, function (err, response) {
-    if (err) return res.send(err.status || 500, err);
+  
+  function onResponse(err, response) {
+    if (err) {
+      return res.send(err.status || 500, err);
+    }
     var loc = req.protocol
       + '://'
       + ((req.host === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
       + req.host
       + '/' + req.params.db
-      + '/' + req.body._id;
+      + '/' + response.id;
     res.location(loc);
     res.send(201, response);
-  });
+  }
+  
+  if (/^multipart\/related/.test(req.headers['content-type'])) {
+    // multipart
+    var form = new multiparty.Form();
+    var stream = require('stream').PassThrough();
+    stream.headers = req.headers;
+    form.parse(stream, function(err, fields, files) {
+      if (err) {
+        return res.send(500, err);
+      }
+      var doc = JSON.parse(fields.null[0]);
+      Promise.resolve().then(function () {
+        if (!files.null) { // no attachments
+          return;
+        }
+        doc._attachments = {};
+        return Promise.all(files.null.map(function (file) {
+          return new Promise(function (resolve, reject) {
+            var inlineFile = {
+              content_type: file.headers['content-type'],
+            }
+            fs.readFile(file.path, function (err, fileContent) {
+              if (err) {
+                return reject(err);
+              }
+              inlineFile.data = fileContent.toString('base64');
+              doc._attachments[file.originalFilename] = inlineFile;
+              resolve();
+            });
+          });
+        }));
+      }).then (function () {
+        req.db.put(doc, req.query, onResponse);
+      }).catch(function (err) {
+        res.send(500, err);
+      });
+    });
+    stream.write(req.rawBody);
+    stream.end();
+  } else {
+    // normal PUT
+    req.body._id = req.body._id || req.query.id;
+    if (!req.body._id) {
+      req.body._id = (!!req.params.id && req.params.id !== 'null')
+        ? req.params.id
+        : null;
+    }
+    req.db.put(req.body, req.query, onResponse);
+  }
 });
 
 // Create a document
