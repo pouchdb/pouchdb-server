@@ -1,7 +1,7 @@
 {
   "name": "express-pouchdb",
   "description": "Express submodule with a CouchDB style REST interface to PouchDB.",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "homepage": "https://github.com/pouchdb/express-pouchdb",
   "author": {
     "name": "Nick Thompson",
