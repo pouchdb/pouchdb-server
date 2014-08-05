@@ -1,17 +1,18 @@
 
-var startTime = new Date().getTime()
-  , express   = require('express')
-  , rawBody   = require('raw-body')
-  , fs        = require('fs')
-  , path      = require('path')
-  , extend    = require('extend')
-  , pkg       = require('./package.json')
-  , multiparty= require('multiparty')
-  , Promise   = require('bluebird')
-  , dbs       = {}
-  , uuids     = require('./uuids')
-  , histories = {}
-  , app       = express();
+var startTime  = new Date().getTime()
+  , express    = require('express')
+  , jsonParser = require('body-parser').json()
+  , rawBody    = require('raw-body')
+  , fs         = require('fs')
+  , path       = require('path')
+  , extend     = require('extend')
+  , pkg        = require('./package.json')
+  , multiparty = require('multiparty')
+  , Promise    = require('bluebird')
+  , dbs        = {}
+  , uuids      = require('./uuids')
+  , histories  = {}
+  , app        = express();
 
 var Pouch;
 module.exports = function(PouchToUse) {
@@ -59,7 +60,7 @@ function setDBOnReq(db_name, req, res, next) {
 
 function expressReqToCouchDBReq(req) {
   return {
-    body: req.rawBody || "undefined",
+    body: req.body ? JSON.stringify(req.body) : "undefined",
     cookie: req.cookies || {},
     headers: req.headers,
     method: req.method,
@@ -97,21 +98,7 @@ app.use(function (req, res, next) {
       req.query[prop] = JSON.parse(req.query[prop]);
     } catch (e) {}
   }
-  // Custom bodyParsing because express.bodyParser() chokes
-  // on 'malformed' requests, and also because we need the
-  // rawBody for attachments
-  rawBody(req, {
-    length: req.headers['content-length']
-  }, function (err, string) {
-    if (err)
-      return next(err)
-
-    req.rawBody = string
-    try {
-      req.body = JSON.parse(string.toString('utf8'))
-    } catch (err) {}
-    next()
-  })
+  next();
 });
 app.use(function (req, res, next) {
   var _res = res;
@@ -224,7 +211,7 @@ app.get('/_all_dbs', function (req, res, next) {
 });
 
 // Replicate a database
-app.post('/_replicate', function (req, res, next) {
+app.post('/_replicate', jsonParser, function (req, res, next) {
 
   var source = req.body.source
     , target = req.body.target
@@ -238,7 +225,7 @@ app.post('/_replicate', function (req, res, next) {
     
     var historyObj = extend(true, {
       start_time: startDate.toJSON(),
-      end_time: new Date().toJSON(),
+      end_time: new Date().toJSON()
     }, response);
     
     var currentHistories = [];
@@ -276,7 +263,7 @@ app.post('/_replicate', function (req, res, next) {
 });
 
 // Create a database.
-app.put('/:db', function (req, res, next) {
+app.put('/:db', jsonParser, function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
@@ -327,7 +314,7 @@ app.get('/:db', function (req, res, next) {
 });
 
 // Bulk docs operations
-app.post('/:db/_bulk_docs', function (req, res, next) {
+app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
 
   // Maybe this should be moved into the leveldb adapter itself? Not sure
   // how uncommon it is for important options to come through in the body
@@ -351,7 +338,7 @@ app.post('/:db/_bulk_docs', function (req, res, next) {
 });
 
 // All docs operations
-app.all('/:db/_all_docs', function (req, res, next) {
+app.all('/:db/_all_docs', jsonParser, function (req, res, next) {
   if (req.method !== 'GET' && req.method !== 'POST') return next();
 
   // Check that the request body, if present, is an object.
@@ -402,7 +389,7 @@ app.get('/:db/_changes', function (req, res, next) {
 });
 
 // DB Compaction
-app.post('/:db/_compact', function (req, res, next) {
+app.post('/:db/_compact', jsonParser, function (req, res, next) {
   req.db.compact(function (err, response) {
     if (err) return res.send(500, err);
     res.send(200, response);
@@ -410,7 +397,7 @@ app.post('/:db/_compact', function (req, res, next) {
 });
 
 // Revs Diff
-app.post('/:db/_revs_diff', function (req, res, next) {
+app.post('/:db/_revs_diff', jsonParser, function (req, res, next) {
   req.db.revsDiff(req.body || {}, function (err, diffs) {
     if (err) return res.send(400, err);
 
@@ -419,7 +406,7 @@ app.post('/:db/_revs_diff', function (req, res, next) {
 });
 
 // Temp Views
-app.post('/:db/_temp_view', function (req, res, next) {
+app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
   if (req.body.map) req.body.map = (new Function('return ' + req.body.map))();
   req.query.conflicts = true;
   req.db.query(req.body, req.query, function (err, response) {
@@ -447,29 +434,47 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
 });
 
 // Query design document list handler
-app.all('/:db/_design/:id/_list/:func/:view', function (req, res, next) {
+app.all('/:db/_design/:id/_list/:func/:view', jsonParser, function (req, res, next) {
   var query = [req.params.id, req.params.func, req.params.view].join("/");
   var opts = expressReqToCouchDBReq(req);
   req.db.list(query, opts, sendCouchDBResp.bind(null, res));
 });
 
 // Query design document show handler
-app.all('/:db/_design/:id/_show/:func/:docid?', function (req, res, next) {
+app.all('/:db/_design/:id/_show/:func/:docid?', jsonParser, function (req, res, next) {
   var query = [req.params.id, req.params.func, req.params.docid].join("/");
   var opts = expressReqToCouchDBReq(req);
   req.db.show(query, opts, sendCouchDBResp.bind(null, res));
 });
 
 // Query design document update handler
-app.all('/:db/_design/:id/_update/:func/:docid?', function (req, res, next) {
+app.all('/:db/_design/:id/_update/:func/:docid?', jsonParser, function (req, res, next) {
   var query = [req.params.id, req.params.func, req.params.docid].join("/");
   var opts = expressReqToCouchDBReq(req);
   req.db.update(query, opts, sendCouchDBResp.bind(null, res));
 });
 
-// Put a document attachment
-app.put('/:db/:id/:attachment(*)', function (req, res, next) {
+var parseRawBody = function(req, res, next) {
+  // Custom bodyParsing because bodyParser chokes
+  // on 'malformed' requests, and also because we need the
+  // rawBody for attachments
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+  rawBody(req, {
+    length: req.headers['content-length']
+  }, function (err, string) {
+    if (err) {
+      return next(err)
+    }
+    req.rawBody = string
+    next()
+  });
+}
 
+// Put a document attachment
+app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
@@ -483,7 +488,7 @@ app.put('/:db/:id/:attachment(*)', function (req, res, next) {
   req.db.putAttachment(name, attachment, rev, body, type, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
-  });
+  });    
 });
 
 // Retrieve a document attachment
@@ -533,7 +538,7 @@ app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
 });
 
 // Create or update document that has an ID
-app.put('/:db/:id(*)', function (req, res, next) {
+app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
   
   function onResponse(err, response) {
     if (err) {
@@ -550,43 +555,36 @@ app.put('/:db/:id(*)', function (req, res, next) {
   }
   
   if (/^multipart\/related/.test(req.headers['content-type'])) {
-    // multipart
+    // multipart, assuming it's also new_edits=false for now
+    var doc;
+    var promise = Promise.resolve();
     var form = new multiparty.Form();
-    var stream = require('stream').PassThrough();
-    stream.headers = req.headers;
-    form.parse(stream, function(err, fields, files) {
-      if (err) {
-        return res.send(500, err);
-      }
-      var doc = JSON.parse(fields.null[0]);
-      Promise.resolve().then(function () {
-        if (!files.null) { // no attachments
-          return;
-        }
-        doc._attachments = {};
-        return Promise.all(files.null.map(function (file) {
-          return new Promise(function (resolve, reject) {
-            var inlineFile = {
-              content_type: file.headers['content-type'],
-            }
-            fs.readFile(file.path, function (err, fileContent) {
-              if (err) {
-                return reject(err);
-              }
-              inlineFile.data = fileContent.toString('base64');
-              doc._attachments[file.originalFilename] = inlineFile;
-              resolve();
-            });
-          });
-        }));
-      }).then (function () {
+    form.on('error', function (err) {
+      return res.send(500, err);
+    }).on('field', function (_, field) {
+      doc = JSON.parse(field);
+      doc._attachments = {};
+    }).on('file', function (_, file) {
+      var type = file.headers['content-type'];
+      var filename = file.originalFilename;
+      promise.then(function () {
+        return Promise.promisify(fs.readFile)(file.path);
+      }).then(function (body) {
+        doc._attachments = doc._attachments || {};
+        doc._attachments[filename] = {
+          content_type: type,
+          data: body
+        };
+      });
+    }).on('close', function () {
+      console.log('close');
+      promise.then(function () {
         req.db.put(doc, req.query, onResponse);
       }).catch(function (err) {
-        res.send(500, err);
+        res.send(err.status || 500, err);
       });
     });
-    stream.write(req.rawBody);
-    stream.end();
+    form.parse(req);
   } else {
     // normal PUT
     req.body._id = req.body._id || req.query.id;
@@ -600,7 +598,7 @@ app.put('/:db/:id(*)', function (req, res, next) {
 });
 
 // Create a document
-app.post('/:db', function (req, res, next) {
+app.post('/:db', jsonParser, function (req, res, next) {
   req.body._id = uuids(1)[0];
   req.db.put(req.body, req.query, function (err, response) {
     if (err) return res.send(err.status || 500, err);
