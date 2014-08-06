@@ -567,7 +567,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
     }).on('file', function (_, file) {
       var type = file.headers['content-type'];
       var filename = file.originalFilename;
-      promise.then(function () {
+      promise = promise.then(function () {
         return Promise.promisify(fs.readFile)(file.path);
       }).then(function (body) {
         doc._attachments = doc._attachments || {};
