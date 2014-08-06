@@ -365,19 +365,32 @@ app.get('/:db/_changes', function (req, res, next) {
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
   if (req.query.feed === 'continuous') {
+    var heartbeat;
     req.socket.setTimeout(86400 * 1000);
     var written = false;
+    req.query.live = true;
     req.db.changes(req.query).on('change', function (change) {
       written = true;
       res.write(JSON.stringify(change) + '\n');
     }).on('complete', function (complete) {
       written = true;
       res.end();
+      if (heartbeat) {
+        clearInterval(heartbeat);
+      }
     }).on('error', function (err) {
       if (!written) {
         res.send(err.status || 500, err);
+        if (heartbeat) {
+          clearInterval(heartbeat);
+        }
       }
     });
+    if  (typeof req.query.heartbeat === 'number') {
+      heartbeat = setInterval(function () {
+        res.write('\n');
+      }, req.query.heartbeat)
+    }
     
   } else { // straight shot, not continuous
     req.query.complete = function (err, response) {
