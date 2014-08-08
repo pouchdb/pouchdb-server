@@ -331,7 +331,7 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
   }
 
   req.db.bulkDocs(req.body, opts, function (err, response) {
-    if (err) return res.send(500, err);
+    if (err) return res.send(err.status || 500, err);
     res.send(201, response);
   });
 
