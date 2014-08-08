@@ -590,7 +590,6 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
         };
       });
     }).on('close', function () {
-      console.log('close');
       promise.then(function () {
         req.db.put(doc, req.query, onResponse);
       }).catch(function (err) {
