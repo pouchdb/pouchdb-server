@@ -572,25 +572,26 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
     var doc;
     var promise = Promise.resolve();
     var form = new multiparty.Form();
+    var attachments = {};
     form.on('error', function (err) {
       return res.send(500, err);
     }).on('field', function (_, field) {
       doc = JSON.parse(field);
-      doc._attachments = {};
     }).on('file', function (_, file) {
       var type = file.headers['content-type'];
       var filename = file.originalFilename;
       promise = promise.then(function () {
         return Promise.promisify(fs.readFile)(file.path);
       }).then(function (body) {
-        doc._attachments = doc._attachments || {};
-        doc._attachments[filename] = {
+        attachments[filename] = {
           content_type: type,
           data: body
         };
       });
     }).on('close', function () {
       promise.then(function () {
+        // merge, since it could be a mix of stubs and non-stubs
+        doc._attachments = extend(true, doc._attachments, attachments);
         req.db.put(doc, req.query, onResponse);
       }).catch(function (err) {
         res.send(err.status || 500, err);
