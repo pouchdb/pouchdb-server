@@ -85,7 +85,7 @@ function doValidation(db, newDoc, options, callback) {
     //CouchDB does the checking for itself. Validate succesful.
     return Promise.resolve();
   }
-  if (String(newDoc._id).indexOf("_design/") === 0) {
+  if (String(newDoc._id).indexOf("_design/") === 0 || String(newDoc._id).indexOf("_local") === 0) {
     //a design document -> always validates succesful.
     return Promise.resolve();
   }
