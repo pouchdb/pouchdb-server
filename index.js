@@ -45,7 +45,7 @@ exports.update = function (updatePath, options, callback) {
     pathEnd.push.apply(pathEnd, docId.split("/"));
   }
   var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
-  return reqPromise.then(function (req) {
+  var promise = reqPromise.then(function (req) {
     //the only option that isn't related to the request object.
     delete req.withValidation;
 
@@ -54,16 +54,14 @@ exports.update = function (updatePath, options, callback) {
     var h = req.headers;
     h["Content-Type"] = h["Content-Type"] || "application/x-www-form-urlencoded";
 
-    var promise;
     if (["http", "https"].indexOf(db.type()) === -1) {
-      promise = offlineQuery(db, designDocName, updateName, docId, req, options);
+      return offlineQuery(db, designDocName, updateName, docId, req, options);
     } else {
-      promise = httpQuery(db, req);
+      return httpQuery(db, req);
     }
-
-    nodify(promise, callback);
-    return promise;
   });
+  nodify(promise, callback);
+  return promise;
 };
 
 function offlineQuery(db, designDocName, updateName, docId, req, options) {
@@ -83,33 +81,31 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
     return null;
   });
 
-  return Promise.all([ddocPromise, docPromise]).then(function (args) {
-    var designDoc = args[0];
-    var doc = args[1];
-
-    //run update function
-    var func = coucheval.evaluate(designDoc, {}, designDoc.updates[updateName]);
-    var result;
-    try {
-      result = func.call(designDoc, doc, req);
-    } catch (e) {
-      throw coucheval.wrapExecutionError(e);
-    }
-    var savePromise;
-    //save result[0] if necessary
-    if (result[0] === null) {
-      savePromise = Promise.resolve(200);
-    } else {
-      var methodName = options.withValidation ? "validatingPut" : "put";
-      savePromise = db[methodName](result[0], options).then(function () {
-        return 201;
+  return Promise.all([ddocPromise, docPromise])
+    .then(Function.prototype.apply.bind(function (designDoc, doc) {
+      //run update function
+      var func = coucheval.evaluate(designDoc, {}, designDoc.updates[updateName]);
+      var result;
+      try {
+        result = func.call(designDoc, doc, req);
+      } catch (e) {
+        throw coucheval.wrapExecutionError(e);
+      }
+      var savePromise;
+      //save result[0] if necessary
+      if (result[0] === null) {
+        savePromise = Promise.resolve(200);
+      } else {
+        var methodName = options.withValidation ? "validatingPut" : "put";
+        savePromise = db[methodName](result[0], options).then(function () {
+          return 201;
+        });
+      }
+      //then return the result
+      return savePromise.then(function (status) {
+        var resp = completeRespObj(result[1]);
+        resp.code = status;
+        return resp;
       });
-    }
-    //then return the result
-    return savePromise.then(function (status) {
-      var resp = completeRespObj(result[1]);
-      resp.code = status;
-      return resp;
-    });
-  });
+    }, null));
 }
