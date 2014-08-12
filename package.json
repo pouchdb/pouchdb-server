@@ -15,6 +15,7 @@
   "dependencies": {
     "bluebird": "^2.2.2",
     "body-parser": "^1.5.2",
+    "compression": "^1.0.10",
     "extend": "^1.2.1",
     "multiparty": "^3.3.1",
     "node-uuid": "1.4.1",
