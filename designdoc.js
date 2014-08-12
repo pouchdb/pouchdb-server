@@ -1,3 +1,4 @@
+//to update: http://localhost:5984/_users/_design/_auth & remove _rev.
 module.exports = {
   _id: "_design/_auth",
   language: "javascript",

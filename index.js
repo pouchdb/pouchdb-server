@@ -25,8 +25,8 @@ var Validation = require("pouchdb-validation");
 var PouchPluginError = require("pouchdb-plugin-error");
 var httpQuery = require("pouchdb-req-http-query");
 
-//to update: http://localhost:5984/_users/_design/_auth & remove _rev.
 var DESIGN_DOC = require("./designdoc.js");
+var ADMIN_RE = /^-pbkdf2-([\da-f]+),([\da-f]+),([0-9]+)$/;
 
 var dbData = {
   dbs: [],
@@ -40,7 +40,7 @@ function dbDataFor(db) {
     methods: dbData.methodsByDBIdx[i],
     sessionDB: dbData.sessionDBsByDBIdx[i],
     isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i],
-  }
+  };
 }
 
 exports.useAsAuthenticationDB = function (opts, callback) {
@@ -79,11 +79,13 @@ exports.useAsAuthenticationDB = function (opts, callback) {
   } else {
     promise = args.db.info()
       .then(function (info) {
-        return "-session-" + info.db_name;
+        return "-session-" + encodeURIComponent(info.db_name);
       })
       .then(function (sessionDBName) {
-        var PouchDB = args.db.constructor;
-        dbData.sessionDBsByDBIdx[i] = new PouchDB(sessionDBName);
+        return args.db.registerDependentDatabase(sessionDBName);
+      }).then(function (info) {
+        info.db.auto_compaction = true;
+        dbData.sessionDBsByDBIdx[i] = info.db;
 
         return args.db.put(DESIGN_DOC);
       })
@@ -106,11 +108,36 @@ function processArgs(db, opts, callback) {
   }
   opts = opts || {};
   opts.sessionID = opts.sessionID || "default";
+  if (typeof opts.admins === "undefined") {
+    opts.admins = {};
+  } else {
+    opts.admins = parseAdmins(opts.admins);
+  }
   return {
     db: db,
     opts: opts,
     callback: callback
   };
+}
+
+function parseAdmins(admins) {
+  var result = {};
+  for (var name in admins) {
+    if (admins.hasOwnProperty(name)) {
+      var info = admins[name].match(ADMIN_RE);
+      if (info) {
+        result[name] = {
+          password_scheme: "pbkdf2",
+          derived_key: info[1],
+          salt: info[2],
+          iterations: parseInt(info[3], 10),
+          roles: ["_admin"],
+          name: name
+        };
+      }
+    }
+  }
+  return result;
 }
 
 var docApi = {};
@@ -232,10 +259,25 @@ api.logIn = function (username, password, opts, callback) {
       return JSON.parse(resp.body);
     });
   } else {
-    var userDoc;
+    var userDoc, userDocPromise;
 
-    promise = args.db.get(docId(username))
+    userDoc = args.opts.admins[username];
+    if (typeof userDoc === "undefined") {
+      userDocPromise = args.db.get(docId(username), {conflicts: true});
+    } else {
+      userDocPromise = Promise.resolve(userDoc);
+    }
+
+    promise = userDocPromise
       .then(function (doc) {
+        if ((doc._conflicts || {}).length) {
+          throw new PouchPluginError({
+            status: 401,
+            name: "unauthorized",
+            message: "User document conflicts must be resolved before" +
+              "the document is used for authentication purposes."
+          });
+        }
         userDoc = doc;
         return hashPassword(password, userDoc.salt, userDoc.iterations);
       })
@@ -260,12 +302,15 @@ api.logIn = function (username, password, opts, callback) {
             roles: userDoc.roles
           };
       })
-      .catch(function () {
-        throw new PouchPluginError({
-          status: 401,
-          name: "unauthorized",
-          message: "Name or password is incorrect."
-        });
+      .catch(function (err) {
+        if (!(err instanceof PouchPluginError)) {
+          err = new PouchPluginError({
+            status: 401,
+            name: "unauthorized",
+            message: "Name or password is incorrect."
+          });
+        }
+        throw err;
       });
   }
 
@@ -322,6 +367,10 @@ api.session = function (opts, callback) {
         authentication_handlers: ["api"]
       }
     };
+    if (Object.keys(args.opts.admins).length === 0) {
+      //admin party
+      resp.userCtx.roles = ["_admin"];
+    }
 
     promise = args.db.info()
       .then(function (info) {
@@ -330,6 +379,10 @@ api.session = function (opts, callback) {
         return data.sessionDB.get(args.opts.sessionID);
       })
       .then(function (sessionDoc) {
+        var adminDoc = args.opts.admins[sessionDoc.username];
+        if (typeof adminDoc !== "undefined") {
+          return adminDoc;
+        }
         return args.db.get(docId(sessionDoc.username));
       })
       .then(function (userDoc) {
