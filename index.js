@@ -48,16 +48,15 @@ exports.show = function (showPath, options, callback) {
     pathEnd.push.apply(pathEnd, docId.split("/"));
   }
   var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
-  return reqPromise.then(function (req) {
-    var promise;
+  var promise = reqPromise.then(function (req) {
     if (["http", "https"].indexOf(db.type()) === -1) {
-      promise = offlineQuery(db, designDocName, showName, docId, req, options);
+      return offlineQuery(db, designDocName, showName, docId, req, options);
     } else {
-      promise = httpQuery(db, req);
+      return httpQuery(db, req);
     }
-    nodify(promise, callback);
-    return promise;
   });
+  nodify(promise, callback);
+  return promise;
 };
 
 function offlineQuery(db, designDocName, showName, docId, req, options) {
@@ -76,13 +75,11 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
     //doc might not exist - that's ok and expected.
     return null;
   });
-  return Promise.all([ddocPromise, docPromise]).then(function (args) {
-    //all data collected - do the magic that is a show function
-    var designDoc = args[0];
-    var doc = args[1];
+  return Promise.all([ddocPromise, docPromise])
+    .then(Function.prototype.apply.bind(function (designDoc, doc) {
+      //all data collected - do the magic that is a show function
+      var source = designDoc.shows[showName];
 
-    var source = designDoc.shows[showName];
-
-    return render(source, designDoc, doc, req);
-  });
+      return render(source, designDoc, doc, req);
+    }, null));
 }
