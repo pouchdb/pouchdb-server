@@ -33,6 +33,7 @@ var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 var extend = require("extend");
 var PouchPluginError = require("pouchdb-plugin-error");
+var routePouchDB = require("pouchdb-route");
 
 exports.rewriteResultRequestObject = function (rewritePath, options, callback) {
   var args = parseArgs(this, rewritePath, options, callback);
@@ -90,7 +91,7 @@ function buildRewriteResultReqObj(db, designDocName, rewriteUrl, options) {
       }
       return {
         method: rewrite.method || "*",
-        from: splitUrl(rewrite.from || "*"),
+        from: splitUrl(typeof rewrite.from == "undefined" ? "*" : rewrite.from),
         to: splitUrl(rewrite.to),
         query: rewrite.query || {}
       };
@@ -239,120 +240,8 @@ function offlineRewrite(currentDb, designDocName, rewriteUrl, options) {
 
   var resultReqPromise = buildRewriteResultReqObj(currentDb, designDocName, rewriteUrl, options);
   return resultReqPromise.then(function (req) {
-    //Mapping urls to PouchDB/plug-in functions. Based on:
-    //http://docs.couchdb.org/en/latest/http-api.html
-    if (req.path[0] === "..") {
-      throw404();
-    }
-    var rootFunc = {
-      "_all_dbs": (PouchDB.allDbs || throw404).bind(PouchDB),
-      "_replicate": PouchDB.replicate.bind(PouchDB, req.query)
-    }[req.path[0]];
-    if (rootFunc) {
-      return rootFunc();
-    }
-    var db = new PouchDB(decodeURIComponent(req.path[0]));
-    var localCallWithBody = callWithBody.bind(null, db, req);
-    if (req.path.length === 1) {
-      var post = withValidation ? db.validatingPost : db.post;
-      var defaultDBFunc = db.info.bind(db);
-      return ({
-        "DELETE": db.destroy.bind(db),
-        "POST": localCallWithBody.bind(null, post, req.query)
-      }[req.method] || defaultDBFunc)();
-    }
-
-    var localRouteCRUD = routeCRUD.bind(null, db, withValidation, req);
-    var defaultFunc = localRouteCRUD.bind(null, req.path[1], req.path.slice(2));
-    return ({
-      "_all_docs": db.allDocs.bind(db, req.query),
-      "_bulk_docs": localCallWithBody.bind(null, db.bulkDocs, req.query),
-      "_changes": db.changes.bind(db, req.query),
-      "_compact": db.compact.bind(db),
-      "_design": function () {
-        var url = req.path[2] + "/" + req.path.slice(4).join("/");
-        var subDefaultFunc = localRouteCRUD.bind(null, "_design/" + req.path[2], req.path.slice(3));
-        return ({
-          "_list": (db.list || throw404).bind(db, url, req),
-          "_rewrite": (db.rewrite || throw404).bind(db, url, req),
-          "_search": (db.search || throw404).bind(db, url, req.query),
-          "_show": (db.show || throw404).bind(db, url, req),
-          "_spatial": (db.spatial || throw404).bind(db, url, req.query),
-          "_update": (db.update || throw404).bind(db, url, req),
-          "_view": db.query.bind(db, url, req.query)
-        }[req.path[3]] || subDefaultFunc)();
-      },
-      "_local": localRouteCRUD.bind(null, "_local/" + req.path[2], req.path.slice(3)),
-      "_revs_diff": localCallWithBody.bind(null, db.revsDiff),
-      "_temp_view": localCallWithBody.bind(null, db.query, req.query),
-      "_view_cleanup": db.viewCleanup.bind(db, req.query)
-    }[req.path[1]] || defaultFunc)();
+    return routePouchDB(PouchDB, req, {withValidation: withValidation});
   });
-}
-
-function callWithBody(db, req, func) {
-  var args = Array.prototype.slice.call(arguments, 3);
-  args.unshift(JSON.parse(req.body));
-  return func.apply(db, args);
-}
-
-function routeCRUD(db, withValidation, req, docId, remainingPath) {
-  function throw405() {
-    throw new PouchPluginError({
-      status: 405,
-      name: "method_not_allowed",
-      message: "method '" + req.method + "' not allowed."
-    });
-  }
-  function callAttachment(isPut) {
-    var funcs;
-    var args = [docId, remainingPath[0], req.query.rev];
-    if (isPut) {
-      args.push(req.body);
-      args.push(req.headers["Content-Type"]);
-
-      funcs = {
-        true: db.validatingPutAttachment,
-        false: db.putAttachment
-      };
-    } else {
-      funcs = {
-        true: db.validatingRemoveAttachment,
-        false: db.removeAttachment
-      };
-    }
-    if (withValidation) {
-      args.push(req.query);
-    }
-    return funcs[withValidation].apply(db, args);
-  }
-
-  //document level
-  if (remainingPath.length === 0) {
-    var localCallWithBody = callWithBody.bind(null, db, req);
-    var put = withValidation ? db.validatingPut : db.put;
-    var remove = withValidation ? db.validatingRemove : db.remove;
-    return ({
-      "GET": function () {
-        return db.get(docId, req.query);
-      },
-      "PUT": localCallWithBody.bind(null, put, req.query),
-      "DELETE": localCallWithBody.bind(null, remove, req.query)
-    }[req.method] || throw405)();
-  }
-  //attachment level
-  if (remainingPath.length === 1) {
-    return ({
-      "GET": function () {
-        return db.getAttachment(docId, remainingPath[0], req.query);
-      },
-      "PUT": callAttachment.bind(null, true),
-      "DELETE": callAttachment.bind(null, false),
-
-    }[req.method] || throw405)();
-  }
-  //not document & not attachment level
-  throw404();
 }
 
 function httpRewrite(db, designDocName, rewriteUrl, options) {
