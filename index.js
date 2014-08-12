@@ -44,16 +44,15 @@ exports.list = function (listPath, options, callback) {
     pathEnd.push(viewName);
   }
   var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
-  return reqPromise.then(function (req) {
-    var promise;
+  var promise = reqPromise.then(function (req) {
     if (["http", "https"].indexOf(db.type()) === -1) {
-      promise = offlineQuery(db, designDocName, listName, viewName, req, options);
+      return offlineQuery(db, designDocName, listName, viewName, req, options);
     } else {
-      promise = httpQuery(db, req);
+      return httpQuery(db, req);
     }
-    nodify(promise, callback);
-    return promise;
   });
+  nodify(promise, callback);
+  return promise;
 };
 
 function offlineQuery(db, designDocName, listName, viewName, req, options) {
@@ -78,7 +77,7 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
   });
   var viewPromise = db.query(designDocName + "/" + viewName, options.query);
 
-  //not Promise.all because the order matters.
+  //not Promise.all because the error order matters.
   var args = [];
   return viewPromise.then(function (viewResp) {
     args.push(viewResp);
@@ -86,10 +85,9 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
     return ddocPromise;
   }).then(function (ddoc) {
     args.push(ddoc);
-  }).then(function () {
-    var viewResp = args[0];
-    var designDoc = args[1];
 
+    return args;
+  }).then(Function.prototype.apply.bind(function (viewResp, designDoc) {
     var head = {
       offset: viewResp.offset,
       total_rows: viewResp.total_rows
@@ -121,5 +119,5 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
       resp.headers["Transfer-Encoding"] = "chunked";
     }
     return resp;
-  });
+  }, null));
 }
