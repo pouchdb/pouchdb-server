@@ -1,0 +1,34 @@
+{
+	"name": "pouchdb-route",
+	"version": "0.1.0",
+	"main": "index.js",
+	"description": "Given a CouchDB request object, return the response of PouchDB's equivalent function.",
+	"repository": {
+		"type": "bzr",
+		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
+	},
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"request",
+		"route",
+		"routing"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-plugin-error": "^0.2.0",
+		"extend": "^1.2.1"
+	},
+	"devDependencies": {
+		"es3ify": "^0.1.3"
+	},
+	"browserify": {
+		"transform": [
+			"es3ify"
+		]
+	}
+}
