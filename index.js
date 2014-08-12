@@ -97,11 +97,10 @@ function doValidation(db, newDoc, options, callback) {
     var completeOptionsPromise = completeValidationOptions(db, options);
     var oldDocPromise = oldDoc(db, newDoc._id);
 
-    return Promise.all([completeOptionsPromise, oldDocPromise]).then(function (args) {
-      var completeOptions = args[0];
-      var oldDoc = args[1];
-      return validate(validationFuncs, newDoc, oldDoc, completeOptions);
-    });
+    return Promise.all([completeOptionsPromise, oldDocPromise])
+      .then(Function.prototype.apply.bind(function (completeOptions, oldDoc) {
+        return validate(validationFuncs, newDoc, oldDoc, completeOptions);
+      }, null));
   });
 }
 
