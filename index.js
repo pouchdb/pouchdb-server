@@ -21,6 +21,7 @@
 var Promise = require("pouchdb-promise");
 var PouchPluginError = require("pouchdb-plugin-error");
 var normalizeHeaderCase = require("header-case-normalizer");
+var extend = require("extend");
 
 if (typeof global.XMLHttpRequest === "undefined") {
   global.XMLHttpRequest = require("xhr2"); //coverage: ignore
@@ -33,12 +34,22 @@ module.exports = function httpQuery(db, req) {
         return;
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        var err = JSON.parse(xhr.responseText);
-        reject(new PouchPluginError({
-          "name": err.error,
-          "message": err.reason,
-          "status": xhr.status
-        }));
+        try {
+          var err = JSON.parse(xhr.responseText);
+          reject(new PouchPluginError({
+            "name": err.error,
+            "message": err.reason,
+            "status": xhr.status
+          }));
+        } catch (err) {
+          //error isn't valid json. Probably some connection error
+          //(which is hard to test without mocking XHR -> not worth it)
+          reject(new PouchPluginError({ //coverage: ignore
+            "name": "unknown_error",
+            "message": xhr.responseText,
+            "status": 500
+          }));
+        }
         return;
       }
 
@@ -62,16 +73,22 @@ module.exports = function httpQuery(db, req) {
 
     //strips the database from the requested_path
     var url = db.getUrl().split("/").slice(0, -2).join("/") + req.raw_path;
+    var pouchHeaders = (db.getHeaders || fakeGetHeaders)();
+    var headers = extend({}, pouchHeaders, req.headers);
 
     var xhr = new XMLHttpRequest();
     xhr.withCredentials = true;
     xhr.onreadystatechange = callback;
     xhr.open(req.method, url, true);
-    for (var name in req.headers) {
-      if (req.headers.hasOwnProperty(name)) {
-        xhr.setRequestHeader(name, req.headers[name]);
+    for (var name in headers) {
+      if (headers.hasOwnProperty(name)) {
+        xhr.setRequestHeader(name, headers[name]);
       }
     }
     xhr.send(req.body === "undefined" ? null : req.body);
   });
 };
+
+function fakeGetHeaders() {
+  return {};
+}
