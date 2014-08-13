@@ -364,34 +364,71 @@ app.get('/:db/_changes', function (req, res, next) {
   // This is a pretty inefficient way to do it.. Revisit?
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
-  if (req.query.feed === 'continuous') {
-    var heartbeat;
-    req.socket.setTimeout(86400 * 1000);
+  if (req.query.feed === 'continuous' || req.query.feed === 'longpoll') {
+    var heartbeatInterval;
+    // 60000 is the CouchDB default
+    // TODO: figure out if we can make this default less aggressive
+    var heartbeat = (typeof req.query.heartbeat === 'number') ? req.query.heartbeat : 6000;
     var written = false;
-    req.query.live = true;
-    req.db.changes(req.query).on('change', function (change) {
+    heartbeatInterval = setInterval(function () {
       written = true;
-      res.write(JSON.stringify(change) + '\n');
-    }).on('complete', function (complete) {
-      written = true;
-      res.end();
-      if (heartbeat) {
-        clearInterval(heartbeat);
+      res.write('\n');
+    }, heartbeat);
+
+    var cleanup = function () {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
       }
-    }).on('error', function (err) {
-      if (!written) {
-        res.send(err.status || 500, err);
-        if (heartbeat) {
-          clearInterval(heartbeat);
+    };
+
+    if (req.query.feed === 'continuous') {
+      req.query.live = req.query.continuous = true;
+      req.db.changes(req.query).on('change', function (change) {
+        written = true;
+        res.write(JSON.stringify(change) + '\n');
+      }).on('error', function (err) {
+        if (!written) {
+          res.send(err.status || 500, err);
+        } else {
+          res.end();
         }
-      }
-    });
-    if  (typeof req.query.heartbeat === 'number') {
-      heartbeat = setInterval(function () {
-        res.write('\n');
-      }, req.query.heartbeat)
+        cleanup();
+      });
+    } else { // longpoll
+
+      // first check if there are >0. if so, return them immediately
+      req.query.live = req.query.continuous = false;
+      req.db.changes(req.query).on('complete', function (complete) {
+        if (!complete.results) {
+          // canceled, ignore
+          cleanup();
+        } else if (complete.results.length) {
+          written = true;
+          res.write(JSON.stringify(complete) + '\n');
+          res.end();
+          cleanup();
+        } else { // do the longpolling
+          req.query.live = req.query.continuous = true;
+          var changes = req.db.changes(req.query).on('change', function (change) {
+            written = true;
+            res.write(JSON.stringify({results: [change], last_seq: change.seq}) + '\n');
+            res.end();
+            changes.cancel();
+            cleanup();
+          }).on('error', function (err) {
+            if (!written) {
+              res.send(err.status || 500, err);
+            }
+            cleanup();
+          });
+        }
+      }).on('error', function (err) {
+        if (!written) {
+          res.send(err.status || 500, err);
+        }
+        cleanup();
+      });
     }
-    
   } else { // straight shot, not continuous
     req.query.complete = function (err, response) {
       if (err) return res.send(err.status, err);
