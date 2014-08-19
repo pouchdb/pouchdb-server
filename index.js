@@ -18,7 +18,7 @@
 
 var Promise = require("pouchdb-promise");
 var nodify = require("promise-nodify");
-var uuid = require("node-uuid");
+var uuid = require("random-uuid-v4");
 var Validation = require("pouchdb-validation");
 var equals = require("equals");
 var extend = require("extend");
@@ -133,7 +133,7 @@ function onChanged(db, doc) {
     if (repId) {
       doc.replication_id = repId;
     } else {
-      doc.replication_id = uuid.v4();
+      doc.replication_id = uuid();
       doc.replication_state = "triggered";
     }
   }
