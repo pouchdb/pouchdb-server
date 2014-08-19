@@ -21,9 +21,8 @@ var extend = require("extend");
 var isEmpty = require("is-empty");
 var querystring = require("querystring");
 var Promise = require("pouchdb-promise");
-var uuid = require("node-uuid");
+var uuid = require("random-uuid-v4");
 var buildUserContextObject = require("./couchusercontextobject.js");
-var url = require("url");
 var normalizeHeaderCase = require("header-case-normalizer");
 
 module.exports = function buildRequestObject(db, pathEnd, options) {
@@ -36,7 +35,7 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
 
   return Promise.all([pathPromise, infoPromise, userCtxPromise]).then(function (args) {
     args.push(getHost(db));
-    args.push(uuid.v4());
+    args.push(uuid());
     args.push(options);
     return actuallyBuildRequestObject.apply(null, args);
   });
@@ -44,7 +43,8 @@ module.exports = function buildRequestObject(db, pathEnd, options) {
 
 function getHost(db) {
   try {
-    return url.parse(db.getUrl()).host;
+    var url = decodeURI(db.getUrl());
+    return url.split("://")[1].split("/")[0].split("@").pop();
   } catch (err) {
     return "localhost:5984";
   }
