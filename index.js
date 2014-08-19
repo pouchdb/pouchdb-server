@@ -20,7 +20,7 @@ var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var nodify = require("promise-nodify");
 
-var uuid = require("node-uuid");
+var uuid = require("random-uuid-v4");
 var Promise = require("pouchdb-promise");
 var PouchPluginError = require("pouchdb-plugin-error");
 
@@ -174,7 +174,7 @@ exports.validatingPut = function (doc, options, callback) {
 exports.validatingPost = function (doc, options, callback) {
   var args = processArgs(this, callback, options);
 
-  doc._id = doc._id || uuid.v4();
+  doc._id = doc._id || uuid();
   var promise = doValidation(args.db, doc, args.options).then(function () {
     return methods(args.db).post(doc, args.options);
   });
@@ -207,7 +207,7 @@ exports.validatingBulkDocs = function (bulkDocs, options, callback) {
   }
 
   var validations = bulkDocs.map(function (doc) {
-    doc._id = doc._id || uuid.v4();
+    doc._id = doc._id || uuid();
     var validationPromise = doValidation(args.db, doc, args.options);
 
     return validationPromise.then(function (resp) {
