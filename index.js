@@ -17,7 +17,8 @@
 "use strict";
 
 var Promise = require("pouchdb-promise");
-var crypto = require("crypto");
+var crypto = require("crypto-lite").crypto;
+var secureRandom = require("secure-random");
 var extend = require("extend");
 
 var nodify = require("promise-nodify");
@@ -171,16 +172,18 @@ function modifyDoc(doc) {
   return Promise.resolve(doc);
 }
 
+function arrayToString(array) {
+  var result = "";
+  for (var i = 0; i < array.length; i += 1) {
+    result += ((array[i] & 0xFF) + 0x100).toString(16);
+  }
+  return result;
+}
+
 function generateSalt() {
-  return new Promise(function (resolve, reject) {
-    crypto.randomBytes(16, function (err, buf) {
-      if (err) {
-        reject(err); //coverage: ignore
-      } else {
-        resolve(buf.toString("hex"));
-      }
-    });
-  });
+  var arr = secureRandom(16);
+  var result = arrayToString(arr);
+  return Promise.resolve(result);
 }
 
 function hashPassword(password, salt, iterations) {
