@@ -339,6 +339,15 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
 
 });
 
+// Ensure all commits are written to disk
+app.post('/:db/_ensure_full_commit', function (req, res, next) {
+  // TODO: implement
+  res.send(201, {
+    ok: true, 
+    instance_start_time: startTime.toString()
+  });
+});
+
 // All docs operations
 app.all('/:db/_all_docs', jsonParser, function (req, res, next) {
   if (req.method !== 'GET' && req.method !== 'POST') return next();
