@@ -22,8 +22,11 @@
 	"author": "Marten de Vries",
 	"dependencies": {
 		"extend": "^1.2.1",
+		"pouchdb-promise": "^0.0.0",
 		"promise-nodify": "^1.0.0",
-		"pouchdb-req-http-query": "^0.1.6"
+		"pouchdb-req-http-query": "^0.1.6",
+		"pouchdb-wrappers": "^0.1.0",
+		"pouchdb-plugin-error": "^0.2.0"
 	},
 	"devDependencies": {
 		"browserify": "^4.1.8",
