@@ -18,31 +18,11 @@
 
 var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
-var nodify = require("promise-nodify");
+var wrappers = require("pouchdb-wrappers");
+var PouchPluginError = require("pouchdb-plugin-error");
 
 var uuid = require("random-uuid-v4");
 var Promise = require("pouchdb-promise");
-var PouchPluginError = require("pouchdb-plugin-error");
-
-var dbs = [];
-var methodNames = ["put", "post", "remove", "bulkDocs", "putAttachment", "removeAttachment"];
-var methodsByDbsIdx = [];
-
-function methods(db) {
-  var index = dbs.indexOf(db);
-  if (index === -1) {
-    return methodsFromDb(db);
-  }
-  return methodsByDbsIdx[index];
-}
-
-function methodsFromDb(db) {
-  var meths = {};
-  methodNames.forEach(function (name) {
-    meths[name] = db[name].bind(db);
-  });
-  return meths;
-}
 
 function oldDoc(db, id) {
   return db.get(id, {revs: true}).catch(function () {
@@ -150,157 +130,114 @@ function parseValidationFunctions(resp) {
   return validationFuncs;
 }
 
-function processArgs(db, callback, options) {
-  if (typeof options === "function") {
-    callback = options;
-    options = {};
-  }
-  return {
-    db: db,
-    callback: callback,
-    options: options
-  };
-}
-
-exports.validatingPut = function (doc, options, callback) {
-  var args = processArgs(this, callback, options);
-  var promise = doValidation(args.db, doc, args.options).then(function () {
-    return methods(args.db).put(doc, args.options);
-  });
-  nodify(promise, args.callback);
-  return promise;
+var wrapperApi = {};
+wrapperApi.put = function (orig, args) {
+  return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
-exports.validatingPost = function (doc, options, callback) {
-  var args = processArgs(this, callback, options);
-
-  doc._id = doc._id || uuid();
-  var promise = doValidation(args.db, doc, args.options).then(function () {
-    return methods(args.db).post(doc, args.options);
-  });
-  nodify(promise, args.callback);
-  return promise;
+wrapperApi.post = function (orig, args) {
+  args.doc.id = args.doc.id || uuid();
+  return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
-exports.validatingRemove = function (doc, options, callback) {
-  var args = processArgs(this, callback, options);
-
-  doc._deleted = true;
-  var promise = doValidation(args.db, doc, args.options).then(function () {
-    return methods(args.db).remove(doc, args.options);
-  });
-  nodify(promise, args.callback);
-  return promise;
+wrapperApi.remove = function (orig, args) {
+  args.doc._deleted = true;
+  return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
-exports.validatingBulkDocs = function (bulkDocs, options, callback) {
+wrapperApi.bulkDocs = function (original, args) {
   //the ``all_or_nothing`` attribute on ``bulkDocs`` is unsupported.
   //Also, the result array might not be in the same order as
-  //``bulkDocs.docs``
-  var args = processArgs(this, callback, options);
+  //``bulkDocs.docs`` argument.
 
   var done = [];
   var notYetDone = [];
 
-  if (!Array.isArray(bulkDocs)) {
-    bulkDocs = bulkDocs.docs;
-  }
-
-  var validations = bulkDocs.map(function (doc) {
+  var validations = args.docs.map(function (doc) {
     doc._id = doc._id || uuid();
     var validationPromise = doValidation(args.db, doc, args.options);
 
-    return validationPromise.then(function (resp) {
-      notYetDone.push(doc);
-    }).catch(function (err) {
-      err.id = doc._id;
-      done.push(err);
+    return validationPromise
+      .then(function (resp) {
+        notYetDone.push(doc);
+      })
+      .catch(function (err) {
+        err.id = doc._id;
+        done.push(err);
+      });
+  });
+  return Promise.all(validations)
+    .then(function () {
+      args.docs = notYetDone;
+
+      return original();
+    })
+    .then(function (insertedDocs) {
+      return done.concat(insertedDocs);
     });
-  });
-  var allValidationsPromise = Promise.all(validations).then(function () {
-    return methods(args.db).bulkDocs(notYetDone, args.options);
-  }).then(function (insertedDocs) {
-    return done.concat(insertedDocs);
-  });
-  nodify(allValidationsPromise, args.callback);
-  return allValidationsPromise;
 };
 
-var vpa = function (docId, attachmentId, rev, attachment, type, options, callback) {
-  var args = processArgs(this, callback, options);
+wrapperApi.putAttachment = function (orig, args) {
+  return args.db.get(args.docId, {rev: args.rev, revs: true})
+    .catch(function (err) {
+      return {_id: args.docId};
+    })
+    .then(function (doc) {
+      //validate the doc + attachment
+      doc._attachments = doc._attachments || {};
+      doc._attachments[args.attachmentId] = {
+        content_type: args.type,
+        data: args.doc
+      };
 
-  //get the doc
-  var promise = args.db.get(docId, {rev: rev, revs: true}).catch(function (err) {
-    return {_id: docId};
-  }).then(function (doc) {
-    //validate the doc + attachment
-    doc._attachments = doc._attachments || {};
-    doc._attachments[attachmentId] = {
-      content_type: type,
-      data: attachment,
-    };
-    return doValidation(args.db, doc, args.options);
-  }).then(function () {
-    //save the attachment
-    return methods(args.db).putAttachment(docId, attachmentId, rev, attachment, type);
-  });
-  nodify(promise, args.callback);
-  return promise;
+      return doValidation(args.db, doc, args.options);
+    })
+    .then(orig);
 };
-exports.validatingPutAttachment = vpa;
 
-var vra = function (docId, attachmentId, rev, options, callback) {
-  var args = processArgs(this, callback, options);
-  //get the doc
-  var promise = args.db.get(docId, {rev: rev, revs: true}).then(function (doc) {
-    //validate the doc without attachment
-    delete doc._attachments[attachmentId];
+wrapperApi.removeAttachment = function (orig, args) {
+  return args.db.get(args.docId, {rev: args.rev, revs: true})
+    .then(function (doc) {
+      //validate the doc without attachment
+      delete doc._attachments[args.attachmentId];
 
-    return doValidation(args.db, doc, args.options);
-  }).then(function () {
-    //remove the attachment
-    return methods(args.db).removeAttachment(docId, attachmentId, rev);
-  });
-  nodify(promise, args.callback);
-  return promise;
+      return doValidation(args.db, doc, args.options);
+    })
+    .then(orig);
 };
-exports.validatingRemoveAttachment = vra;
+
+Object.keys(wrapperApi).forEach(function (name) {
+  var exportName = "validating" + name[0].toUpperCase() + name.substr(1);
+  var orig = function () {
+    return this[name].apply(this, arguments);
+  };
+  exports[exportName] = wrappers.createWrapperMethod(name, orig, wrapperApi[name]);
+});
 
 exports.installValidationMethods = function () {
   var db = this;
 
-  if (dbs.indexOf(db) !== -1) {
+  try {
+    wrappers.installWrapperMethods(db, wrapperApi);
+  } catch (err) {
     throw new PouchPluginError({
       status: 500,
       name: "already_installed",
       message: "Validation methods are already installed on this database."
     });
   }
-
-  dbs.push(db);
-  methodsByDbsIdx.push(methodsFromDb(db));
-  methodNames.forEach(function (name) {
-    db[name] = exports["validating" + name[0].toUpperCase() + name.substr(1)].bind(db);
-  });
 };
 
 exports.uninstallValidationMethods = function () {
   var db = this;
 
-  var index = dbs.indexOf(db);
-  if (index === -1) {
+  try {
+    wrappers.uninstallWrapperMethods(db, wrapperApi);
+  } catch (err) {
     throw new PouchPluginError({
       status: 500,
       name: "already_not_installed",
       message: "Validation methods are already not installed on this database."
     });
   }
-  var meths = methods(db);
-  methodNames.forEach(function (name) {
-    db[name] = meths[name];
-  });
-
-  //cleanup
-  dbs.splice(index, 1);
-  methodsByDbsIdx.splice(index, 1);
 };
