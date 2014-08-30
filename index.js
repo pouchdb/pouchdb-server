@@ -5,7 +5,7 @@
 	you may not use this file except in compliance with the License.
 	You may obtain a copy of the License at
 
-	http://www.apache.or6g/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 	Unless required by applicable law or agreed to in writing, software
 	distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ var crypto = require("crypto-lite").crypto;
 var secureRandom = require("secure-random");
 var extend = require("extend");
 
+var wrappers = require("pouchdb-wrappers");
 var nodify = require("promise-nodify");
 var Validation = require("pouchdb-validation");
 var PouchPluginError = require("pouchdb-plugin-error");
@@ -28,17 +29,16 @@ var httpQuery = require("pouchdb-req-http-query");
 
 var DESIGN_DOC = require("./designdoc.js");
 var ADMIN_RE = /^-pbkdf2-([\da-f]+),([\da-f]+),([0-9]+)$/;
+var IS_HASH_RE = /^-(?:pbkdf2|hashed)-/;
 
 var dbData = {
   dbs: [],
-  methodsByDBIdx: [],
   sessionDBsByDBIdx: [],
   isOnlineAuthDBsByDBIdx: []
 };
 function dbDataFor(db) {
   var i = dbData.dbs.indexOf(db);
   return {
-    methods: dbData.methodsByDBIdx[i],
     sessionDB: dbData.sessionDBsByDBIdx[i],
     isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i],
   };
@@ -54,22 +54,16 @@ exports.useAsAuthenticationDB = function (opts, callback) {
   }
 
   var i = dbData.dbs.push(args.db) -1;
-  dbData.methodsByDBIdx[i] = {
-    put: args.db.put.bind(args.db),
-    post: args.db.post.bind(args.db),
-    bulkDocs: args.db.bulkDocs.bind(args.db)
-  };
   if (typeof args.opts.isOnlineAuthDB === "undefined") {
     args.opts.isOnlineAuthDB = ["http", "https"].indexOf(args.db.type()) !== -1;
   }
   dbData.isOnlineAuthDBsByDBIdx[i] = args.opts.isOnlineAuthDB;
 
-  var newMethods = extend({}, api);
   if (!args.opts.isOnlineAuthDB) {
-    newMethods = extend(newMethods, docApi);
+    wrappers.installWrapperMethods(args.db, writeWrappers);
   }
-  for (var name in newMethods) {
-    args.db[name] = newMethods[name].bind(args.db);
+  for (var name in api) {
+    args.db[name] = api[name].bind(args.db);
   }
 
   var promise;
@@ -108,6 +102,9 @@ function processArgs(db, opts, callback) {
     opts = {};
   }
   opts = opts || {};
+  //clone (deep)
+  opts = extend(true, {}, opts);
+
   opts.sessionID = opts.sessionID || "default";
   if (typeof opts.admins === "undefined") {
     opts.admins = {};
@@ -141,16 +138,14 @@ function parseAdmins(admins) {
   return result;
 }
 
-var docApi = {};
 var api = {};
+var writeWrappers = {};
 
-docApi.put = function (doc, opts, callback) {
-  var args = processArgs(this, opts, callback);
-  var promise = modifyDoc(doc).then(function (newDoc) {
-    return dbDataFor(args.db).methods.put(newDoc, args.opts);
+writeWrappers.put = writeWrappers.post = function (original, args) {
+  return modifyDoc(args.doc).then(function (newDoc) {
+    args.doc = newDoc;
+    return original();
   });
-  nodify(promise, args.callback);
-  return promise;
 };
 
 function modifyDoc(doc) {
@@ -172,18 +167,18 @@ function modifyDoc(doc) {
   return Promise.resolve(doc);
 }
 
+function generateSalt() {
+  var arr = secureRandom(16);
+  var result = arrayToString(arr);
+  return Promise.resolve(result);
+}
+
 function arrayToString(array) {
   var result = "";
   for (var i = 0; i < array.length; i += 1) {
     result += ((array[i] & 0xFF) + 0x100).toString(16);
   }
   return result;
-}
-
-function generateSalt() {
-  var arr = secureRandom(16);
-  var result = arrayToString(arr);
-  return Promise.resolve(result);
 }
 
 function hashPassword(password, salt, iterations) {
@@ -198,27 +193,11 @@ function hashPassword(password, salt, iterations) {
   });
 }
 
-docApi.post = function (doc, opts, callback) {
-  var args = processArgs(this, opts, callback);
-  var promise = modifyDoc(doc).then(function (newDoc) {
-    return dbDataFor(args.db).methods.post(newDoc, args.opts);
+writeWrappers.bulkDocs = function (original, args) {
+  return Promise.all(args.docs.map(modifyDoc)).then(function (newDocs) {
+    args.docs = newDocs;
+    return original();
   });
-  nodify(promise, args.callback);
-  return promise;
-};
-
-docApi.bulkDocs = function (docs, opts, callback) {
-  var args = processArgs(this, opts, callback);
-  if (!Array.isArray(docs)) {
-    docs = docs.docs;
-  }
-  var promise = Promise.all(docs.map(function (doc) {
-    return modifyDoc(doc);
-  })).then(function (newDocs) {
-    return dbDataFor(args.db).methods.bulkDocs(newDocs, args.opts);
-  });
-  nodify(promise, args.callback);
-  return promise;
 };
 
 api.signUp = function (username, password, opts, callback) {
@@ -410,15 +389,12 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
     throw new Error("Not an authentication database.");
   }
   dbData.dbs.splice(i, 1);
-  var originalMethods = dbData.methodsByDBIdx.splice(i, 1)[0];
+
   for (var name in api) {
     if (api.hasOwnProperty(name)) {
       delete db[name];
     }
   }
-  extend(db, originalMethods);
-
-  Validation.uninstallValidationMethods.call(db);
 
   var sessionDB = dbData.sessionDBsByDBIdx.splice(i, 1)[0];
   var isOnlineAuthDB = dbData.isOnlineAuthDBsByDBIdx.splice(i, 1)[0];
@@ -426,9 +402,53 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
   if (isOnlineAuthDB) {
     promise = Promise.resolve();
   } else {
+    wrappers.uninstallWrapperMethods(db, writeWrappers);
     promise = sessionDB.destroy()
       .then(function () {/* empty success value */});
   }
+
+  Validation.uninstallValidationMethods.call(db);
+
   nodify(promise, callback);
   return promise;
 };
+
+exports.hashAdminPasswords = function (admins, opts, callback) {
+  //opts: opts.iterations (default 10)
+  //'static' method (doesn't use the database)
+  if (typeof opts === "function") {
+    callback = opts;
+    opts = {};
+  }
+  if (typeof opts === "undefined") {
+    opts = {};
+  }
+  var iterations = opts.iterations || 10;
+
+  var result = {};
+  var promise = Promise.all(Object.keys(admins).map(function (key) {
+    return hashAdminPassword(admins[key], iterations)
+      .then(function (hashed) {
+        result[key] = hashed;
+      });
+  })).then(function () {
+    return result;
+  });
+  nodify(promise, callback);
+  return promise;
+};
+
+function hashAdminPassword(password, iterations) {
+  if (IS_HASH_RE.test(password)) {
+    return Promise.resolve(password);
+  }
+  var salt;
+  return generateSalt()
+    .then(function (theSalt) {
+      salt = theSalt;
+      return hashPassword(password, salt, iterations);
+    })
+    .then(function (hash) {
+      return "-pbkdf2-" + hash + "," + salt + "," + iterations;
+    });
+}
