@@ -22,10 +22,12 @@ var secureRandom = require("secure-random");
 var extend = require("extend");
 
 var wrappers = require("pouchdb-wrappers");
+var createBulkDocsWrapper = require("pouchdb-bulkdocs-wrapper");
 var nodify = require("promise-nodify");
 var Validation = require("pouchdb-validation");
 var PouchPluginError = require("pouchdb-plugin-error");
 var httpQuery = require("pouchdb-req-http-query");
+var systemDB = require("pouchdb-system-db");
 
 var DESIGN_DOC = require("./designdoc.js");
 var ADMIN_RE = /^-pbkdf2-([\da-f]+),([\da-f]+),([0-9]+)$/;
@@ -61,6 +63,7 @@ exports.useAsAuthenticationDB = function (opts, callback) {
 
   if (!args.opts.isOnlineAuthDB) {
     wrappers.installWrapperMethods(args.db, writeWrappers);
+    systemDB.installSystemDBProtection(args.db);
   }
   for (var name in api) {
     args.db[name] = api[name].bind(args.db);
@@ -141,12 +144,10 @@ function parseAdmins(admins) {
 var api = {};
 var writeWrappers = {};
 
-writeWrappers.put = writeWrappers.post = function (original, args) {
-  return modifyDoc(args.doc).then(function (newDoc) {
-    args.doc = newDoc;
-    return original();
-  });
+writeWrappers.put = function (original, args) {
+  return modifyDoc(args.doc).then(original);
 };
+writeWrappers.post = writeWrappers.put;
 
 function modifyDoc(doc) {
   if (!(typeof doc.password == "undefined" || doc.password === null)) {
@@ -160,11 +161,9 @@ function modifyDoc(doc) {
     }).then(function (hash) {
       delete doc.password;
       doc.derived_key = hash;
-
-      return doc;
     });
   }
-  return Promise.resolve(doc);
+  return Promise.resolve();
 }
 
 function generateSalt() {
@@ -193,12 +192,7 @@ function hashPassword(password, salt, iterations) {
   });
 }
 
-writeWrappers.bulkDocs = function (original, args) {
-  return Promise.all(args.docs.map(modifyDoc)).then(function (newDocs) {
-    args.docs = newDocs;
-    return original();
-  });
-};
+writeWrappers.bulkDocs = createBulkDocsWrapper(modifyDoc);
 
 api.signUp = function (username, password, opts, callback) {
   //opts: roles
@@ -402,6 +396,7 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
   if (isOnlineAuthDB) {
     promise = Promise.resolve();
   } else {
+    systemDB.uninstallSystemDBProtection(db);
     wrappers.uninstallWrapperMethods(db, writeWrappers);
     promise = sessionDB.destroy()
       .then(function () {/* empty success value */});
@@ -416,14 +411,8 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
 exports.hashAdminPasswords = function (admins, opts, callback) {
   //opts: opts.iterations (default 10)
   //'static' method (doesn't use the database)
-  if (typeof opts === "function") {
-    callback = opts;
-    opts = {};
-  }
-  if (typeof opts === "undefined") {
-    opts = {};
-  }
-  var iterations = opts.iterations || 10;
+  var args = processArgs(null, opts, callback);
+  var iterations = args.opts.iterations || 10;
 
   var result = {};
   var promise = Promise.all(Object.keys(admins).map(function (key) {
@@ -434,7 +423,7 @@ exports.hashAdminPasswords = function (admins, opts, callback) {
   })).then(function () {
     return result;
   });
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 

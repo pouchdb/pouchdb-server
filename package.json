@@ -27,6 +27,7 @@
 		"pouchdb-promise": "^0.0.0",
 		"pouchdb-req-http-query": "^0.1.5",
 		"pouchdb-validation": "^1.1.0",
+		"pouchdb-system-db": "^0.1.0",
 		"promise-nodify": "^1.0.0",
 		"secure-random": "^1.1.1"
 	},
