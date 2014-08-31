@@ -22,20 +22,25 @@ var Promise = require("pouchdb-promise");
 var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 var wrappers = require("pouchdb-wrappers");
+var createBulkDocsWrapper = require("pouchdb-bulkdocs-wrapper");
 var PouchDBPluginError = require("pouchdb-plugin-error");
 
 var DOC_ID = "_local/_security";
 
 exports.installSecurityMethods = function () {
   try {
-    wrappers.installWrapperMethods(securityWrappers);
+    wrappers.installWrapperMethods(this, securityWrappers);
   } catch (err) {
     throw new Error("Security methods already installed.");
   }
 };
 
 function securityWrapper(checkAllowed, original, args) {
-  var userCtx = getUserCtx(args.getSession);
+  var userCtx = args.options.userCtx || {
+    //Admin party!
+    name: null,
+    roles: ["_admin"]
+  };
   if (userCtx.roles.indexOf("_admin") !== -1) {
     return original();
   }
@@ -52,19 +57,9 @@ function securityWrapper(checkAllowed, original, args) {
     .then(original);
 }
 
-function getUserCtx(getSession) {
-  if (typeof getSession === "function") {
-    return getSession().userCtx;
-  }
-  //No session. Admin party!
-  return {
-    name: null,
-    roles: ["_admin"]
-  };
-}
-
 function filledInSecurity(db) {
   //needs the unwrapped getSecurity() to prevent recursion
+
   return exports.getSecurity.call(db)
     .then(function (security) {
       security.members = security.members || {};
@@ -113,79 +108,65 @@ function documentModificationWrapper(original, args, docId) {
   //- a non-design document & at least a db member or
   //- at least a db admin
   return securityWrapper(function (userCtx, security) {
-    var isNotDesignDoc = docId.indexOf("_design/") !== 0;
+    var isNotDesignDoc = String(docId).indexOf("_design/") !== 0;
     return (
       isIn(userCtx, security.admins) ||
-      (isNotDesignDoc && isIn(userCtx, security.members))
+      (isNotDesignDoc && isMember(userCtx, security))
     );
   }, original, args);
 }
 
-securityWrappers.put = securityWrappers.post = function (original, args) {
-  return documentModificationWrapper(original, args, args.doc._id || "a-post-id");
-};
+function isMember(userCtx, security) {
+  var thereAreMembers = (
+    security.admins.users.length ||
+    security.admins.roles.length ||
+    security.members.users.length ||
+    security.members.roles.length
+  );
+  return (!thereAreMembers) || isIn(userCtx, security.members);
+}
 
-securityWrappers.putAttachment = securityWrappers.removeAttachment = function (original, args) {
+securityWrappers.put = function (original, args) {
+  return documentModificationWrapper(original, args, args.doc._id);
+};
+securityWrappers.post = securityWrappers.put;
+securityWrappers.remove = securityWrappers.put;
+
+securityWrappers.putAttachment = function (original, args) {
   return documentModificationWrapper(original, args, args.docId);
 };
+securityWrappers.removeAttachment = securityWrappers.removeAttachment;
 
-securityWrappers.bulkDocs = securityWrappers.bulkDocs = function (original, args) {
-  //the ``all_or_nothing`` attribute on ``bulkDocs`` is unsupported.
-  //Also, the result array might not be in the same order as
-  //``bulkDocs.docs`` argument.
-
-  var done = [];
-  var notYetDone = [];
-  var noop = function () {};
-
-  var checks = args.docs.map(function (doc) {
-    var docId = doc._id || "a-post-id";
-    var checkPromise = documentModificationWrapper(noop, args, docId);
-
-    return checkPromise
-      .then(function () {
-        notYetDone.push(doc);
-      })
-      .catch(function (err) {
-        err.id = doc._id;
-        done.push(err);
-      });
-  });
-  return Promise.all(checks)
-    .then(function () {
-      args.docs = notYetDone;
-
-      return original();
-    })
-    .then(function (insertedDocs) {
-      return done.concat(insertedDocs);
-    });
-};
+securityWrappers.bulkDocs = createBulkDocsWrapper(function (doc, args) {
+  var noop = Promise.resolve.bind(Promise);
+  return documentModificationWrapper(noop, args, doc._id);
+});
 
 //functions requiring a db admin
-var requiresAdminWrapper = securityWrapper.bind(null, function (userCtx, security) {
+securityWrappers.compact = securityWrapper.bind(null, function (userCtx, security) {
   return isIn(userCtx, security.admins);
 });
-
-"compact putSecurity viewCleanup".split(" ").forEach(function (name) {
-  securityWrappers[name] = requiresAdminWrapper;
-});
+securityWrappers.putSecurity = securityWrappers.compact;
+securityWrappers.viewCleanup = securityWrappers.compact;
 
 //functions requiring a db member
 var requiresMemberWrapper = securityWrapper.bind(null, function (userCtx, security) {
-  return isIn(userCtx, security.admins) || isIn(userCtx, security.members);
+  return (
+    isMember(userCtx, security) ||
+    isIn(userCtx, security.admins)
+  );
 });
 
-Array.prototype.concat(
-  "get allDocs changes replicate replicate.to".split(" "),
-  "replicate.from sync getAttachment info revsDiff".split(" ")
+[].concat(
+  "get allDocs changes replicate.to replicate.from".split(" "),
+  "sync getAttachment info revsDiff".split(" ")
 ).forEach(function (name) {
   securityWrappers[name] = requiresMemberWrapper;
 });
 
 exports.uninstallSecurityMethods = function () {
   try {
-    wrappers.uninstallWrapperMethods(securityWrappers);
+    wrappers.uninstallWrapperMethods(this, securityWrappers);
   } catch (err) {
     throw new Error("Security methods not installed.");
   }
