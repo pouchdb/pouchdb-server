@@ -19,6 +19,7 @@
 var coucheval = require("couchdb-eval");
 var couchdb_objects = require("couchdb-objects");
 var wrappers = require("pouchdb-wrappers");
+var createBulkDocsWrapper = require("pouchdb-bulkdocs-wrapper");
 var PouchPluginError = require("pouchdb-plugin-error");
 
 var uuid = require("random-uuid-v4");
@@ -131,12 +132,13 @@ function parseValidationFunctions(resp) {
 }
 
 var wrapperApi = {};
+
 wrapperApi.put = function (orig, args) {
   return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
 wrapperApi.post = function (orig, args) {
-  args.doc.id = args.doc.id || uuid();
+  args.doc._id = args.doc._id || uuid();
   return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
@@ -145,37 +147,10 @@ wrapperApi.remove = function (orig, args) {
   return doValidation(args.db, args.doc, args.options).then(orig);
 };
 
-wrapperApi.bulkDocs = function (original, args) {
-  //the ``all_or_nothing`` attribute on ``bulkDocs`` is unsupported.
-  //Also, the result array might not be in the same order as
-  //``bulkDocs.docs`` argument.
-
-  var done = [];
-  var notYetDone = [];
-
-  var validations = args.docs.map(function (doc) {
-    doc._id = doc._id || uuid();
-    var validationPromise = doValidation(args.db, doc, args.options);
-
-    return validationPromise
-      .then(function (resp) {
-        notYetDone.push(doc);
-      })
-      .catch(function (err) {
-        err.id = doc._id;
-        done.push(err);
-      });
-  });
-  return Promise.all(validations)
-    .then(function () {
-      args.docs = notYetDone;
-
-      return original();
-    })
-    .then(function (insertedDocs) {
-      return done.concat(insertedDocs);
-    });
-};
+wrapperApi.bulkDocs = createBulkDocsWrapper(function (doc, args) {
+  doc._id = doc._id || uuid();
+  return doValidation(args.db, doc, args.options);
+});
 
 wrapperApi.putAttachment = function (orig, args) {
   return args.db.get(args.docId, {rev: args.rev, revs: true})
