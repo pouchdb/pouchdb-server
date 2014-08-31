@@ -23,6 +23,7 @@ var Validation = require("pouchdb-validation");
 var equals = require("equals");
 var extend = require("extend");
 var PouchPluginError = require("pouchdb-plugin-error");
+var systemDB = require("pouchdb-system-db");
 
 //to update: http://localhost:5984/_replicator/_design/_replicator & remove _rev.
 var DESIGN_DOC = require("./designdoc.js");
@@ -54,6 +55,7 @@ exports.startReplicator = function (callback) {
       message: "Replicator already active on this database."
     }));
   }
+  systemDB.installSystemDBProtection(db);
 
   var i = dbData.dbs.push(db) - 1;
   dbData.activeReplicationsByDbIdxAndId[i] = {};
@@ -258,6 +260,8 @@ exports.stopReplicator = function (callback) {
   dbData.activeReplicationSignaturesByDbIdxAndRepId.splice(index, 1);
   dbData.activeReplicationsByDbIdxAndId.splice(index, 1);
   dbData.changedByReplicatorByDbIdx.splice(index, 1);
+
+  systemDB.uninstallSystemDBProtection(db);
 
   var promise = new Promise(function (resolve, reject) {
     //cancel changes/replications
