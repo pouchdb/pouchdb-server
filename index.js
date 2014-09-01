@@ -28,7 +28,7 @@ exports.show = function (showPath, options, callback) {
   //options: values to end up in the request object of the show
   //function (next to their defaults).
 
-  if (typeof options === "function") {
+  if (["function", "undefined"].indexOf(typeof options) !== -1) {
     callback = options;
     options = {};
   }
@@ -71,7 +71,7 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
     }
     return designDoc;
   });
-  var docPromise = db.get(docId, options).catch(function () {
+  var docPromise = db.get(docId, options).catch(function (err) {
     //doc might not exist - that's ok and expected.
     return null;
   });
