@@ -1,6 +1,6 @@
 {
 	"name": "couchdb-resp-completer",
-	"version": "0.1.2",
+	"version": "1.0.0",
 	"main": "index.js",
 	"description": "Builds a complete CouchDB-like response object from a very marginal one. (Can be just a string at first.)",
 	"repository": {
