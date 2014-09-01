@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-system-db",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"main": "index.js",
 	"description": "Protects PouchDB system databases by wrapping their methods.",
 	"repository": {
@@ -22,9 +22,9 @@
 	"license": "Apache-2.0",
 	"author": "Marten de Vries",
 	"dependencies": {
-		"pouchdb-security": "^0.1.0",
-		"pouchdb-wrappers": "^0.1.0",
-		"pouchdb-plugin-error": "^0.2.0"
+		"pouchdb-security": "^1.0.0",
+		"pouchdb-wrappers": "^1.0.0",
+		"pouchdb-plugin-error": "^1.0.0"
 	},
 	"devDependencies": {
 		"es3ify": "^0.1.3"
