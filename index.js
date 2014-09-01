@@ -135,11 +135,16 @@ securityWrappers.remove = securityWrappers.put;
 securityWrappers.putAttachment = function (original, args) {
   return documentModificationWrapper(original, args, args.docId);
 };
-securityWrappers.removeAttachment = securityWrappers.removeAttachment;
+securityWrappers.removeAttachment = securityWrappers.putAttachment;
 
 securityWrappers.bulkDocs = createBulkDocsWrapper(function (doc, args) {
   var noop = Promise.resolve.bind(Promise);
   return documentModificationWrapper(noop, args, doc._id);
+});
+
+//functions requiring a server admin
+securityWrappers.destroy = securityWrapper.bind(null, function (userCtx, security) {
+  return false;
 });
 
 //functions requiring a db admin
