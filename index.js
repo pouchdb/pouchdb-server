@@ -1,20 +1,25 @@
+var startTime        = new Date().getTime()
+  , express          = require('express')
+  , jsonParser       = require('body-parser').json({limit: '1mb'})
+  , urlencodedParser = require('body-parser').urlencoded({extended: false})
+  , rawBody          = require('raw-body')
+  , cookieParser     = require('cookie-parser')
+  , fs               = require('fs')
+  , path             = require('path')
+  , extend           = require('extend')
+  , pkg              = require('./package.json')
+  , multiparty       = require('multiparty')
+  , Promise          = require('bluebird')
+  , basicAuth        = require('basic-auth')
+  , dbs              = {}
+  , uuids            = require('./uuids')
+  , histories        = {}
+  , app              = express()
+  , CouchConfig      = require('./lib/couch_config')
+  , events           = require('events');
 
-var startTime  = new Date().getTime()
-  , express    = require('express')
-  , jsonParser = require('body-parser').json({limit: '1mb'})
-  , rawBody    = require('raw-body')
-  , fs         = require('fs')
-  , path       = require('path')
-  , extend     = require('extend')
-  , pkg        = require('./package.json')
-  , multiparty = require('multiparty')
-  , Promise    = require('bluebird')
-  , dbs        = {}
-  , uuids      = require('./uuids')
-  , histories  = {}
-  , app        = express();
+var Pouch, usersDB, preparingUsersDB;
 
-var Pouch;
 module.exports = function(PouchToUse) {
   Pouch = PouchToUse;
   require('pouchdb-all-dbs')(Pouch);
@@ -23,8 +28,43 @@ module.exports = function(PouchToUse) {
   Pouch.plugin(require('pouchdb-show'));
   Pouch.plugin(require('pouchdb-update'));
   Pouch.plugin(require('pouchdb-validation'));
+  Pouch.plugin(require('pouchdb-auth'));
+
+  // init DbUpdates
+  app.couch_db_updates = new events.EventEmitter();
+
+  Pouch.on('created', function (dbName) {
+    app.couch_db_updates.emit('update', {db_name: dbName, type: 'created'});
+  });
+
+  Pouch.on('destroyed', function (dbName) {
+    app.couch_db_updates.emit('update', {db_name: dbName, type: 'deleted'});
+  });
+
+  app.couchConfig = new CouchConfig('./config.json');
+  ensureUsersDB();
+
+  app.couchConfig.on('couch_httpd_auth.authentication_db', ensureUsersDB);
+
   return app;
 };
+
+function ensureUsersDB() {
+  var name = app.couchConfig.get('couch_httpd_auth', 'authentication_db');
+
+  function cleanupDone() {
+    dbs[name] = dbs[name] || new Pouch(name);
+
+    preparingUsersDB = dbs[name].useAsAuthenticationDB().then(function () {
+      usersDB = dbs[name];
+    });
+  };
+  if (usersDB) {
+    usersDB.stopUsingAsAuthenticationDB().then(cleanupDone);
+  } else {
+    cleanupDone();
+  }
+}
 
 function registerDB(name, db) {
   db.installValidationMethods();
@@ -65,7 +105,8 @@ function expressReqToCouchDBReq(req) {
     headers: req.headers,
     method: req.method,
     peer: req.ip,
-    query: req.query
+    query: req.query,
+    userCtx: req.session.userCtx
   };
 }
 
@@ -82,11 +123,57 @@ function sendCouchDBResp(res, err, couchResp) {
     res.send(couchResp.code, body);
 }
 
+function buildCookieSession(req) {
+  var opts = {
+    sessionID: (req.cookies || {}).AuthSession,
+    admins: app.couchConfig.getSection("admins")
+  };
+  if (!opts.sessionID) {
+    throw new Error("No cookie, so no cookie auth.");
+  }
+  return usersDB.session(opts).then(function (session) {
+    if (session.info.authenticated) {
+      session.info.authenticated = 'cookie';
+    }
+    return session;
+  });
+}
+
+function buildBasicAuthSession(req) {
+  var userInfo = basicAuth(req);
+  var opts = {
+    sessionID: uuids(1)[0],
+    admins: app.couchConfig.getSection("admins")
+  }
+  var initializingDone = Promise.resolve();
+  if (userInfo) {
+    initializingDone = initializingDone.then(function () {
+      return usersDB.logIn(userInfo.name, userInfo.pass, opts);
+    });
+  }
+  var session;
+  return initializingDone.then(function () {
+    return usersDB.session(opts);
+  }).then(function (theSession) {
+    session = theSession;
+
+    // Cleanup
+    return usersDB.logOut(opts);
+  }).then(function () {
+    if (session.info.authenticated) {
+      session.info.authenticated = 'default';
+    }
+    return session;
+  });
+}
+
 app.use(require('compression')());
 
 app.use('/js', express.static(__dirname + '/fauxton/js'));
 app.use('/css', express.static(__dirname + '/fauxton/css'));
 app.use('/img', express.static(__dirname + '/fauxton/img'));
+
+app.use(cookieParser());
 
 app.use(function (req, res, next) {
   var opts = {}
@@ -121,6 +208,21 @@ app.use(function (req, res, next) {
   next();
 });
 
+app.use(function (req, res, next) {
+  // TODO: TIMING ATTACK
+  preparingUsersDB.then(function () {
+    return buildCookieSession(req);
+  }).catch(function (err) {
+    return buildBasicAuthSession(req);
+  }).then(function (session) {
+    req.session = session;
+    req.session.info.authentication_handlers = ['cookie', 'default'];
+    next();
+  }).catch(function (err) {
+    res.send(err.status || 500, err);
+  });
+});
+
 // Query design document rewrite handler
 app.use(function (req, res, next) {
   // Prefers regex over setting the first argument of app.use(), because
@@ -143,7 +245,7 @@ app.use(function (req, res, next) {
       req.url = "/" + resp.path.join("/");
       req.query = resp.query;
 
-      //handle the newly generated request.
+      // Handle the newly generated request.
       next();
     });
   });
@@ -158,25 +260,95 @@ app.get('/', function (req, res, next) {
 });
 
 app.get('/_session', function (req, res, next) {
-  res.send({"ok":true,"userCtx":{"name":null,"roles":["_admin"]},"info":{}});
+  res.send(200, req.session);
+});
+
+app.post('/_session', jsonParser, urlencodedParser, function (req, res, next) {
+  var name = req.body.name;
+  var password = req.body.password;
+  var opts = {
+    sessionID: uuids(1)[0],
+    admins: app.couchConfig.getSection("admins")
+  };
+  usersDB.logIn(name, password, opts, function (err, resp) {
+    if (err) return res.send(err.status, err);
+
+    res.cookie('AuthSession', opts.sessionID, {httpOnly: true});
+    res.send(200, resp);
+  });
+});
+
+app.delete('/_session', function (req, res, next) {
+  var sessionID = (req.cookies || {}).AuthSession;
+  usersDB.logOut({sessionID: sessionID}, function (err, resp) {
+    // ``err`` just doesn't occur
+    res.clearCookie('AuthSession');
+    res.send(200, resp);
+  });
+});
+
+
+app.all('/_db_updates', function (req, res, next) {
+  // TODO: implement
+  res.send(400);
+  // app.couch_db_updates.on('update', function(update) {
+  //   res.send(200, update);
+  // });
 });
 
 app.get('/_utils', function (req, res, next) {
   res.sendfile(__dirname + '/fauxton/index.html');
 });
 
-// Config (stub for now)
+// Config
 app.get('/_config', function (req, res, next) {
-  res.send(200, {
-    facts: { 
-        "pouchdb-server has no config": true,
-        "if you use pouchdb-server, you are awesome": true
-      }
+  res.send(200, app.couchConfig.getAll());
+});
+
+app.get('/_config/:section', function (req, res, next) {
+  res.send(200, app.couchConfig.getSection(req.params.section));
+});
+
+app.get('/_config/:section/:key', function (req, res, next) {
+  var value = app.couchConfig.get(req.params.section, req.params.key);
+  sendConfigValue(res, value);
+});
+
+function sendConfigValue(res, value) {
+  if (typeof value === "undefined") {
+    res.send(404, {
+      error: "not_found",
+      reason: "unknown_config_value"
+    });
+  }
+  res.send(200, JSON.stringify(value));
+}
+
+app.put('/_config/:section/:key', parseRawBody, function (req, res, next) {
+  // Custom JSON parsing, because the default JSON body parser
+  // middleware only supports JSON lists and objects. (Not numbers etc.)
+  var value;
+  try {
+    value = JSON.parse(req.rawBody.toString('utf-8'));
+  } catch (err) {
+    return res.send(400, {
+      error: "bad_request",
+      reason: "invalid_json"
+    });
+  }
+  if (typeof value !== "string") {
+    value = JSON.stringify(value);
+  }
+
+  app.couchConfig.set(req.params.section, req.params.key, value, function (oldValue) {
+    res.send(200, JSON.stringify(oldValue));
   });
 });
 
-app.put('/_config/:key/:value(*)', function (req, res, next) {
-  res.send(200, {ok: true, 'pouchdb-server has no config': true});
+app.delete('/_config/:section/:key', function (req, res, next) {
+  app.couchConfig.delete(req.params.section, req.params.key, function (err, oldValue) {
+    sendConfigValue(res, oldValue);
+  });
 });
 
 // Log (stub for now)
@@ -208,6 +380,10 @@ app.get('/_uuids', function (req, res, next) {
 app.get('/_all_dbs', function (req, res, next) {
   Pouch.allDbs(function (err, response) {
     if (err) res.send(500, Pouch.UNKNOWN_ERROR);
+
+    response = response.filter(function (name) {
+      return name.indexOf("-session-") !== 0;
+    });
     res.send(200, response);
   });
 });
@@ -311,6 +487,8 @@ app.get('/:db', function (req, res, next) {
   req.db.info(function (err, info) {
     if (err) return res.send(404, err);
     info.instance_start_time = startTime.toString();
+    // TODO: disk_size
+    // TODO: data_size
     res.send(200, info);
   });
 });
@@ -323,7 +501,8 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
   // https://github.com/daleharvey/pouchdb/issues/435
   var opts = 'new_edits' in req.body
     ? { new_edits: req.body.new_edits }
-    : null;
+    : {};
+  opts.userCtx = req.session.userCtx;
 
   if (Array.isArray(req.body)) {
     return res.send(400, {
@@ -515,7 +694,7 @@ app.all('/:db/_design/:id/_update/:func/:docid?', jsonParser, function (req, res
   req.db.update(query, opts, sendCouchDBResp.bind(null, res));
 });
 
-var parseRawBody = function(req, res, next) {
+function parseRawBody(req, res, next) {
   // Custom bodyParsing because bodyParser chokes
   // on 'malformed' requests, and also because we need the
   // rawBody for attachments
@@ -540,8 +719,9 @@ function putAttachment(name, req, res) {
     , rev = req.query.rev
     , type = req.get('Content-Type') || 'application/octet-stream'
     , body = new Buffer(req.rawBody || '', 'binary')
+    , opts = {userCtx: req.session.userCtx};
 
-  req.db.putAttachment(name, attachment, rev, body, type, function (err, response) {
+  req.db.putAttachment(name, attachment, rev, body, type, opts, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });    
@@ -594,8 +774,10 @@ app.get('/:db/:id/:attachment(*)', function (req, res, next) {
 
 // Delete a document attachment
 function deleteAttachment(name, req, res) {
-  var attachment = req.params.attachment
-    , rev = req.query.rev;
+  var name = req.params.id
+    , attachment = req.params.attachment
+    , rev = req.query.rev
+    , opts = {userCtx: req.session.userCtx};
 
   req.db.removeAttachment(name, attachment, rev, function (err, response) {
     if (err) return res.send(409, err);
@@ -617,6 +799,9 @@ app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
 
 // Create or update document that has an ID
 app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
+
+  var opts = req.query;
+  opts.userCtx = req.session.userCtx;
   
   function onResponse(err, response) {
     if (err) {
@@ -657,7 +842,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
       promise.then(function () {
         // merge, since it could be a mix of stubs and non-stubs
         doc._attachments = extend(true, doc._attachments, attachments);
-        req.db.put(doc, req.query, onResponse);
+        req.db.put(doc, opts, onResponse);
       }).catch(function (err) {
         res.send(err.status || 500, err);
       });
@@ -671,14 +856,17 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
         ? req.params.id
         : null;
     }
-    req.db.put(req.body, req.query, onResponse);
+    req.db.put(req.body, opts, onResponse);
   }
 });
 
 // Create a document
 app.post('/:db', jsonParser, function (req, res, next) {
+  var opts = req.query;
+  opts.userCtx = req.session.userCtx;
+
   req.body._id = uuids(1)[0];
-  req.db.put(req.body, req.query, function (err, response) {
+  req.db.put(req.body, opts, function (err, response) {
     if (err) return res.send(err.status || 500, err);
     res.send(201, response);
   });
@@ -696,7 +884,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
 app.delete('/:db/:id(*)', function (req, res, next) {
   req.db.get(req.params.id, req.query, function (err, doc) {
     if (err) return res.send(404, err);
-    req.db.remove(doc, function (err, response) {
+    req.db.remove(doc, {userCtx: req.session.userCtx}, function (err, response) {
       if (err) return res.send(404, err);
       res.send(200, response);
     });
@@ -716,6 +904,13 @@ app.copy('/:db/:id', function (req, res, next) {
     });
   }
 
+  if(isHTTP(dest) || isHTTPS(dest)) {
+    return res.send(400, {
+      'error': 'bad_request',
+      'reason': 'Destination URL must be relative.'
+    });
+  }
+
   if (match = /(.+?)\?rev=(.+)/.exec(dest)) {
     dest = match[1];
     rev = match[2];
@@ -725,9 +920,22 @@ app.copy('/:db/:id', function (req, res, next) {
     if (err) return res.send(404, err);
     doc._id = dest;
     doc._rev = rev;
-    req.db.put(doc, function (err, response) {
+    req.db.put(doc, {userCtx: req.session.userCtx}, function (err, response) {
       if (err) return res.send(409, err);
-      res.send(200, doc);
+      res.send(201, {ok: true});
     });
   });
 });
+
+
+function isHTTP(url) {
+  return hasPrefix(url, 'http://');
+}
+
+function isHTTPS(url) {
+  return hasPrefix(url, 'https://');
+}
+
+function hasPrefix(haystack, needle) {
+  return haystack.substr(0, needle.length) === needle;
+}
