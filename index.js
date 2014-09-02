@@ -343,6 +343,10 @@ exports.uninstallWrapperMethods = function (db, handlers) {
     }
     var info = getBaseAndName(db, name);
     var wrapper = info.base[info.name];
+    if (typeof wrapper === "undefined") {
+      //method doesn't exist, so was never wrapped in the first place.
+      continue;
+    }
 
     var idx;
     try {
