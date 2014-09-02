@@ -203,8 +203,8 @@ function updateExistingDoc(db, docId, func) {
 
     func(doc);
     putAsReplicatorChange(db, doc).catch(function (err) {
-      if (err.status === 409) {
-        updateExistingDoc(db, docId, func);
+      if (err.status === 409) { //coverage: ignore
+        updateExistingDoc(db, docId, func); //coverage: ignore
       } else {
         throw err;
       }
@@ -225,10 +225,10 @@ function putAsReplicatorChange(db, doc) {
       roles: ["_replicator", "_admin"],
     }
   }).catch(function (err) {
-    var idx = data.changedByReplicator.indexOf(doc._id);
-    data.changedByReplicator.splice(idx, 1);
+    var idx = data.changedByReplicator.indexOf(doc._id); //coverage: ignore
+    data.changedByReplicator.splice(idx, 1); //coverage: ignore
 
-    throw err;
+    throw err; //coverage: ignore
   });
 }
 
