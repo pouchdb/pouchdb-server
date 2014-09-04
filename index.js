@@ -535,13 +535,8 @@ var parseRawBody = function(req, res, next) {
 }
 
 // Put a document attachment
-app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
-  // Be careful not to catch normal design docs or local docs
-  if (req.params.id === '_design' || req.params.id === '_local') {
-    return next();
-  }
-  var name = req.params.id
-    , attachment = req.params.attachment
+function putAttachment(name, req, res) {
+  var attachment = req.params.attachment
     , rev = req.query.rev
     , type = req.get('Content-Type') || 'application/octet-stream'
     , body = new Buffer(req.rawBody || '', 'binary')
@@ -550,20 +545,25 @@ app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });    
+}
+
+app.put('/:db/_design/:id/:attachment(*)', parseRawBody, function (req, res, next) {
+  putAttachment('_design/' + req.params.id, req, res);
 });
 
-// Retrieve a document attachment
-app.get('/:db/:id/:attachment(*)', function (req, res, next) {
-
+app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
+  putAttachment(req.params.id, req, res);
+});
 
-  var name = req.params.id
-    , attachment = req.params.attachment;
+// Retrieve a document attachment
+function getAttachment(name, req, res) {
+  var attachment = req.params.attachment;
 
-  req.db.get(req.params.id, req.query, function (err, info) {
+  req.db.get(name, req.query, function (err, info) {
     if (err) return res.send(404, err);
 
     if (!info._attachments || !info._attachments[attachment]) {
@@ -578,24 +578,41 @@ app.get('/:db/:id/:attachment(*)', function (req, res, next) {
       res.send(200, response);
     });    
   });
+}
+
+app.get('/:db/_design/:id/:attachment(*)', function (req, res, next) {
+  getAttachment('_design/' + req.params.id, req, res);
 });
 
-// Delete a document attachment
-app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
-
+app.get('/:db/:id/:attachment(*)', function (req, res, next) {
   // Be careful not to catch normal design docs or local docs
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
+  getAttachment(req.params.id, req, res);
+});
 
-  var name = req.params.id
-    , attachment = req.params.attachment
+// Delete a document attachment
+function deleteAttachment(name, req, res) {
+  var attachment = req.params.attachment
     , rev = req.query.rev;
 
   req.db.removeAttachment(name, attachment, rev, function (err, response) {
     if (err) return res.send(409, err);
     res.send(200, response);
   });
+}
+
+app.delete('/:db/_design/:id/:attachment(*)', function (req, res, next) {
+  deleteAttachment('_design/' + req.params.id, req, res);
+});
+
+app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
+  // Be careful not to catch normal design docs or local docs
+  if (req.params.id === '_design' || req.params.id === '_local') {
+    return next();
+  }
+  deleteAttachment(req.params.id, req, res);
 });
 
 // Create or update document that has an ID
