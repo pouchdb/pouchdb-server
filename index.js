@@ -1,7 +1,7 @@
 
 var startTime  = new Date().getTime()
   , express    = require('express')
-  , jsonParser = require('body-parser').json()
+  , jsonParser = require('body-parser').json({limit: '1mb'})
   , rawBody    = require('raw-body')
   , fs         = require('fs')
   , path       = require('path')
