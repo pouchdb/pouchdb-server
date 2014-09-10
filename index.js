@@ -16,6 +16,10 @@
 
 "use strict";
 
+//TODO:
+//- offline create_target
+//- do retries on error
+
 var Promise = require("pouchdb-promise");
 var nodify = require("promise-nodify");
 var uuid = require("random-uuid-v4");
@@ -114,8 +118,8 @@ function onChanged(db, doc) {
   if (oldReplication) {
     oldReplication.cancel();
   }
-  if (doc.replication_id) {
-    currentSignature = data.activeReplicationSignaturesByRepId[doc.replication_id];
+  if (doc._replication_id) {
+    currentSignature = data.activeReplicationSignaturesByRepId[doc._replication_id];
   }
   //removes the data used to get cancel & currentSignature now it's no
   //longer necessary
@@ -133,18 +137,19 @@ function onChanged(db, doc) {
     //happens.
     var repId = getMatchingSignatureId(db, currentSignature);
     if (repId) {
-      doc.replication_id = repId;
+      doc._replication_id = repId;
     } else {
-      doc.replication_id = uuid();
-      doc.replication_state = "triggered";
+      doc._replication_id = uuid();
+      doc._replication_state = "triggered";
     }
   }
-  if (doc.replication_state === "triggered") {
+  if (doc._replication_state === "triggered") {
     //(re)start actual replication
     var PouchDB = db.constructor;
+    doc.userCtx = doc.user_ctx;
     var replication = PouchDB.replicate(doc.source, doc.target, doc);
     data.activeReplicationsById[doc._id] = replication;
-    data.activeReplicationSignaturesByRepId[doc.replication_id] = currentSignature;
+    data.activeReplicationSignaturesByRepId[doc._replication_id] = currentSignature;
     replication.on("complete", onReplicationComplete.bind(null, db, doc._id));
     replication.on("error", onReplicationError.bind(null, db, doc._id));
   }
@@ -172,7 +177,7 @@ function cleanupReplicationData(db, doc) {
   var data = dataFor(db);
 
   delete data.activeReplicationsById[doc._id];
-  delete data.activeReplicationSignaturesByRepId[doc.replication_id];
+  delete data.activeReplicationSignaturesByRepId[doc._replication_id];
 }
 
 function getMatchingSignatureId(db, searchedSignature) {
@@ -192,8 +197,8 @@ function onReplicationComplete(db, docId, info) {
   delete info.status;
   delete info.ok;
   updateExistingDoc(db, docId, function (doc) {
-    doc.replication_state = "completed";
-    doc.replication_stats = info;
+    doc._replication_state = "completed";
+    doc._replication_stats = info;
   });
 }
 
@@ -213,8 +218,8 @@ function updateExistingDoc(db, docId, func) {
 }
 
 function putAsReplicatorChange(db, doc) {
-  if (doc.replication_state) {
-    doc.replication_state_time = Date.now();
+  if (doc._replication_state) {
+    doc._replication_state_time = Date.now();
   }
 
   var data = dataFor(db);
@@ -234,8 +239,8 @@ function putAsReplicatorChange(db, doc) {
 
 function onReplicationError(db, docId, info) {
   updateExistingDoc(db, docId, function (doc) {
-    doc.replication_state = "error";
-    doc.replication_state_reason = info.message;
+    doc._replication_state = "error";
+    doc._replication_state_reason = info.message;
   });
 }
 
