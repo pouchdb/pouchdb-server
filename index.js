@@ -68,7 +68,7 @@ var wrapperCreators = {};
 wrapperCreators.destroy = function (db, destroy, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
-    return callHandlers(handlers, args, destroy);
+    return callHandlers(handlers, args, makeCall(destroy));
   };
 };
 
@@ -215,7 +215,6 @@ wrapperCreators.putAttachment = function (db, putAttachment, handlers) {
     args.attachmentId = attachmentId;
 
     return callHandlers(handlers, args, function () {
-      delete args.db;
       return putAttachment.call(this, args.docId, args.attachmentId, args.rev, args.doc, args.type);
     });
   };
@@ -266,7 +265,7 @@ wrapperCreators.info = function (db, info, handlers) {
   return function (options, callback) {
     //see note on the options argument at putAttachment.
     var args = parseBaseArgs(db, this, options, callback);
-    return callHandlers(handlers, args, info);
+    return callHandlers(handlers, args, makeCall(info));
   };
 };
 
@@ -290,6 +289,28 @@ wrapperCreators.revsDiff = function (db, revsDiff, handlers) {
 
 //Plug-in wrapperCreators; only of the plug-ins for which a wrapper
 //has been necessary.
+
+wrapperCreators.list = function (db, orig, handlers) {
+  return function (path, options, callback) {
+    var args = parseBaseArgs(db, this, options, callback);
+    args.path = path;
+
+    return callHandlers(handlers, args, function () {
+      return orig.call(this, args.path, args.options);
+    });
+  };
+};
+
+wrapperCreators.rewriteResultRequestObject = wrapperCreators.list;
+wrapperCreators.show = wrapperCreators.list;
+wrapperCreators.update = wrapperCreators.list;
+
+wrapperCreators.getSecurity = function (db, getSecurity, handlers) {
+  return function (options, callback) {
+    var args = parseBaseArgs(db, this, options, callback);
+    return callHandlers(handlers, args, makeCallWithOptions(getSecurity, args));
+  };
+};
 
 wrapperCreators.putSecurity = function (db, putSecurity, handlers) {
   return function (secObj, options, callback) {
@@ -328,6 +349,12 @@ function callHandlers(handlers, args, method) {
   var promise = method();
   nodify(promise, callback);
   return promise;
+}
+
+function makeCall(func) {
+  return function () {
+    return func.call(this);
+  };
 }
 
 function makeCallWithOptions(func, args) {
