@@ -18,7 +18,7 @@ var startTime        = new Date().getTime()
   , CouchConfig      = require('./lib/couch_config')
   , events           = require('events');
 
-var Pouch, usersDB, preparingUsersDB;
+var Pouch, usersDB, preparingUsersDB, replicatorDB;
 
 module.exports = function(PouchToUse) {
   Pouch = PouchToUse;
@@ -29,6 +29,7 @@ module.exports = function(PouchToUse) {
   Pouch.plugin(require('pouchdb-update'));
   Pouch.plugin(require('pouchdb-validation'));
   Pouch.plugin(require('pouchdb-auth'));
+  Pouch.plugin(require('pouchdb-replicator'));
 
   // init DbUpdates
   app.couch_db_updates = new events.EventEmitter();
@@ -42,9 +43,12 @@ module.exports = function(PouchToUse) {
   });
 
   app.couchConfig = new CouchConfig('./config.json');
-  ensureUsersDB();
 
+  ensureUsersDB();
   app.couchConfig.on('couch_httpd_auth.authentication_db', ensureUsersDB);
+
+  ensureReplicatorDB();
+  app.couchConfig.on('replicator.db', ensureReplicatorDB)
 
   return app;
 };
@@ -61,6 +65,23 @@ function ensureUsersDB() {
   };
   if (usersDB) {
     usersDB.stopUsingAsAuthenticationDB().then(cleanupDone);
+  } else {
+    cleanupDone();
+  }
+}
+
+function ensureReplicatorDB() {
+  var name = app.couchConfig.get('replicator', 'db');
+
+  function cleanupDone() {
+    dbs[name] = dbs[name] || new Pouch(name);
+
+    dbs[name].startReplicator().then(function () {
+      replicatorDB = dbs[name];
+    });
+  };
+  if (replicatorDB) {
+    replicatorDB.stopReplicator().then(cleanupDone);
   } else {
     cleanupDone();
   }
