@@ -44,7 +44,7 @@ function securityWrapper(checkAllowed, original, args) {
   if (userCtx.roles.indexOf("_admin") !== -1) {
     return original();
   }
-  return filledInSecurity(args.db)
+  return filledInSecurity(args)
     .then(function (security) {
       if (!checkAllowed(userCtx, security)) {
         throw new PouchDBPluginError({
@@ -57,10 +57,16 @@ function securityWrapper(checkAllowed, original, args) {
     .then(original);
 }
 
-function filledInSecurity(db) {
-  //needs the unwrapped getSecurity() to prevent recursion
+function filledInSecurity(args) {
+  var getSecurity;
+  if (typeof args.options.secObj === "undefined") {
+    //needs the unwrapped getSecurity() to prevent recursion
+    getSecurity = exports.getSecurity.bind(args.db);
+  } else {
+    getSecurity = Promise.resolve.bind(Promise, args.options.secObj);
+  }
 
-  return exports.getSecurity.call(db)
+  return getSecurity()
     .then(function (security) {
       security.members = security.members || {};
       security.admins = security.admins || {};
@@ -72,12 +78,12 @@ function filledInSecurity(db) {
 }
 
 function fillInSection(section) {
-  section.users = section.users || [];
+  section.names = section.names || [];
   section.roles = section.roles || [];
 }
 
 function isIn(userCtx, section) {
-  return section.users.some(function (name) {
+  return section.names.some(function (name) {
     return name === userCtx.name;
   }) || section.roles.some(function (role) {
     return userCtx.roles.indexOf(role) !== -1;
@@ -98,7 +104,7 @@ securityWrappers.query = function (original, args) {
     var isStoredView = typeof args.fun === "string";
     return (
       isIn(userCtx, security.admins) ||
-      (isStoredView && isIn(userCtx, security.members))
+      (isStoredView && isMember(userCtx, security))
     );
   }, original, args);
 };
@@ -118,9 +124,9 @@ function documentModificationWrapper(original, args, docId) {
 
 function isMember(userCtx, security) {
   var thereAreMembers = (
-    security.admins.users.length ||
+    security.admins.names.length ||
     security.admins.roles.length ||
-    security.members.users.length ||
+    security.members.names.length ||
     security.members.roles.length
   );
   return (!thereAreMembers) || isIn(userCtx, security.members);
@@ -157,14 +163,15 @@ securityWrappers.viewCleanup = securityWrappers.compact;
 //functions requiring a db member
 var requiresMemberWrapper = securityWrapper.bind(null, function (userCtx, security) {
   return (
-    isMember(userCtx, security) ||
-    isIn(userCtx, security.admins)
+    isIn(userCtx, security.admins) ||
+    isMember(userCtx, security)
   );
 });
 
 [].concat(
   "get allDocs changes replicate.to replicate.from".split(" "),
-  "sync getAttachment info revsDiff".split(" ")
+  "sync getAttachment info revsDiff getSecurity list show".split(" "),
+  "update rewriteResultRequestObject".split(" ")
 ).forEach(function (name) {
   securityWrappers[name] = requiresMemberWrapper;
 });
