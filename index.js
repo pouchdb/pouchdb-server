@@ -18,12 +18,26 @@
 
 var nodify = require("promise-nodify");
 
+exports.installStaticWrapperMethods = function (PouchDB, handlers) {
+  //set an 'alternative constructor' so the constructor can be easily
+  //wrapped, since wrapping 'real' constructors is hard.
+  PouchDB.new = PouchDB.new || function (name, options, callback) {
+    return new PouchDB(name, options, callback);
+  };
+
+  installWrappers(PouchDB, handlers, exports.createStaticWrapperMethod);
+};
+
 exports.installWrapperMethods = function (db, handlers) {
+  installWrappers(db, handlers, exports.createWrapperMethod);
+};
+
+function installWrappers(base, handlers, createWrapperMethod) {
   for (var name in handlers) {
     if (!handlers.hasOwnProperty(name)) {
       continue;
     }
-    var info = getBaseAndName(db, name);
+    var info = getBaseAndName(base, name);
     var original = info.base[info.name];
     if (!original) {
       //no method to wrap
@@ -35,10 +49,10 @@ exports.installWrapperMethods = function (db, handlers) {
       }
       original._handlers.push(handlers[name]);
     } else {
-      info.base[info.name] = exports.createWrapperMethod(name, original, handlers[name], db);
+      info.base[info.name] = createWrapperMethod(name, original, handlers[name], base);
     }
   }
-};
+}
 
 function getBaseAndName(base, name) {
   name = name.split(".");
@@ -51,31 +65,43 @@ function getBaseAndName(base, name) {
   };
 }
 
+exports.createStaticWrapperMethod = function (name, original, handler, PouchDB) {
+  //PouchDB is optional
+  return createWrapper(name, original, handler, staticWrapperBuilders, PouchDB);
+};
+
 exports.createWrapperMethod = function (name, original, handler, db) {
-  var createWrapper = wrapperCreators[name];
+  //db is optional
+  return createWrapper(name, original, handler, wrapperBuilders, db);
+};
+
+function createWrapper(name, original, handler, theWrapperBuilders, thisVal) {
+  //thisVal is optional
+  var buildWrapper = theWrapperBuilders[name];
   if (typeof createWrapper === "undefined") {
     throw new Error("No known wrapper for method name: " + name); //coverage: ignore
   }
   var handlers = [handler];
-  var wrapper = createWrapper(db, original, handlers);
+  var wrapper = buildWrapper(thisVal, original, handlers);
   wrapper._original = original;
   wrapper._handlers = handlers;
   return wrapper;
-};
+}
 
-var wrapperCreators = {};
+var wrapperBuilders = {};
 
-wrapperCreators.destroy = function (db, destroy, handlers) {
+wrapperBuilders.destroy = function (db, destroy, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     return callHandlers(handlers, args, makeCall(destroy));
   };
 };
 
-wrapperCreators.put = function (db, put, handlers) {
+wrapperBuilders.put = function (db, put, handlers) {
   return function (doc, docId, docRev, options, callback) {
     var args = {};
-    args.db = db || this;
+    args.base = db || this;
+    args.db = db || this; //backwards compatibility
     var argsList = Array.prototype.slice.call(arguments);
     //parsing code borrowed from PouchDB (adapted).
     args.doc = argsList.shift();
@@ -104,7 +130,7 @@ wrapperCreators.put = function (db, put, handlers) {
   };
 };
 
-wrapperCreators.post = function (db, post, handlers) {
+wrapperBuilders.post = function (db, post, handlers) {
   return function (doc, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.doc = doc;
@@ -114,7 +140,7 @@ wrapperCreators.post = function (db, post, handlers) {
   };
 };
 
-wrapperCreators.get = function (db, get, handlers) {
+wrapperBuilders.get = function (db, get, handlers) {
   return function(docId, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.docId = docId;
@@ -124,7 +150,7 @@ wrapperCreators.get = function (db, get, handlers) {
   };
 };
 
-wrapperCreators.remove = function (db, remove, handlers) {
+wrapperBuilders.remove = function (db, remove, handlers) {
   return function (docOrId, optsOrRev, opts, callback) {
     var args;
 
@@ -148,7 +174,7 @@ wrapperCreators.remove = function (db, remove, handlers) {
   };
 };
 
-wrapperCreators.bulkDocs = function (db, bulkDocs, handlers) {
+wrapperBuilders.bulkDocs = function (db, bulkDocs, handlers) {
   return function (docs, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     //support the deprecated signature.
@@ -159,14 +185,14 @@ wrapperCreators.bulkDocs = function (db, bulkDocs, handlers) {
   };
 };
 
-wrapperCreators.allDocs = function (db, allDocs, handlers) {
+wrapperBuilders.allDocs = function (db, allDocs, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     return callHandlers(handlers, args, makeCallWithOptions(allDocs, args));
   };
 };
 
-wrapperCreators.changes = function (db, changes, handlers) {
+wrapperBuilders.changes = function (db, changes, handlers) {
   return function (options, callback) {
     //the callback argument is no longer documented. (And deprecated?)
     var args = parseBaseArgs(db, this, options, callback);
@@ -174,7 +200,7 @@ wrapperCreators.changes = function (db, changes, handlers) {
   };
 };
 
-wrapperCreators.sync = function (db, replicate, handlers) {
+wrapperBuilders.sync = function (db, replicate, handlers) {
   return function (url, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.url = url;
@@ -184,10 +210,10 @@ wrapperCreators.sync = function (db, replicate, handlers) {
   };
 };
 
-wrapperCreators["replicate.from"] = wrapperCreators.sync;
-wrapperCreators["replicate.to"] = wrapperCreators.sync;
+wrapperBuilders["replicate.from"] = wrapperBuilders.sync;
+wrapperBuilders["replicate.to"] = wrapperBuilders.sync;
 
-wrapperCreators.putAttachment = function (db, putAttachment, handlers) {
+wrapperBuilders.putAttachment = function (db, putAttachment, handlers) {
   return function (docId, attachmentId, rev, doc, type, options, callback) {
     //options is not an 'official' argument. But some plug-ins need it
     //and maybe (?) also the http adapter.
@@ -220,7 +246,7 @@ wrapperCreators.putAttachment = function (db, putAttachment, handlers) {
   };
 };
 
-wrapperCreators.getAttachment = function (db, getAttachment, handlers) {
+wrapperBuilders.getAttachment = function (db, getAttachment, handlers) {
   return function (docId, attachmentId, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.docId = docId;
@@ -231,7 +257,7 @@ wrapperCreators.getAttachment = function (db, getAttachment, handlers) {
   };
 };
 
-wrapperCreators.removeAttachment = function (db, removeAttachment, handlers) {
+wrapperBuilders.removeAttachment = function (db, removeAttachment, handlers) {
   return function (docId, attachmentId, rev, options, callback) {
     //see note on the options argument at putAttachment.
     var args = parseBaseArgs(db, this, options, callback);
@@ -244,7 +270,7 @@ wrapperCreators.removeAttachment = function (db, removeAttachment, handlers) {
   };
 };
 
-wrapperCreators.query = function (db, query, handlers) {
+wrapperBuilders.query = function (db, query, handlers) {
   return function (fun, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.fun = fun;
@@ -254,14 +280,14 @@ wrapperCreators.query = function (db, query, handlers) {
   };
 };
 
-wrapperCreators.viewCleanup = function (db, viewCleanup, handlers) {
+wrapperBuilders.viewCleanup = function (db, viewCleanup, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     return callHandlers(handlers, args, makeCallWithOptions(viewCleanup, args));
   };
 };
 
-wrapperCreators.info = function (db, info, handlers) {
+wrapperBuilders.info = function (db, info, handlers) {
   return function (options, callback) {
     //see note on the options argument at putAttachment.
     var args = parseBaseArgs(db, this, options, callback);
@@ -269,14 +295,14 @@ wrapperCreators.info = function (db, info, handlers) {
   };
 };
 
-wrapperCreators.compact = function (db, compact, handlers) {
+wrapperBuilders.compact = function (db, compact, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     return callHandlers(handlers, args, makeCallWithOptions(compact, args));
   };
 };
 
-wrapperCreators.revsDiff = function (db, revsDiff, handlers) {
+wrapperBuilders.revsDiff = function (db, revsDiff, handlers) {
   return function (diff, options, callback) {
     //see note on the options argument at putAttachment.
     var args = parseBaseArgs(db, this, options, callback);
@@ -287,10 +313,10 @@ wrapperCreators.revsDiff = function (db, revsDiff, handlers) {
   };
 };
 
-//Plug-in wrapperCreators; only of the plug-ins for which a wrapper
+//Plug-in wrapperBuilders; only of the plug-ins for which a wrapper
 //has been necessary.
 
-wrapperCreators.list = function (db, orig, handlers) {
+wrapperBuilders.list = function (db, orig, handlers) {
   return function (path, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.path = path;
@@ -301,18 +327,18 @@ wrapperCreators.list = function (db, orig, handlers) {
   };
 };
 
-wrapperCreators.rewriteResultRequestObject = wrapperCreators.list;
-wrapperCreators.show = wrapperCreators.list;
-wrapperCreators.update = wrapperCreators.list;
+wrapperBuilders.rewriteResultRequestObject = wrapperBuilders.list;
+wrapperBuilders.show = wrapperBuilders.list;
+wrapperBuilders.update = wrapperBuilders.list;
 
-wrapperCreators.getSecurity = function (db, getSecurity, handlers) {
+wrapperBuilders.getSecurity = function (db, getSecurity, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     return callHandlers(handlers, args, makeCallWithOptions(getSecurity, args));
   };
 };
 
-wrapperCreators.putSecurity = function (db, putSecurity, handlers) {
+wrapperBuilders.putSecurity = function (db, putSecurity, handlers) {
   return function (secObj, options, callback) {
     //see note on the options argument at putAttachment.
     var args = parseBaseArgs(db, this, options, callback);
@@ -323,13 +349,64 @@ wrapperCreators.putSecurity = function (db, putSecurity, handlers) {
   };
 };
 
-function parseBaseArgs(db, thisVal, options, callback) {
+//static
+var staticWrapperBuilders = {};
+
+staticWrapperBuilders.new = function (PouchDB, construct, handlers) {
+  return function (name, options, callback) {
+    var args;
+    if (typeof name === "object") {
+      args = parseBaseArgs(PouchDB, this, name, options);
+    } else {
+      args = parseBaseArgs(PouchDB, this, options, callback);
+      args.options.name = name;
+    }
+    return callHandlers(handlers, args, function () {
+      return construct.call(this, args.options);
+    });
+  };
+};
+
+staticWrapperBuilders.destroy = function (PouchDB, destroy, handlers) {
+  return function (name, options, callback) {
+    var args;
+    if (typeof name === "object") {
+      args = parseBaseArgs(PouchDB, this, name, options);
+    } else {
+      args = parseBaseArgs(PouchDB, this, options, callback);
+      args.options.name = name;
+    }
+    return callHandlers(handlers, args, function () {
+      var name = args.options.name;
+      delete args.options.name;
+      return destroy.call(this, name, args.options);
+    });
+  };
+};
+
+staticWrapperBuilders.replicate = function (PouchDB, replicate, handlers) {
+  return function (source, target, options) {
+    //no callback
+    var args = parseBaseArgs(PouchDB, this, options);
+    args.source = source;
+    args.target = target;
+    return callHandlers(handlers, args, function () {
+      return replicate.call(this, args.source, args.target, args.options);
+    });
+  };
+};
+
+//Wrap .plugin()? .on()? .defaults()? No use case yet, but it's
+//possible...
+
+function parseBaseArgs(thisVal1, thisVal2, options, callback) {
   if (typeof options === "function") {
     callback = options;
     options = {};
   }
   return {
-    db: db || thisVal,
+    base: thisVal1 || thisVal2,
+    db: thisVal1 || thisVal2, //backwards compatibility
     options: options || {},
     callback: callback
   };
@@ -341,7 +418,7 @@ function callHandlers(handlers, args, method) {
 
   //build a chain of handlers: the bottom handler calls the 'real'
   //method, the other handlers call other handlers.
-  method = method.bind(args.db);
+  method = method.bind(args.base);
   for (var i = handlers.length - 1; i >= 0; i -= 1) {
     method = handlers[i].bind(null, method, args);
   }
@@ -364,11 +441,19 @@ function makeCallWithOptions(func, args) {
 }
 
 exports.uninstallWrapperMethods = function (db, handlers) {
+  uninstallWrappers(db, handlers);
+};
+
+exports.uninstallStaticWrapperMethods = function (PouchDB, handlers) {
+  uninstallWrappers(PouchDB, handlers);
+};
+
+function uninstallWrappers(base, handlers) {
   for (var name in handlers) {
     if (!handlers.hasOwnProperty(name)) {
       continue;
     }
-    var info = getBaseAndName(db, name);
+    var info = getBaseAndName(base, name);
     var wrapper = info.base[info.name];
     if (typeof wrapper === "undefined") {
       //method doesn't exist, so was never wrapped in the first place.
@@ -395,4 +480,4 @@ exports.uninstallWrapperMethods = function (db, handlers) {
       }
     }
   }
-};
+}
