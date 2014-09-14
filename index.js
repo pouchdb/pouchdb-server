@@ -35,6 +35,15 @@ exports.installSecurityMethods = function () {
   }
 };
 
+exports.installStaticSecurityMethods = function (PouchDB) {
+  //'static' method.
+  try {
+    wrappers.installStaticWrapperMethods(PouchDB, staticSecurityWrappers);
+  } catch (err) {
+    throw new Error("Static security methods already installed.");
+  }
+};
+
 function securityWrapper(checkAllowed, original, args) {
   var userCtx = args.options.userCtx || {
     //Admin party!
@@ -44,17 +53,24 @@ function securityWrapper(checkAllowed, original, args) {
   if (userCtx.roles.indexOf("_admin") !== -1) {
     return original();
   }
+  if (!checkAllowed) {
+    return Promise.resolve().then(throw401);
+  }
   return filledInSecurity(args)
     .then(function (security) {
       if (!checkAllowed(userCtx, security)) {
-        throw new PouchDBPluginError({
-          status: 401,
-          name: "unauthorized",
-          message: "You are not authorized to access this db."
-        });
+        throw401();
       }
     })
     .then(original);
+}
+
+function throw401() {
+  throw new PouchDBPluginError({
+    status: 401,
+    name: "unauthorized",
+    message: "You are not authorized to access this db."
+  });
 }
 
 function filledInSecurity(args) {
@@ -149,9 +165,9 @@ securityWrappers.bulkDocs = createBulkDocsWrapper(function (doc, args) {
 });
 
 //functions requiring a server admin
-securityWrappers.destroy = securityWrapper.bind(null, function (userCtx, security) {
-  return false;
-});
+var requiresServerAdmin = securityWrapper.bind(null, null);
+
+securityWrappers.destroy = requiresServerAdmin;
 
 //functions requiring a db admin
 securityWrappers.compact = securityWrapper.bind(null, function (userCtx, security) {
@@ -176,11 +192,32 @@ var requiresMemberWrapper = securityWrapper.bind(null, function (userCtx, securi
   securityWrappers[name] = requiresMemberWrapper;
 });
 
+var staticSecurityWrappers = {};
+
+staticSecurityWrappers.new = requiresServerAdmin;
+staticSecurityWrappers.destroy = requiresServerAdmin;
+staticSecurityWrappers.replicate = function (original, args) {
+  //emulate replicate.to/replicate.from
+  var PouchDB = args.base;
+  args.db = new PouchDB(args.source);
+  //and call its handler
+  return requiresMemberWrapper(original, args);
+};
+
 exports.uninstallSecurityMethods = function () {
   try {
     wrappers.uninstallWrapperMethods(this, securityWrappers);
   } catch (err) {
     throw new Error("Security methods not installed.");
+  }
+};
+
+exports.uninstallStaticSecurityMethods = function (PouchDB) {
+  //'static' method.
+  try {
+    wrappers.uninstallStaticWrapperMethods(PouchDB, staticSecurityWrappers);
+  } catch (err) {
+    throw new Error("Static security methods not installed.");
   }
 };
 
