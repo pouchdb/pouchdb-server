@@ -16,7 +16,8 @@ var startTime        = new Date().getTime()
   , histories        = {}
   , app              = express()
   , CouchConfig      = require('./lib/couch_config')
-  , events           = require('events');
+  , events           = require('events')
+  , Security         = require('pouchdb-security');
 
 var Pouch, usersDB, preparingUsersDB, replicatorDB;
 
@@ -25,11 +26,14 @@ module.exports = function(PouchToUse) {
   require('pouchdb-all-dbs')(Pouch);
   Pouch.plugin(require('pouchdb-rewrite'));
   Pouch.plugin(require('pouchdb-list'));
+  Pouch.plugin(Security)
   Pouch.plugin(require('pouchdb-show'));
   Pouch.plugin(require('pouchdb-update'));
   Pouch.plugin(require('pouchdb-validation'));
   Pouch.plugin(require('pouchdb-auth'));
   Pouch.plugin(require('pouchdb-replicator'));
+
+  Security.installStaticSecurityMethods(Pouch);
 
   // init DbUpdates
   app.couch_db_updates = new events.EventEmitter();
@@ -87,7 +91,18 @@ function ensureReplicatorDB() {
   }
 }
 
+function makeOpts(req, startOpts) {
+  // fill in opts so it can be used by authorisation logic
+  var opts = startOpts || {};
+  opts.userCtx = req.session.userCtx;
+  opts.secObj = req.secObj;
+
+  return opts;
+}
+
 function registerDB(name, db) {
+  // order matters!
+  db.installSecurityMethods();
   db.installValidationMethods();
   dbs[name] = db;
 }
@@ -95,9 +110,17 @@ function registerDB(name, db) {
 function setDBOnReq(db_name, req, res, next) {
   var name = encodeURIComponent(db_name);
 
+  function doneSettingDB() {
+    req.db.getSecurity().then(function (secObj) {
+      req.secObj = secObj;
+
+      next();
+    });
+  }
+
   if (name in dbs) {
     req.db = dbs[name];
-    return next();
+    return doneSettingDB();
   }
 
   Pouch.allDbs(function (err, dbs) {
@@ -114,21 +137,20 @@ function setDBOnReq(db_name, req, res, next) {
       if (err) return res.send(412, err);
       registerDB(name, db);
       req.db = db;
-      return next();
+      return doneSettingDB();
     });
   });
 }
 
 function expressReqToCouchDBReq(req) {
-  return {
+  return makeOpts(req, {
     body: req.body ? JSON.stringify(req.body) : "undefined",
     cookie: req.cookies || {},
     headers: req.headers,
     method: req.method,
     peer: req.ip,
-    query: req.query,
-    userCtx: req.session.userCtx
-  };
+    query: req.query
+  });
 }
 
 function sendCouchDBResp(res, err, couchResp) {
@@ -309,7 +331,7 @@ app.delete('/_session', function (req, res, next) {
 });
 
 
-app.all('/_db_updates', function (req, res, next) {
+app.all('/_db_updates', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
   res.send(400);
   // app.couch_db_updates.on('update', function(update) {
@@ -321,16 +343,26 @@ app.get('/_utils', function (req, res, next) {
   res.sendfile(__dirname + '/fauxton/index.html');
 });
 
+function requiresServerAdmin(req, res, next) {
+  if (req.session.userCtx.roles.indexOf('_admin') !== -1) {
+    return next();
+  }
+  res.send(401, {
+    error: "unauthorized",
+    reason:"You are not a server admin."
+  });
+}
+
 // Config
-app.get('/_config', function (req, res, next) {
+app.get('/_config', requiresServerAdmin, function (req, res, next) {
   res.send(200, app.couchConfig.getAll());
 });
 
-app.get('/_config/:section', function (req, res, next) {
+app.get('/_config/:section', requiresServerAdmin, function (req, res, next) {
   res.send(200, app.couchConfig.getSection(req.params.section));
 });
 
-app.get('/_config/:section/:key', function (req, res, next) {
+app.get('/_config/:section/:key', requiresServerAdmin, function (req, res, next) {
   var value = app.couchConfig.get(req.params.section, req.params.key);
   sendConfigValue(res, value);
 });
@@ -345,7 +377,7 @@ function sendConfigValue(res, value) {
   res.send(200, JSON.stringify(value));
 }
 
-app.put('/_config/:section/:key', parseRawBody, function (req, res, next) {
+app.put('/_config/:section/:key', requiresServerAdmin, parseRawBody, function (req, res, next) {
   // Custom JSON parsing, because the default JSON body parser
   // middleware only supports JSON lists and objects. (Not numbers etc.)
   var value;
@@ -366,14 +398,14 @@ app.put('/_config/:section/:key', parseRawBody, function (req, res, next) {
   });
 });
 
-app.delete('/_config/:section/:key', function (req, res, next) {
+app.delete('/_config/:section/:key', requiresServerAdmin, function (req, res, next) {
   app.couchConfig.delete(req.params.section, req.params.key, function (err, oldValue) {
     sendConfigValue(res, oldValue);
   });
 });
 
 // Log (stub for now)
-app.get('/_log', function (req, res, next) {
+app.get('/_log', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
   res.send(200, '_log is not implemented yet. PRs welcome!');
 });
@@ -384,7 +416,7 @@ app.get('/_stats', function (req, res, next) {
   res.send(200, {'pouchdb-server' : 'has not impemented _stats yet. PRs welcome!'});
 });
 
-app.get('/_active_tasks', function (req, res, next) {
+app.get('/_active_tasks', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
   res.send(200, []);
 });
@@ -414,7 +446,7 @@ app.post('/_replicate', jsonParser, function (req, res, next) {
 
   var source = req.body.source
     , target = req.body.target
-    , opts = { continuous: !!req.body.continuous };
+    , opts = makeOpts(req, {continuous: !!req.body.continuous});
 
   if (req.body.filter) opts.filter = req.body.filter;
   if (req.body.query_params) opts.query_params = req.body.query_params;
@@ -472,8 +504,10 @@ app.put('/:db', jsonParser, function (req, res, next) {
     });
   }
 
-  new Pouch(name, function (err, db) {
-    if (err) return res.send(412, err);
+  // Pouch.new() instead of new Pouch() because that adds authorisation
+  // logic
+  Pouch.new(name, makeOpts(req), function (err, db) {
+    if (err) return res.send(err.status || 412, err);
     registerDB(name, db);
     var loc = req.protocol
       + '://'
@@ -488,7 +522,7 @@ app.put('/:db', jsonParser, function (req, res, next) {
 // Delete a database
 app.delete('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
-  Pouch.destroy(name, function (err, info) {
+  Pouch.destroy(name, makeOpts(req), function (err, info) {
     if (err) return res.send(err.status || 500, err);
     delete dbs[name];
     res.send(200, { ok: true });
@@ -505,7 +539,7 @@ app.delete('/:db', function (req, res, next) {
 
 // Get database information
 app.get('/:db', function (req, res, next) {
-  req.db.info(function (err, info) {
+  req.db.info(makeOpts(req), function (err, info) {
     if (err) return res.send(404, err);
     info.instance_start_time = startTime.toString();
     // TODO: disk_size
@@ -523,7 +557,7 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
   var opts = 'new_edits' in req.body
     ? { new_edits: req.body.new_edits }
     : {};
-  opts.userCtx = req.session.userCtx;
+  opts = makeOpts(req, opts);
 
   if (Array.isArray(req.body)) {
     return res.send(400, {
@@ -541,7 +575,7 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
 
 // Ensure all commits are written to disk
 app.post('/:db/_ensure_full_commit', function (req, res, next) {
-  // TODO: implement
+  // TODO: implement. Also check security then: who is allowed to access this? (db & server admins?)
   res.send(201, {
     ok: true, 
     instance_start_time: startTime.toString()
@@ -557,11 +591,8 @@ app.all('/:db/_all_docs', jsonParser, function (req, res, next) {
     return res.send(400, Pouch.BAD_REQUEST);
   }
 
-  for (var prop in req.body) {
-    req.query[prop] = req.query[prop] || req.body[prop];
-  }
-
-  req.db.allDocs(req.query, function (err, response) {
+  var opts = makeOpts(req, extend({}, req.body, req.query));
+  req.db.allDocs(opts, function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
   });
@@ -574,6 +605,8 @@ app.get('/:db/_changes', function (req, res, next) {
   // api.changes expects a property `query_params`
   // This is a pretty inefficient way to do it.. Revisit?
   req.query.query_params = JSON.parse(JSON.stringify(req.query));
+
+  req.query = makeOpts(req, req.query);
 
   if (req.query.feed === 'continuous' || req.query.feed === 'longpoll') {
     var heartbeatInterval;
@@ -651,7 +684,7 @@ app.get('/:db/_changes', function (req, res, next) {
 
 // DB Compaction
 app.post('/:db/_compact', jsonParser, function (req, res, next) {
-  req.db.compact(function (err, response) {
+  req.db.compact(makeOpts(req), function (err, response) {
     if (err) return res.send(500, err);
     res.send(200, response);
   });
@@ -659,10 +692,27 @@ app.post('/:db/_compact', jsonParser, function (req, res, next) {
 
 // Revs Diff
 app.post('/:db/_revs_diff', jsonParser, function (req, res, next) {
-  req.db.revsDiff(req.body || {}, function (err, diffs) {
+  req.db.revsDiff(req.body || {}, makeOpts(req), function (err, diffs) {
     if (err) return res.send(400, err);
 
     res.send(200, diffs);
+  });
+});
+
+// Security
+app.get('/:db/_security', function (req, res, next) {
+  req.db.getSecurity(makeOpts(req), function (err, response) {
+    if (err) return res.send(err.status, err);
+
+    res.send(200, response);
+  });
+});
+
+app.put('/:db/_security', jsonParser, function (req, res, next) {
+  req.db.putSecurity(req.body || {}, makeOpts(req), function (err, response) {
+    if (err) return res.send(err.status, err);
+
+    res.send(200, response);
   });
 });
 
@@ -670,7 +720,8 @@ app.post('/:db/_revs_diff', jsonParser, function (req, res, next) {
 app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
   if (req.body.map) req.body.map = (new Function('return ' + req.body.map))();
   req.query.conflicts = true;
-  req.db.query(req.body, req.query, function (err, response) {
+  var opts = makeOpts(req, req.query);
+  req.db.query(req.body, opts, function (err, response) {
     if (err) return res.send(400, err);
     res.send(200, response);
   });
@@ -678,7 +729,8 @@ app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
 
 // Query design document info
 app.get('/:db/_design/:id/_info', function (req, res, next) {
-  // Dummy data for Fauxton
+  // Dummy data for Fauxton - when implementing fully also take into
+  // account req.secObj - this needs at least db view rights it seems.
   res.send(200, {
     'name': req.query.id,
     'view_index': 'Not implemented.'
@@ -688,7 +740,8 @@ app.get('/:db/_design/:id/_info', function (req, res, next) {
 // Query a document view
 app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
   var query = req.params.id + '/' + req.params.view;
-  req.db.query(query, req.query, function (err, response) {
+  var opts = makeOpts(req, req.query);
+  req.db.query(query, opts, function (err, response) {
     if (err) return res.send(404, err);
     res.send(200, response);
   });
@@ -740,7 +793,7 @@ function putAttachment(name, req, res) {
     , rev = req.query.rev
     , type = req.get('Content-Type') || 'application/octet-stream'
     , body = new Buffer(req.rawBody || '', 'binary')
-    , opts = {userCtx: req.session.userCtx};
+    , opts = makeOpts(req);
 
   req.db.putAttachment(name, attachment, rev, body, type, opts, function (err, response) {
     if (err) return res.send(409, err);
@@ -763,8 +816,9 @@ app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
 // Retrieve a document attachment
 function getAttachment(name, req, res) {
   var attachment = req.params.attachment;
+  var opts = makeOpts(req, req.query);
 
-  req.db.get(name, req.query, function (err, info) {
+  req.db.get(name, opts, function (err, info) {
     if (err) return res.send(404, err);
 
     if (!info._attachments || !info._attachments[attachment]) {
@@ -798,7 +852,7 @@ function deleteAttachment(name, req, res) {
   var name = req.params.id
     , attachment = req.params.attachment
     , rev = req.query.rev
-    , opts = {userCtx: req.session.userCtx};
+    , opts = makeOpts(req);
 
   req.db.removeAttachment(name, attachment, rev, function (err, response) {
     if (err) return res.send(409, err);
@@ -821,9 +875,8 @@ app.delete('/:db/:id/:attachment(*)', function (req, res, next) {
 // Create or update document that has an ID
 app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
 
-  var opts = req.query;
-  opts.userCtx = req.session.userCtx;
-  
+  var opts = makeOpts(req, req.query);
+
   function onResponse(err, response) {
     if (err) {
       return res.send(err.status || 500, err);
@@ -837,7 +890,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
     res.location(loc);
     res.send(201, response);
   }
-  
+
   if (/^multipart\/related/.test(req.headers['content-type'])) {
     // multipart, assuming it's also new_edits=false for now
     var doc;
@@ -883,8 +936,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
 
 // Create a document
 app.post('/:db', jsonParser, function (req, res, next) {
-  var opts = req.query;
-  opts.userCtx = req.session.userCtx;
+  var opts = makeOpts(req, req.query);
 
   req.body._id = uuids(1)[0];
   req.db.put(req.body, opts, function (err, response) {
@@ -895,7 +947,9 @@ app.post('/:db', jsonParser, function (req, res, next) {
 
 // Retrieve a document
 app.get('/:db/:id(*)', function (req, res, next) {
-  req.db.get(req.params.id, req.query, function (err, doc) {
+  var opts = makeOpts(req, req.query);
+
+  req.db.get(req.params.id, opts, function (err, doc) {
     if (err) return res.send(404, err);
     res.send(200, doc);
   });
@@ -903,9 +957,11 @@ app.get('/:db/:id(*)', function (req, res, next) {
 
 // Delete a document
 app.delete('/:db/:id(*)', function (req, res, next) {
-  req.db.get(req.params.id, req.query, function (err, doc) {
+  var opts = makeOpts(req, req.query);
+
+  req.db.get(req.params.id, opts, function (err, doc) {
     if (err) return res.send(404, err);
-    req.db.remove(doc, {userCtx: req.session.userCtx}, function (err, response) {
+    req.db.remove(doc, opts, function (err, response) {
       if (err) return res.send(404, err);
       res.send(200, response);
     });
@@ -937,11 +993,13 @@ app.copy('/:db/:id', function (req, res, next) {
     rev = match[2];
   }
 
-  req.db.get(req.params.id, req.query, function (err, doc) {
+  var opts = makeOpts(req, req.query);
+
+  req.db.get(req.params.id, opts, function (err, doc) {
     if (err) return res.send(404, err);
     doc._id = dest;
     doc._rev = rev;
-    req.db.put(doc, {userCtx: req.session.userCtx}, function (err, response) {
+    req.db.put(doc, opts, function (err, response) {
       if (err) return res.send(409, err);
       res.send(201, {ok: true});
     });
