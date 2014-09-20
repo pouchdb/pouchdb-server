@@ -19,30 +19,30 @@ var startTime        = new Date().getTime()
   , events           = require('events')
   , Security         = require('pouchdb-security');
 
-var Pouch, usersDB, preparingUsersDB, replicatorDB;
+var PouchDB, usersDB, preparingUsersDB, usersDBName, replicatorDB, preparingReplicatorDB, replicatorDBName;
 
 module.exports = function(PouchToUse) {
-  Pouch = PouchToUse;
-  require('pouchdb-all-dbs')(Pouch);
-  Pouch.plugin(require('pouchdb-rewrite'));
-  Pouch.plugin(require('pouchdb-list'));
-  Pouch.plugin(Security)
-  Pouch.plugin(require('pouchdb-show'));
-  Pouch.plugin(require('pouchdb-update'));
-  Pouch.plugin(require('pouchdb-validation'));
-  Pouch.plugin(require('pouchdb-auth'));
-  Pouch.plugin(require('pouchdb-replicator'));
+  PouchDB = PouchToUse;
+  require('pouchdb-all-dbs')(PouchDB);
+  PouchDB.plugin(require('pouchdb-rewrite'));
+  PouchDB.plugin(require('pouchdb-list'));
+  PouchDB.plugin(Security)
+  PouchDB.plugin(require('pouchdb-show'));
+  PouchDB.plugin(require('pouchdb-update'));
+  PouchDB.plugin(require('pouchdb-validation'));
+  PouchDB.plugin(require('pouchdb-auth'));
+  PouchDB.plugin(require('pouchdb-replicator'));
 
-  Security.installStaticSecurityMethods(Pouch);
+  Security.installStaticSecurityMethods(PouchDB);
 
   // init DbUpdates
   app.couch_db_updates = new events.EventEmitter();
 
-  Pouch.on('created', function (dbName) {
+  PouchDB.on('created', function (dbName) {
     app.couch_db_updates.emit('update', {db_name: dbName, type: 'created'});
   });
 
-  Pouch.on('destroyed', function (dbName) {
+  PouchDB.on('destroyed', function (dbName) {
     app.couch_db_updates.emit('update', {db_name: dbName, type: 'deleted'});
   });
 
@@ -57,39 +57,95 @@ module.exports = function(PouchToUse) {
   return app;
 };
 
+//There are four types of databases:
+//- unwrapped databases. These are what you get by doing new PouchDB()
+//
+//- normal databases. These are validated and you need proper authorisation
+//  to use them. Related: useAsNormalDB()/stopUsingAsNormalDB
+//
+//- replicator databases. Better known as _replicator. Related:
+//  db.startReplicator()/.stopReplicator()
+//
+//- user databases. Better known as _users. Related:
+//  db.useAsAuthenticationDB()/.stopUsingAsAuthenticationDB()
+
 function ensureUsersDB() {
   var name = app.couchConfig.get('couch_httpd_auth', 'authentication_db');
 
-  function cleanupDone() {
-    dbs[name] = dbs[name] || new Pouch(name);
-
-    preparingUsersDB = dbs[name].useAsAuthenticationDB().then(function () {
-      usersDB = dbs[name];
-    });
-  };
-  if (usersDB) {
-    usersDB.stopUsingAsAuthenticationDB().then(cleanupDone);
-  } else {
-    cleanupDone();
+  function wrap(db) {
+    return db.useAsAuthenticationDB();
   }
+  function unwrap(db) {
+    return db.stopUsingAsAuthenticationDB();
+  }
+
+  preparingUsersDB = (preparingUsersDB || Promise.resolve()).then(function () {
+    return ensureSpecialDB(wrap, unwrap, usersDB, name);
+  }).then(function (db) {
+    usersDBName = name;
+    usersDB = db;
+  });
 }
 
 function ensureReplicatorDB() {
   var name = app.couchConfig.get('replicator', 'db');
 
-  function cleanupDone() {
-    dbs[name] = dbs[name] || new Pouch(name);
+  function wrap(db) {
+    return db.startReplicator();
+  }
+  function unwrap(db) {
+    return db.stopReplicator();
+  }
 
-    dbs[name].startReplicator().then(function () {
-      replicatorDB = dbs[name];
+  preparingReplicatorDB = (preparingReplicatorDB || Promise.resolve()).then(function () {
+    return ensureSpecialDB(wrap, unwrap, replicatorDB, name);
+  }).then(function (db) {
+    replicatorDBName = name;
+    replicatorDB = db;
+  });
+}
+
+function ensureSpecialDB(specialWrap, specialUnwrap, oldDB, newName) {
+  function cleanupSuccess() {
+    useAsNormalDB(oldDB);
+    return cleanupDone();
+  }
+  function cleanupDone() {
+    var newDB = getUnwrappedDB(newName);
+    return specialWrap(newDB).then(function () {
+      dbs[newName] = newDB;
+      return newDB;
     });
-  };
-  if (replicatorDB) {
-    replicatorDB.stopReplicator().then(cleanupDone);
+  }
+
+  if (typeof oldDB === "undefined") {
+    return cleanupDone();
   } else {
-    cleanupDone();
+    return specialUnwrap(oldDB).then(cleanupSuccess, cleanupDone);
   }
 }
+
+function getUnwrappedDB(name) {
+  db = dbs[name];
+  if (typeof db === "undefined") {
+    db = new PouchDB(name);
+  } else {
+    stopUsingAsNormalDB(db);
+  }
+  return db;
+}
+
+function authFunc(name) {
+  return function () {
+    return preparingUsersDB.then(function () {
+      return usersDB[name].apply(usersDB, arguments);
+    });
+  }
+}
+
+var session = authFunc("session"),
+    logIn   = authFunc("logIn"),
+    logOut  = authFunc("logOut");
 
 function makeOpts(req, startOpts) {
   // fill in opts so it can be used by authorisation logic
@@ -101,10 +157,20 @@ function makeOpts(req, startOpts) {
 }
 
 function registerDB(name, db) {
+  useAsNormalDB(db);
+  dbs[name] = db;
+}
+
+function useAsNormalDB(db) {
   // order matters!
   db.installSecurityMethods();
   db.installValidationMethods();
-  dbs[name] = db;
+}
+
+function stopUsingAsNormalDB(db) {
+  // order doesn't matter!
+  db.uninstallValidationMethods();
+  db.uninstallSecurityMethods();
 }
 
 function setDBOnReq(db_name, req, res, next) {
@@ -123,18 +189,17 @@ function setDBOnReq(db_name, req, res, next) {
     return doneSettingDB();
   }
 
-  Pouch.allDbs(function (err, dbs) {
+  PouchDB.allDbs(function (err, dbs) {
     if (err) {
-      return res.send(500, err);
+      return sendError(res, err);
     } else if (dbs.indexOf(name) === -1) {
-      return res.send(404, {
-        status: 404,
+      return sendJSON(res, 404, {
         error: 'not_found',
         reason: 'no_db_file'
       });
     }
-    new Pouch(name, function (err, db) {
-      if (err) return res.send(412, err);
+    new PouchDB(name, function (err, db) {
+      if (err) return sendError(res, err, 412);
       registerDB(name, db);
       req.db = db;
       return doneSettingDB();
@@ -154,16 +219,16 @@ function expressReqToCouchDBReq(req) {
 }
 
 function sendCouchDBResp(res, err, couchResp) {
-    if (err) return res.send(err.status, err);
+  if (err) return sendError(res, err);
 
-    res.set(couchResp.headers);
-    var body;
-    if (couchResp.base64) {
-      body = new Buffer(couchResp.base64, 'base64');
-    } else {
-      body = couchResp.body;
-    }
-    res.send(couchResp.code, body);
+  res.set(couchResp.headers);
+  var body;
+  if (couchResp.base64) {
+    body = new Buffer(couchResp.base64, 'base64');
+  } else {
+    body = couchResp.body;
+  }
+  res.status(couchResp.code).send(body);
 }
 
 function buildCookieSession(req) {
@@ -174,11 +239,11 @@ function buildCookieSession(req) {
   if (!opts.sessionID) {
     throw new Error("No cookie, so no cookie auth.");
   }
-  return usersDB.session(opts).then(function (session) {
-    if (session.info.authenticated) {
-      session.info.authenticated = 'cookie';
+  return session(opts).then(function (result) {
+    if (result.info.authenticated) {
+      result.info.authenticated = 'cookie';
     }
-    return session;
+    return result;
   });
 }
 
@@ -191,22 +256,22 @@ function buildBasicAuthSession(req) {
   var initializingDone = Promise.resolve();
   if (userInfo) {
     initializingDone = initializingDone.then(function () {
-      return usersDB.logIn(userInfo.name, userInfo.pass, opts);
+      return logIn(userInfo.name, userInfo.pass, opts);
     });
   }
-  var session;
+  var result;
   return initializingDone.then(function () {
-    return usersDB.session(opts);
+    return session(opts);
   }).then(function (theSession) {
-    session = theSession;
+    result = theSession;
 
     // Cleanup
-    return usersDB.logOut(opts);
+    return logOut(opts);
   }).then(function () {
-    if (session.info.authenticated) {
-      session.info.authenticated = 'default';
+    if (result.info.authenticated) {
+      result.info.authenticated = 'default';
     }
-    return session;
+    return result;
   });
 }
 
@@ -225,7 +290,7 @@ app.use(function (req, res, next) {
     , prop;
 
   // Normalize query string parameters for direct passing
-  // into Pouch queries.
+  // into PouchDB queries.
   for (prop in req.query) {
     try {
       req.query[prop] = JSON.parse(req.query[prop]);
@@ -233,37 +298,65 @@ app.use(function (req, res, next) {
   }
   next();
 });
-app.use(function (req, res, next) {
-  var _res = res;
-  var send = res.send;
-  res.send = function() {
-    var args = Array.prototype.slice.call(arguments).map(function (arg) {
-      if (arg && arg.name && arg.message) {
-        var _arg = {
-          error: arg.name,
-          reason: arg.message
-        };
-        return _arg;
+
+function sendError(res, err, baseStatus) {
+  var status = err.status || baseStatus || 500;
+
+  // last argument is optional
+  if (err.name && err.message) {
+    if (err.name === 'Error') {
+      if (err.message.indexOf("Bad special document member") !== -1) {
+        err.name = 'doc_validation';
       }
-      return arg;
-    });
-    send.apply(_res, args);
-  };
-  next();
-});
+      // add more clauses here if the error name is too general
+    }
+    err = {
+      error: err.name,
+      reason: err.message
+    };
+  }
+  sendJSON(res, status, err);
+}
+
+function sendJSON(res, status, body) {
+  res.status(status);
+
+  var type = res.req.accepts(['text', 'json']);
+  if (type === "json") {
+    res.setHeader('Content-Type', 'application/json');
+  } else {
+    //adds ; charset=utf-8
+    res.type('text/plain');
+  }
+  //convert to buffer so express doesn't add the ; charset=utf-8 if it
+  //isn't already there by now. No performance problem: express does
+  //this internally anyway.
+  res.send(new Buffer(JSON.stringify(body) + "\n", 'utf8'));
+}
+
+function setLocation(res, path) {
+  //CouchDB location headers are always non-relative.
+  var loc = res.req.protocol
+    + '://'
+    + ((res.req.hostname === '127.0.0.1') ? '' : res.req.subdomains.join('.') + '.')
+    + res.req.hostname
+    + ':' + res.req.socket.localPort
+    + '/' + path;
+  res.location(loc);
+}
 
 app.use(function (req, res, next) {
   // TODO: TIMING ATTACK
-  preparingUsersDB.then(function () {
-    return buildCookieSession(req);
+  Promise.resolve().then(function () {
+    return buildCookieSession(req)
   }).catch(function (err) {
     return buildBasicAuthSession(req);
-  }).then(function (session) {
-    req.session = session;
+  }).then(function (result) {
+    req.session = result;
     req.session.info.authentication_handlers = ['cookie', 'default'];
     next();
   }).catch(function (err) {
-    res.send(err.status || 500, err);
+    sendError(res, err);
   });
 });
 
@@ -272,7 +365,7 @@ app.use(function (req, res, next) {
   // Prefers regex over setting the first argument of app.use(), because
   // the last makes req.url relative, which in turn makes most rewrites
   // impossible.
-  var match = /\/([^\/]*)\/_design\/([^\/]*)\/_rewrite(.*)/.exec(req.url);
+  var match = /\/([^\/]*)\/_design\/([^\/]*)\/_rewrite\/([^?]*)/.exec(req.url);
   if (!match) {
     return next();
   }
@@ -280,7 +373,8 @@ app.use(function (req, res, next) {
     var query = match[2] + "/" + match[3];
     var opts = expressReqToCouchDBReq(req);
     req.db.rewriteResultRequestObject(query, opts, function (err, resp) {
-      if (err) return res.send(err.status, err);
+      if (err) return sendError(res, err);
+
       req.rawBody = resp.body;
       req.cookies = resp.cookie;
       req.headers = resp.headers;
@@ -289,6 +383,7 @@ app.use(function (req, res, next) {
       req.url = "/" + resp.path.join("/");
       req.query = resp.query;
 
+      console.log("Rewritten to: " + req.url);
       // Handle the newly generated request.
       next();
     });
@@ -297,14 +392,14 @@ app.use(function (req, res, next) {
 
 // Root route, return welcome message
 app.get('/', function (req, res, next) {
-  res.send(200, {
+  sendJSON(res, 200, {
     'express-pouchdb': 'Welcome!',
     'version': pkg.version
   });
 });
 
 app.get('/_session', function (req, res, next) {
-  res.send(200, req.session);
+  sendJSON(res, 200, req.session);
 });
 
 app.post('/_session', jsonParser, urlencodedParser, function (req, res, next) {
@@ -314,29 +409,29 @@ app.post('/_session', jsonParser, urlencodedParser, function (req, res, next) {
     sessionID: uuids(1)[0],
     admins: app.couchConfig.getSection("admins")
   };
-  usersDB.logIn(name, password, opts, function (err, resp) {
-    if (err) return res.send(err.status, err);
+  logIn(name, password, opts, function (err, resp) {
+    if (err) return sendError(res, err);
 
     res.cookie('AuthSession', opts.sessionID, {httpOnly: true});
-    res.send(200, resp);
+    sendJSON(res, 200, resp);
   });
 });
 
 app.delete('/_session', function (req, res, next) {
   var sessionID = (req.cookies || {}).AuthSession;
-  usersDB.logOut({sessionID: sessionID}, function (err, resp) {
+  logOut({sessionID: sessionID}, function (err, resp) {
     // ``err`` just doesn't occur
     res.clearCookie('AuthSession');
-    res.send(200, resp);
+    sendJSON(res, 200, resp);
   });
 });
 
 
 app.all('/_db_updates', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
-  res.send(400);
+  res.status(400).end();
   // app.couch_db_updates.on('update', function(update) {
-  //   res.send(200, update);
+  //   sendJSON(res, 200, update);
   // });
 });
 
@@ -348,7 +443,7 @@ function requiresServerAdmin(req, res, next) {
   if (req.session.userCtx.roles.indexOf('_admin') !== -1) {
     return next();
   }
-  res.send(401, {
+  sendJSON(res, 401, {
     error: "unauthorized",
     reason:"You are not a server admin."
   });
@@ -356,11 +451,11 @@ function requiresServerAdmin(req, res, next) {
 
 // Config
 app.get('/_config', requiresServerAdmin, function (req, res, next) {
-  res.send(200, app.couchConfig.getAll());
+  sendJSON(res, 200, app.couchConfig.getAll());
 });
 
 app.get('/_config/:section', requiresServerAdmin, function (req, res, next) {
-  res.send(200, app.couchConfig.getSection(req.params.section));
+  sendJSON(res, 200, app.couchConfig.getSection(req.params.section));
 });
 
 app.get('/_config/:section/:key', requiresServerAdmin, function (req, res, next) {
@@ -370,12 +465,12 @@ app.get('/_config/:section/:key', requiresServerAdmin, function (req, res, next)
 
 function sendConfigValue(res, value) {
   if (typeof value === "undefined") {
-    res.send(404, {
+    return sendJSON(res, 404, {
       error: "not_found",
       reason: "unknown_config_value"
     });
   }
-  res.send(200, JSON.stringify(value));
+  sendJSON(res, 200, value);
 }
 
 app.put('/_config/:section/:key', requiresServerAdmin, parseRawBody, function (req, res, next) {
@@ -385,7 +480,7 @@ app.put('/_config/:section/:key', requiresServerAdmin, parseRawBody, function (r
   try {
     value = JSON.parse(req.rawBody.toString('utf-8'));
   } catch (err) {
-    return res.send(400, {
+    return sendJSON(res, 400, {
       error: "bad_request",
       reason: "invalid_json"
     });
@@ -395,7 +490,7 @@ app.put('/_config/:section/:key', requiresServerAdmin, parseRawBody, function (r
   }
 
   app.couchConfig.set(req.params.section, req.params.key, value, function (oldValue) {
-    res.send(200, JSON.stringify(oldValue));
+    sendJSON(res, 200, oldValue || "");
   });
 });
 
@@ -408,37 +503,59 @@ app.delete('/_config/:section/:key', requiresServerAdmin, function (req, res, ne
 // Log (stub for now)
 app.get('/_log', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
-  res.send(200, '_log is not implemented yet. PRs welcome!');
+  sendJSON(res, 200, '_log is not implemented yet. PRs welcome!');
 });
 
 // Log (stub for now)
 app.get('/_stats', function (req, res, next) {
   // TODO: implement
-  res.send(200, {'pouchdb-server' : 'has not impemented _stats yet. PRs welcome!'});
+  sendJSON(res, 200, {'pouchdb-server' : 'has not impemented _stats yet. PRs welcome!'});
 });
 
 app.get('/_active_tasks', requiresServerAdmin, function (req, res, next) {
   // TODO: implement
-  res.send(200, []);
+  sendJSON(res, 200, []);
 });
 
 // Generate UUIDs
-app.get('/_uuids', function (req, res, next) {
+app.all('/_uuids', restrictMethods(["GET"]), function (req, res, next) {
+  res.set({
+    "Cache-Control": "must-revalidate, no-cache",
+    "Pragma": "no-cache"
+  });
   var count = typeof req.query.count === 'number' ? req.query.count : 1;
-  res.send(200, {
+  sendJSON(res, 200, {
     uuids: uuids(count)
   });
 });
 
+function restrictMethods(methods) {
+  return function (req, res, next) {
+    if (methods.indexOf(req.method) === -1) {
+      res.set("Allow", methods.join(", "));
+      return sendJSON(res, 405, {
+        error: 'method_not_allowed',
+        reason: "Only " + methods.join(",") + " allowed"
+      });
+    }
+    next();
+  };
+}
+
 // List all databases.
 app.get('/_all_dbs', function (req, res, next) {
-  Pouch.allDbs(function (err, response) {
-    if (err) res.send(500, Pouch.UNKNOWN_ERROR);
+  PouchDB.allDbs(function (err, response) {
+    if (err) {
+      sendJSON(res, 500, {
+        error: "unknown_error",
+        reason: "Database encountered an unknown error"
+      });
+    }
 
     response = response.filter(function (name) {
       return name.indexOf("-session-") !== 0;
     });
-    res.send(200, response);
+    sendJSON(res, 200, response);
   });
 });
 
@@ -453,7 +570,7 @@ app.post('/_replicate', jsonParser, function (req, res, next) {
   if (req.body.query_params) opts.query_params = req.body.query_params;
 
   var startDate = new Date();
-  Pouch.replicate(source, target, opts).then(function (response) {
+  PouchDB.replicate(source, target, opts).then(function (response) {
     
     var historyObj = extend(true, {
       start_time: startDate.toJSON(),
@@ -482,14 +599,14 @@ app.post('/_replicate', jsonParser, function (req, res, next) {
     });
     
     response.history = histories[source] || histories[target] || [];
-    res.send(200, response);
+    sendJSON(res, 200, response);
   }, function (err) {
-    res.send(400, err);
+    sendError(res, err);
   });
 
   // if continuous pull replication return 'ok' since we cannot wait for callback
   if (target in dbs && opts.continuous) {
-    res.send(200, { ok : true });
+    sendJSON(res, 200, { ok : true });
   }
 
 });
@@ -499,39 +616,37 @@ app.put('/:db', jsonParser, function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
 
   if (name in dbs) {
-    return res.send(412, {
+    return sendJSON(res, 412, {
       'error': 'file_exists',
       'reason': 'The database could not be created.'
     });
   }
 
-  // Pouch.new() instead of new Pouch() because that adds authorisation
-  // logic
-  Pouch.new(name, makeOpts(req), function (err, db) {
-    if (err) return res.send(err.status || 412, err);
+  // PouchDB.new() instead of new PouchDB() because that adds
+  // authorisation logic
+  PouchDB.new(name, makeOpts(req), function (err, db) {
+    if (err) return sendError(res, err, 412);
     registerDB(name, db);
-    var loc = req.protocol
-      + '://'
-      + ((req.hostname === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
-      + req.hostname
-      + '/' + name;
-    res.location(loc);
-    res.send(201, { ok: true });
+    setLocation(res, name);
+    sendJSON(res, 201, { ok: true });
   });
 });
 
 // Delete a database
 app.delete('/:db', function (req, res, next) {
   var name = encodeURIComponent(req.params.db);
-  Pouch.destroy(name, makeOpts(req), function (err, info) {
-    if (err) return res.send(err.status || 500, err);
+  PouchDB.destroy(name, makeOpts(req), function (err, info) {
+    if (err) return sendError(res, err);
     delete dbs[name];
-    res.send(200, { ok: true });
+    //if one of these was removed, it should re-appear.
+    if (usersDBName === name) ensureUsersDB();
+    if (replicatorDBName === name) ensureReplicatorDB();
+    sendJSON(res, 200, { ok: true });
   });
 });
 
 // At this point, some route middleware can take care of identifying the
-// correct Pouch instance.
+// correct PouchDB instance.
 ['/:db/*','/:db'].forEach(function (route) {
   app.all(route, function (req, res, next) {
     setDBOnReq(req.params.db, req, res, next);
@@ -541,11 +656,11 @@ app.delete('/:db', function (req, res, next) {
 // Get database information
 app.get('/:db', function (req, res, next) {
   req.db.info(makeOpts(req), function (err, info) {
-    if (err) return res.send(404, err);
+    if (err) return sendError(res, err);
     info.instance_start_time = startTime.toString();
     // TODO: disk_size
     // TODO: data_size
-    res.send(200, info);
+    sendJSON(res, 200, info);
   });
 });
 
@@ -561,15 +676,15 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
   opts = makeOpts(req, opts);
 
   if (Array.isArray(req.body)) {
-    return res.send(400, {
+    return sendJSON(res, 400, {
       error: "bad_request",
       reason: "Request body must be a JSON object"
     });
   }
 
   req.db.bulkDocs(req.body, opts, function (err, response) {
-    if (err) return res.send(err.status || 500, err);
-    res.send(201, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 201, response);
   });
 
 });
@@ -577,7 +692,7 @@ app.post('/:db/_bulk_docs', jsonParser, function (req, res, next) {
 // Ensure all commits are written to disk
 app.post('/:db/_ensure_full_commit', function (req, res, next) {
   // TODO: implement. Also check security then: who is allowed to access this? (db & server admins?)
-  res.send(201, {
+  sendJSON(res, 201, {
     ok: true, 
     instance_start_time: startTime.toString()
   });
@@ -589,13 +704,16 @@ app.all('/:db/_all_docs', jsonParser, function (req, res, next) {
 
   // Check that the request body, if present, is an object.
   if (!!req.body && (typeof req.body !== 'object' || Array.isArray(req.body))) {
-    return res.send(400, Pouch.BAD_REQUEST);
+    return sendJSON(res, 400, {
+      reason: "Something wrong with the request",
+      error: 'bad_request'
+    });
   }
 
   var opts = makeOpts(req, extend({}, req.body, req.query));
   req.db.allDocs(opts, function (err, response) {
-    if (err) return res.send(400, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 200, response);
   });
 
 });
@@ -633,7 +751,7 @@ app.get('/:db/_changes', function (req, res, next) {
         res.write(JSON.stringify(change) + '\n');
       }).on('error', function (err) {
         if (!written) {
-          res.send(err.status || 500, err);
+          sendError(res, err);
         } else {
           res.end();
         }
@@ -662,22 +780,22 @@ app.get('/:db/_changes', function (req, res, next) {
             cleanup();
           }).on('error', function (err) {
             if (!written) {
-              res.send(err.status || 500, err);
+              sendError(res, err);
             }
             cleanup();
           });
         }
       }).on('error', function (err) {
         if (!written) {
-          res.send(err.status || 500, err);
+          sendError(res, err);
         }
         cleanup();
       });
     }
   } else { // straight shot, not continuous
     req.query.complete = function (err, response) {
-      if (err) return res.send(err.status, err);
-      res.send(200, response);
+      if (err) return sendError(res, err);
+      sendJSON(res, 200, response);
     };
     req.db.changes(req.query);
   }
@@ -686,34 +804,34 @@ app.get('/:db/_changes', function (req, res, next) {
 // DB Compaction
 app.post('/:db/_compact', jsonParser, function (req, res, next) {
   req.db.compact(makeOpts(req), function (err, response) {
-    if (err) return res.send(500, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 200, {ok: true});
   });
 });
 
 // Revs Diff
 app.post('/:db/_revs_diff', jsonParser, function (req, res, next) {
   req.db.revsDiff(req.body || {}, makeOpts(req), function (err, diffs) {
-    if (err) return res.send(400, err);
+    if (err) return sendJSON(res, err);
 
-    res.send(200, diffs);
+    sendJSON(res, 200, diffs);
   });
 });
 
 // Security
 app.get('/:db/_security', function (req, res, next) {
   req.db.getSecurity(makeOpts(req), function (err, response) {
-    if (err) return res.send(err.status, err);
+    if (err) return sendError(res, err);
 
-    res.send(200, response);
+    sendJSON(res, 200, response);
   });
 });
 
 app.put('/:db/_security', jsonParser, function (req, res, next) {
   req.db.putSecurity(req.body || {}, makeOpts(req), function (err, response) {
-    if (err) return res.send(err.status, err);
+    if (err) return sendError(res, err);
 
-    res.send(200, response);
+    sendJSON(res, 200, response);
   });
 });
 
@@ -723,8 +841,8 @@ app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
   req.query.conflicts = true;
   var opts = makeOpts(req, req.query);
   req.db.query(req.body, opts, function (err, response) {
-    if (err) return res.send(400, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 200, response);
   });
 });
 
@@ -732,7 +850,7 @@ app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
 app.get('/:db/_design/:id/_info', function (req, res, next) {
   // Dummy data for Fauxton - when implementing fully also take into
   // account req.secObj - this needs at least db view rights it seems.
-  res.send(200, {
+  sendJSON(res, 200, {
     'name': req.query.id,
     'view_index': 'Not implemented.'
   });
@@ -743,8 +861,8 @@ app.get('/:db/_design/:id/_view/:view', function (req, res, next) {
   var query = req.params.id + '/' + req.params.view;
   var opts = makeOpts(req, req.query);
   req.db.query(query, opts, function (err, response) {
-    if (err) return res.send(404, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 200, response);
   });
 });
 
@@ -789,7 +907,7 @@ function parseRawBody(req, res, next) {
 }
 
 // Put a document attachment
-function putAttachment(name, req, res) {
+function putAttachment(db, name, req, res) {
   var attachment = req.params.attachment
     , rev = req.query.rev
     , type = req.get('Content-Type') || 'application/octet-stream'
@@ -797,13 +915,14 @@ function putAttachment(name, req, res) {
     , opts = makeOpts(req);
 
   req.db.putAttachment(name, attachment, rev, body, type, opts, function (err, response) {
-    if (err) return res.send(409, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    setLocation(res, db + '/' + name + '/' + attachment);
+    sendJSON(res, 201, response);
   });    
 }
 
 app.put('/:db/_design/:id/:attachment(*)', parseRawBody, function (req, res, next) {
-  putAttachment('_design/' + req.params.id, req, res);
+  putAttachment(req.params.db, '_design/' + req.params.id, req, res);
 });
 
 app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
@@ -811,7 +930,7 @@ app.put('/:db/:id/:attachment(*)', parseRawBody, function (req, res, next) {
   if (req.params.id === '_design' || req.params.id === '_local') {
     return next();
   }
-  putAttachment(req.params.id, req, res);
+  putAttachment(req.params.db, req.params.id, req, res);
 });
 
 // Retrieve a document attachment
@@ -820,19 +939,26 @@ function getAttachment(name, req, res) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(name, opts, function (err, info) {
-    if (err) return res.send(404, err);
+    // TODO: when this is solved, the 404 hack can disappear.
+    // https://github.com/pouchdb/pouchdb/issues/2765
+    if (err) return sendError(res, err, 404);
 
     if (!info._attachments || !info._attachments[attachment]) {
-      return res.send(404, {status:404, error:'not_found', reason:'missing'});
+      return sendJSON(res, 404, {
+        error:'not_found',
+        reason:'missing'
+      });
     };
 
     var type = info._attachments[attachment].content_type;
- 
+    var md5 = info._attachments[attachment].digest.slice(4);
+
     req.db.getAttachment(name, attachment, function (err, response) {
-      if (err) return res.send(409, err);
-      res.set('Content-Type', type);
-      res.send(200, response);
-    });    
+      if (err) return sendError(res, err);
+      res.set('ETag', '"' + md5 + '"');
+      res.setHeader('Content-Type', type);
+      res.status(200).send(response);
+    });
   });
 }
 
@@ -856,8 +982,8 @@ function deleteAttachment(name, req, res) {
     , opts = makeOpts(req);
 
   req.db.removeAttachment(name, attachment, rev, function (err, response) {
-    if (err) return res.send(409, err);
-    res.send(200, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 200, response);
   });
 }
 
@@ -879,17 +1005,10 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
   var opts = makeOpts(req, req.query);
 
   function onResponse(err, response) {
-    if (err) {
-      return res.send(err.status || 500, err);
-    }
-    var loc = req.protocol
-      + '://'
-      + ((req.hostname === '127.0.0.1') ? '' : req.subdomains.join('.') + '.')
-      + req.hostname
-      + '/' + req.params.db
-      + '/' + response.id;
-    res.location(loc);
-    res.send(201, response);
+    if (err) return sendError(res, err);
+    res.set('ETag', '"' + response.rev + '"');
+    setLocation(res, req.params.db + '/' + response.id);
+    sendJSON(res, 201, response);
   }
 
   if (/^multipart\/related/.test(req.headers['content-type'])) {
@@ -899,7 +1018,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
     var form = new multiparty.Form();
     var attachments = {};
     form.on('error', function (err) {
-      return res.send(500, err);
+      return sendError(res, err);
     }).on('field', function (_, field) {
       doc = JSON.parse(field);
     }).on('file', function (_, file) {
@@ -919,7 +1038,7 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
         doc._attachments = extend(true, doc._attachments, attachments);
         req.db.put(doc, opts, onResponse);
       }).catch(function (err) {
-        res.send(err.status || 500, err);
+        sendError(res, err);
       });
     });
     form.parse(req);
@@ -931,9 +1050,40 @@ app.put('/:db/:id(*)', jsonParser, function (req, res, next) {
         ? req.params.id
         : null;
     }
+    req.body._rev = getRev(req, req.body);
     req.db.put(req.body, opts, onResponse);
   }
 });
+
+function getRev(req, doc) {
+  var docRevExists = typeof doc._rev !== 'undefined';
+  var queryRevExists = typeof req.query.rev !== 'undefined';
+  var etagRevExists = typeof req.get('If-Match') !== 'undefined';
+  if (docRevExists && queryRevExists && doc._rev !== req.query.rev) {
+    return sendJSON(res, 400, {
+      error: 'bad_request',
+      reason: "Document rev from request body and query string have different values"
+    });
+  }
+  var etagRev;
+  if (etagRevExists) {
+    etagRev = req.get('If-Match').slice(1, -1);
+    if (docRevExists && doc._rev !== etagRev) {
+      return sendJSON(res, 400, {
+        error: 'bad_request',
+        reason: "Document rev and etag have different values"
+      });
+    }
+    if (queryRevExists && req.query.rev !== etagRev) {
+      return sendJSON(res, 400, {
+        error: 'bad_request',
+        reason: "Document rev and etag have different values"
+      });
+    }
+  }
+
+  return doc._rev || req.query.rev || etagRev;
+}
 
 // Create a document
 app.post('/:db', jsonParser, function (req, res, next) {
@@ -941,8 +1091,8 @@ app.post('/:db', jsonParser, function (req, res, next) {
 
   req.body._id = uuids(1)[0];
   req.db.put(req.body, opts, function (err, response) {
-    if (err) return res.send(err.status || 500, err);
-    res.send(201, response);
+    if (err) return sendError(res, err);
+    sendJSON(res, 201, response);
   });
 });
 
@@ -951,20 +1101,27 @@ app.get('/:db/:id(*)', function (req, res, next) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    if (err) return res.send(404, err);
-    res.send(200, doc);
+    // TODO: when this is solved, the 404 hack can disappear.
+    // https://github.com/pouchdb/pouchdb/issues/2765
+    if (err) return sendError(res, err, 404);
+
+    res.set('ETag', '"' + doc._rev + '"');
+    sendJSON(res, 200, doc);
   });
 });
 
 // Delete a document
 app.delete('/:db/:id(*)', function (req, res, next) {
   var opts = makeOpts(req, req.query);
+  opts.rev = getRev(req, {});
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    if (err) return res.send(404, err);
+    // TODO: when this is solved, the 404 hack can disappear.
+    // https://github.com/pouchdb/pouchdb/issues/2765
+    if (err) return sendError(res, err, 404);
     req.db.remove(doc, opts, function (err, response) {
-      if (err) return res.send(404, err);
-      res.send(200, response);
+      if (err) return sendError(res, err);
+      sendJSON(res, 200, response);
     });
   });
 });
@@ -976,14 +1133,14 @@ app.copy('/:db/:id', function (req, res, next) {
     , match;
 
   if (!dest) {
-    return res.send(400, {
+    return sendJSON(res, 400, {
       'error': 'bad_request',
       'reason': 'Destination header is mandatory for COPY.'
     });
   }
 
   if(isHTTP(dest) || isHTTPS(dest)) {
-    return res.send(400, {
+    return sendJSON(res, 400, {
       'error': 'bad_request',
       'reason': 'Destination URL must be relative.'
     });
@@ -997,12 +1154,14 @@ app.copy('/:db/:id', function (req, res, next) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    if (err) return res.send(404, err);
+    // TODO: Remove 404 when the following is solved:
+    // https://github.com/pouchdb/pouchdb/issues/2765
+    if (err) return sendError(res, err, 404);
     doc._id = dest;
     doc._rev = rev;
     req.db.put(doc, opts, function (err, response) {
-      if (err) return res.send(409, err);
-      res.send(201, {ok: true});
+      if (err) return sendError(res, err, 409);
+      sendJSON(res, 201, {ok: true});
     });
   });
 });
@@ -1019,3 +1178,11 @@ function isHTTPS(url) {
 function hasPrefix(haystack, needle) {
   return haystack.substr(0, needle.length) === needle;
 }
+
+//404 handler
+app.use(function (req, res, next) {
+  sendJSON(res, 404, {
+    error: "not_found",
+    reason: "missing"
+  });
+});
