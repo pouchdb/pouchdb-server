@@ -215,6 +215,7 @@ app.use(require('compression')());
 app.use('/js', express.static(__dirname + '/fauxton/js'));
 app.use('/css', express.static(__dirname + '/fauxton/css'));
 app.use('/img', express.static(__dirname + '/fauxton/img'));
+app.use('/fonts', express.static(__dirname + '/fauxton/fonts'));
 
 app.use(cookieParser());
 
