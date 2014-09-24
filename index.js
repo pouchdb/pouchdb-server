@@ -137,8 +137,9 @@ function getUnwrappedDB(name) {
 
 function authFunc(name) {
   return function () {
+    var args = arguments;
     return preparingUsersDB.then(function () {
-      return usersDB[name].apply(usersDB, arguments);
+      return usersDB[name].apply(usersDB, args);
     });
   }
 }
@@ -489,7 +490,7 @@ app.put('/_config/:section/:key', requiresServerAdmin, parseRawBody, function (r
     value = JSON.stringify(value);
   }
 
-  app.couchConfig.set(req.params.section, req.params.key, value, function (oldValue) {
+  app.couchConfig.set(req.params.section, req.params.key, value, function (err, oldValue) {
     sendJSON(res, 200, oldValue || "");
   });
 });
