@@ -940,9 +940,7 @@ function getAttachment(name, req, res) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(name, opts, function (err, info) {
-    // TODO: when this is solved, the 404 hack can disappear.
-    // https://github.com/pouchdb/pouchdb/issues/2765
-    if (err) return sendError(res, err, 404);
+    if (err) return sendError(res, err);
 
     if (!info._attachments || !info._attachments[attachment]) {
       return sendJSON(res, 404, {
@@ -1102,9 +1100,7 @@ app.get('/:db/:id(*)', function (req, res, next) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    // TODO: when this is solved, the 404 hack can disappear.
-    // https://github.com/pouchdb/pouchdb/issues/2765
-    if (err) return sendError(res, err, 404);
+    if (err) return sendError(res, err);
 
     res.set('ETag', '"' + doc._rev + '"');
     sendJSON(res, 200, doc);
@@ -1117,9 +1113,7 @@ app.delete('/:db/:id(*)', function (req, res, next) {
   opts.rev = getRev(req, {});
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    // TODO: when this is solved, the 404 hack can disappear.
-    // https://github.com/pouchdb/pouchdb/issues/2765
-    if (err) return sendError(res, err, 404);
+    if (err) return sendError(res, err);
     req.db.remove(doc, opts, function (err, response) {
       if (err) return sendError(res, err);
       sendJSON(res, 200, response);
@@ -1155,9 +1149,7 @@ app.copy('/:db/:id', function (req, res, next) {
   var opts = makeOpts(req, req.query);
 
   req.db.get(req.params.id, opts, function (err, doc) {
-    // TODO: Remove 404 when the following is solved:
-    // https://github.com/pouchdb/pouchdb/issues/2765
-    if (err) return sendError(res, err, 404);
+    if (err) return sendError(res, err);
     doc._id = dest;
     doc._rev = rev;
     req.db.put(doc, opts, function (err, response) {
