@@ -39,7 +39,9 @@ module.exports = function route(PouchDB, req, options) {
   }
   var rootFunc = {
     "_all_dbs": (PouchDB.allDbs || throw404).bind(PouchDB),
-    "_replicate": PouchDB.replicate.bind(PouchDB, req.query),
+    "_replicate": callWithBody.bind(null, PouchDB, req, function (body) {
+      return this.replicate(body.source, body.target, body);
+    }),
     "_session": function () {
       if (!PouchDB.seamlessSession) {
         throw404();
@@ -160,7 +162,7 @@ function routeCRUD(db, req, options, docId, remainingPath) {
         return db.get(docId, opts);
       },
       PUT: localCallWithBody.bind(null, put, opts),
-      DELETE: localCallWithBody.bind(null, remove, opts)
+      DELETE: db.remove.bind(db, docId, opts.rev)
     }[req.method] || throw405.bind(null, req))();
   }
   //attachment level
