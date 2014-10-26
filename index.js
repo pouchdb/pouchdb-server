@@ -151,8 +151,8 @@ var session = authFunc("session"),
 function makeOpts(req, startOpts) {
   // fill in opts so it can be used by authorisation logic
   var opts = startOpts || {};
-  opts.userCtx = req.session.userCtx;
-  opts.secObj = req.secObj;
+  opts.userCtx = req.couchSession.userCtx;
+  opts.secObj = req.couchSessionObj;
 
   return opts;
 }
@@ -179,7 +179,7 @@ function setDBOnReq(db_name, req, res, next) {
 
   function doneSettingDB() {
     req.db.getSecurity().then(function (secObj) {
-      req.secObj = secObj;
+      req.couchSessionObj = secObj;
 
       next();
     });
@@ -353,8 +353,8 @@ app.use(function (req, res, next) {
   }).catch(function (err) {
     return buildBasicAuthSession(req);
   }).then(function (result) {
-    req.session = result;
-    req.session.info.authentication_handlers = ['cookie', 'default'];
+    req.couchSession = result;
+    req.couchSession.info.authentication_handlers = ['cookie', 'default'];
     next();
   }).catch(function (err) {
     sendError(res, err);
@@ -400,7 +400,7 @@ app.get('/', function (req, res, next) {
 });
 
 app.get('/_session', function (req, res, next) {
-  sendJSON(res, 200, req.session);
+  sendJSON(res, 200, req.couchSession);
 });
 
 app.post('/_session', jsonParser, urlencodedParser, function (req, res, next) {
@@ -441,7 +441,7 @@ app.get('/_utils', function (req, res, next) {
 });
 
 function requiresServerAdmin(req, res, next) {
-  if (req.session.userCtx.roles.indexOf('_admin') !== -1) {
+  if (req.couchSession.userCtx.roles.indexOf('_admin') !== -1) {
     return next();
   }
   sendJSON(res, 401, {
@@ -850,7 +850,8 @@ app.post('/:db/_temp_view', jsonParser, function (req, res, next) {
 // Query design document info
 app.get('/:db/_design/:id/_info', function (req, res, next) {
   // Dummy data for Fauxton - when implementing fully also take into
-  // account req.secObj - this needs at least db view rights it seems.
+  // account req.couchSessionObj - this needs at least db view rights it
+  // seems.
   sendJSON(res, 200, {
     'name': req.query.id,
     'view_index': 'Not implemented.'
