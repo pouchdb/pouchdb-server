@@ -424,7 +424,6 @@ module.exports = function(PouchToUse) {
     });
   });
 
-
   app.all('/_db_updates', requiresServerAdmin, function (req, res, next) {
     // TODO: implement
     res.status(400).end();
@@ -434,7 +433,7 @@ module.exports = function(PouchToUse) {
   });
 
   app.get('/_utils', function (req, res, next) {
-    res.sendfile(__dirname + '/fauxton/index.html');
+    res.sendFile(__dirname + '/fauxton/index.html');
   });
 
   function requiresServerAdmin(req, res, next) {
