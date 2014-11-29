@@ -5,13 +5,11 @@ var startTime        = new Date().getTime()
   , rawBody          = require('raw-body')
   , cookieParser     = require('cookie-parser')
   , fs               = require('fs')
-  , path             = require('path')
   , extend           = require('extend')
   , pkg              = require('./package.json')
   , multiparty       = require('multiparty')
   , Promise          = require('bluebird')
   , basicAuth        = require('basic-auth')
-  , dbs              = {}
   , uuids            = require('./uuids')
   , histories        = {}
   , app              = express()
@@ -19,7 +17,7 @@ var startTime        = new Date().getTime()
   , events           = require('events')
   , Security         = require('pouchdb-security');
 
-var PouchDB, usersDB, preparingUsersDB, usersDBName, replicatorDB, preparingReplicatorDB, replicatorDBName;
+var PouchDB;
 
 module.exports = function(PouchToUse) {
   PouchDB = PouchToUse;
@@ -48,102 +46,81 @@ module.exports = function(PouchToUse) {
 
   app.couchConfig = new CouchConfig('./config.json');
 
-  ensureUsersDB();
-  app.couchConfig.on('couch_httpd_auth.authentication_db', ensureUsersDB);
+  //ensure the databases exist
+  getUsersDB();
+  app.couchConfig.on('couch_httpd_auth.authentication_db', getUsersDB);
 
-  ensureReplicatorDB();
-  app.couchConfig.on('replicator.db', ensureReplicatorDB)
+  getReplicatorDB();
+  app.couchConfig.on('replicator.db', getReplicatorDB)
 
-  //There are four types of databases:
-  //- unwrapped databases. These are what you get by doing new PouchDB()
-  //
-  //- normal databases. These are validated and you need proper authorisation
-  //  to use them. Related: useAsNormalDB()/stopUsingAsNormalDB
-  //
-  //- replicator databases. Better known as _replicator. Related:
-  //  db.startReplicator()/.stopReplicator()
-  //
-  //- user databases. Better known as _users. Related:
-  //  db.useAsAuthenticationDB()/.stopUsingAsAuthenticationDB()
-
-  function ensureUsersDB() {
-    var name = app.couchConfig.get('couch_httpd_auth', 'authentication_db');
-
-    function wrap(db) {
-      return db.useAsAuthenticationDB();
+  PouchDB.on('destroyed', function (dbName) {
+    //if one of these was removed, it should re-appear.
+    switch (dbName) {
+      case getUsersDBName():
+      case getReplicatorDBName():
+        getSystemDB(dbName);
+        break;
     }
-    function unwrap(db) {
-      return db.stopUsingAsAuthenticationDB();
-    }
+  });
 
-    preparingUsersDB = (preparingUsersDB || Promise.resolve()).then(function () {
-      return ensureSpecialDB(wrap, unwrap, usersDB, name);
-    }).then(function (db) {
-      usersDBName = name;
-      usersDB = db;
+  function getUsersDBName() {
+    return app.couchConfig.get('couch_httpd_auth', 'authentication_db');
+  }
+
+  function getUsersDB() {
+    return getSystemDB(getUsersDBName());
+  }
+
+  function getReplicatorDBName() {
+    return app.couchConfig.get('replicator', 'db');
+  }
+
+  function getReplicatorDB() {
+    return getSystemDB(getReplicatorDBName());
+  }
+
+  function getSystemDB(name) {
+    var db = new PouchDB(name);
+    return wrapDB(name, db).then(function () {
+      return db;
     });
   }
 
-  function ensureReplicatorDB() {
-    var name = app.couchConfig.get('replicator', 'db');
+  function wrapDB(name, db) {
+    //There are four types of databases:
+    //- unwrapped databases. These are what you get by doing new PouchDB()
+    //
+    //- normal databases. These are validated and you need proper authorisation
+    //  to use them. Related: useAsNormalDB()
+    //
+    //- replicator databases. Better known as _replicator. Related:
+    //  db.startReplicator()
+    //
+    //- user databases. Better known as _users. Related:
+    //  db.useAsAuthenticationDB()
 
-    function wrap(db) {
-      return db.startReplicator();
+    switch(name) {
+      case app.couchConfig.get('couch_httpd_auth', 'authentication_db'):
+        return db.useAsAuthenticationDB();
+      case app.couchConfig.get('replicator', 'db'):
+        return db.startReplicator();
+      default:
+        return useAsNormalDB(db)
     }
-    function unwrap(db) {
-      return db.stopReplicator();
-    }
-
-    preparingReplicatorDB = (preparingReplicatorDB || Promise.resolve()).then(function () {
-      return ensureSpecialDB(wrap, unwrap, replicatorDB, name);
-    }).then(function (db) {
-      replicatorDBName = name;
-      replicatorDB = db;
-    });
-  }
-
-  function ensureSpecialDB(specialWrap, specialUnwrap, oldDB, newName) {
-    function cleanupSuccess() {
-      useAsNormalDB(oldDB);
-      return cleanupDone();
-    }
-    function cleanupDone() {
-      var newDB = getUnwrappedDB(newName);
-      return specialWrap(newDB).then(function () {
-        dbs[newName] = newDB;
-        return newDB;
-      });
-    }
-
-    if (typeof oldDB === "undefined") {
-      return cleanupDone();
-    } else {
-      return specialUnwrap(oldDB).then(cleanupSuccess, cleanupDone);
-    }
-  }
-
-  function getUnwrappedDB(name) {
-    db = dbs[name];
-    if (typeof db === "undefined") {
-      db = new PouchDB(name);
-    } else {
-      stopUsingAsNormalDB(db);
-    }
-    return db;
   }
 
   function authFunc(name) {
     return function () {
       var args = arguments;
-      return preparingUsersDB.then(function () {
+      return getUsersDB().then(function (usersDB) {
         return usersDB[name].apply(usersDB, args);
       });
     }
   }
 
-  var session = authFunc("session"),
-  logIn   = authFunc("logIn"),
-  logOut  = authFunc("logOut");
+  var session = authFunc("session")
+    , logIn   = authFunc("logIn")
+    , logOut  = authFunc("logOut");
 
   function makeOpts(req, startOpts) {
     // fill in opts so it can be used by authorisation logic
@@ -154,43 +131,19 @@ module.exports = function(PouchToUse) {
     return opts;
   }
 
-  function registerDB(name, db) {
-    useAsNormalDB(db);
-    dbs[name] = db;
-  }
-
   function useAsNormalDB(db) {
     // order matters!
     db.installSecurityMethods();
     db.installValidationMethods();
   }
 
-  function stopUsingAsNormalDB(db) {
-    // order doesn't matter!
-    db.uninstallValidationMethods();
-    db.uninstallSecurityMethods();
-  }
-
   function setDBOnReq(db_name, req, res, next) {
     var name = encodeURIComponent(db_name);
 
-    function doneSettingDB() {
-      req.db.getSecurity().then(function (secObj) {
-        req.couchSessionObj = secObj;
-
-        next();
-      });
-    }
-
-    if (name in dbs) {
-      req.db = dbs[name];
-      return doneSettingDB();
-    }
-
     PouchDB.allDbs(function (err, dbs) {
-      if (err) {
-        return sendError(res, err);
-      } else if (dbs.indexOf(name) === -1) {
+      if (err) return sendError(res, err);
+
+      if (dbs.indexOf(name) === -1) {
         return sendJSON(res, 404, {
           error: 'not_found',
           reason: 'no_db_file'
@@ -198,9 +151,14 @@ module.exports = function(PouchToUse) {
       }
       new PouchDB(name, function (err, db) {
         if (err) return sendError(res, err, 412);
-        registerDB(name, db);
+        wrapDB(name, db);
         req.db = db;
-        return doneSettingDB();
+
+        req.db.getSecurity().then(function (secObj) {
+          req.couchSessionObj = secObj;
+
+          next();
+        });
       });
     });
   }
@@ -542,13 +500,9 @@ module.exports = function(PouchToUse) {
   // List all databases.
   app.get('/_all_dbs', function (req, res, next) {
     PouchDB.allDbs(function (err, response) {
-      if (err) {
-        sendJSON(res, 500, {
-          error: "unknown_error",
-          reason: "Database encountered an unknown error"
-        });
-      }
+      if (err) return sendError(res, err);
 
+      //hack until pouchdb-all-dbs filter out dependant dbs.
       response = response.filter(function (name) {
         return name.indexOf("-session-") !== 0;
       });
@@ -602,9 +556,13 @@ module.exports = function(PouchToUse) {
     });
 
     // if continuous pull replication return 'ok' since we cannot wait for callback
-    if (target in dbs && opts.continuous) {
-      sendJSON(res, 200, { ok : true });
-    }
+    PouchDB.allDbs(function (err, dbs) {
+      if (err) return sendError(res, err);
+
+      if (dbs.indexOf(target) !== -1 && opts.continuous) {
+        sendJSON(res, 200, { ok : true });
+      }
+    });
 
   });
 
@@ -612,20 +570,23 @@ module.exports = function(PouchToUse) {
   app.put('/:db', jsonParser, function (req, res, next) {
     var name = encodeURIComponent(req.params.db);
 
-    if (name in dbs) {
-      return sendJSON(res, 412, {
-        'error': 'file_exists',
-        'reason': 'The database could not be created.'
-      });
-    }
+    PouchDB.allDbs(function (err, dbs) {
+      if (err) return sendError(res, err);
 
-    // PouchDB.new() instead of new PouchDB() because that adds
-    // authorisation logic
-    PouchDB.new(name, makeOpts(req), function (err, db) {
-      if (err) return sendError(res, err, 412);
-      registerDB(name, db);
-      setLocation(res, name);
-      sendJSON(res, 201, { ok: true });
+      if (dbs.indexOf(name) !== -1) {
+        return sendJSON(res, 412, {
+          'error': 'file_exists',
+          'reason': 'The database could not be created.'
+        });
+      }
+
+      // PouchDB.new() instead of new PouchDB() because that adds
+      // authorisation logic
+      PouchDB.new(name, makeOpts(req), function (err, db) {
+        if (err) return sendError(res, err, 412);
+        setLocation(res, name);
+        sendJSON(res, 201, { ok: true });
+      });
     });
   });
 
@@ -634,10 +595,7 @@ module.exports = function(PouchToUse) {
     var name = encodeURIComponent(req.params.db);
     PouchDB.destroy(name, makeOpts(req), function (err, info) {
       if (err) return sendError(res, err);
-      delete dbs[name];
-      //if one of these was removed, it should re-appear.
-      if (usersDBName === name) ensureUsersDB();
-      if (replicatorDBName === name) ensureReplicatorDB();
+
       sendJSON(res, 200, { ok: true });
     });
   });
