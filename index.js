@@ -717,13 +717,17 @@ module.exports = function(PouchToUse) {
   });
 
   // Monitor database changes
-  app.get('/:db/_changes', function (req, res, next) {
+  function changes(req, res, next) {
 
     // api.changes expects a property `query_params`
     // This is a pretty inefficient way to do it.. Revisit?
     req.query.query_params = JSON.parse(JSON.stringify(req.query));
 
     req.query = makeOpts(req, req.query);
+
+    if (req.body && req.body.doc_ids) {
+      req.query.doc_ids = req.body.doc_ids;
+    }
 
     if (req.query.feed === 'continuous' || req.query.feed === 'longpoll') {
       var heartbeatInterval;
@@ -797,9 +801,11 @@ module.exports = function(PouchToUse) {
       };
       req.db.changes(req.query);
     }
-  });
+  }
+  app.get('/:db/_changes', changes);
+  app.post('/:db/_changes', jsonParser, changes);
 
-  // DB Compaction
+    // DB Compaction
   app.post('/:db/_compact', jsonParser, function (req, res, next) {
     req.db.compact(makeOpts(req), function (err, response) {
       if (err) return sendError(res, err);
