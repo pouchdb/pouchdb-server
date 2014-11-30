@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git://github.com/pouchdb/express-pouchdb.git"
   },
-  "main": "./index.js",
+  "main": "./lib/index.js",
   "dependencies": {
     "basic-auth": "^1.0.0",
     "bluebird": "^2.2.2",
@@ -24,21 +24,27 @@
     "pouchdb-auth": "^1.0.2",
     "pouchdb-all-dbs": "^0.1.0",
     "pouchdb-list": "^1.0.0",
-    "pouchdb-replicator": "^2.0.0",
+    "pouchdb-replicator": "^2.1.0",
     "pouchdb-rewrite": "^1.0.0",
     "pouchdb-security": "^1.2.0",
     "pouchdb-show": "^1.0.0",
     "pouchdb-update": "^1.0.0",
     "pouchdb-validation": "^1.1.5",
+    "pouchdb-wrappers": "^1.2.0",
     "raw-body": "^1.1.5"
   },
   "devDependencies": {
     "express": "4.6.1",
     "morgan": "^1.0.1",
     "pouchdb": "pouchdb/pouchdb",
-    "pouchdb-server": "^0.4.0"
+    "pouchdb-server": "^0.4.0",
+    "jshint": "~2.3.0"
   },
   "peerDependencies": {
     "express": "4.x"
+  },
+  "scripts": {
+    "jshint": "jshint -c .jshintrc lib lib/routes",
+    "test": "npm run jshint"
   }
 }
