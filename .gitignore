@@ -5,3 +5,7 @@ _pouch_*
 _allDbs
 pouch__all_dbs__
 npm-debug.log
+-session-_users
+_users
+_replicator
+config.json

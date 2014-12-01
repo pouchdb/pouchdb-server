@@ -26,7 +26,7 @@
     "corser": "~2.0.0",
     "basic-auth": "~1.0.0",
     "couchdb-harness": "*",
-    "express": "4.6.1",
+    "express": "4.10.4",
     "express-pouchdb": "*",
     "memdown": "0.10.1",
     "mkdirp": "^0.5.0",
