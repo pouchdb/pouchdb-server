@@ -16,10 +16,6 @@
 
 "use strict";
 
-//TODO:
-//- offline create_target
-//- do retries on error
-
 var Promise = require("pouchdb-promise");
 var nodify = require("promise-nodify");
 var uuid = require("random-uuid-v4");
@@ -41,25 +37,31 @@ var dbData = {
 };
 
 exports.startReplicator = function (callback) {
+  var db = this;
+  var promise = exports.startReplicatorDaemon.call(db)
+    .then(function () {
+      exports.useAsReplicatorDB.call(db);
+    });
+  nodify(promise, callback);
+  return promise;
+};
+
+exports.startReplicatorDaemon = function (callback) {
   //When the replicator is started:
   //- replication is started for every already existing document in the
   //  database
   //- subscribing 'live' to the changes feed of the database commences
   //  for future updates
-  //- strict validation rules (using the pouchdb-validation plug-in
-  //  behind the screens) come into effect for the database.
+
   var db = this;
 
-  try {
-    Validation.installValidationMethods.call(db);
-  } catch (err) {
+  if (dbData.dbs.indexOf(db) !== -1) {
     return Promise.reject(new PouchPluginError({
       status: 500,
       name: "already_active",
       message: "Replicator already active on this database."
     }));
   }
-  systemDB.installSystemDBProtection(db);
 
   var i = dbData.dbs.push(db) - 1;
   dbData.activeReplicationsByDbIdxAndId[i] = {};
@@ -147,7 +149,8 @@ function onChanged(db, doc) {
     //(re)start actual replication
     var PouchDB = db.constructor;
     doc.userCtx = doc.user_ctx;
-    var replication = PouchDB.replicate(doc.source, doc.target, doc);
+    var opts = extend({retry: true}, doc);
+    var replication = PouchDB.replicate(doc.source, doc.target, opts);
     data.activeReplicationsById[doc._id] = replication;
     data.activeReplicationSignaturesByRepId[doc._replication_id] = currentSignature;
     replication.on("complete", onReplicationComplete.bind(null, db, doc._id));
@@ -244,11 +247,30 @@ function onReplicationError(db, docId, info) {
   });
 }
 
+exports.useAsReplicatorDB = function (callback) {
+  //applies strict validation rules (using the pouchdb-validation
+  //plug-in behind the screens) to the database.
+
+  Validation.installValidationMethods.call(this);
+  systemDB.installSystemDBProtection(this);
+};
+
 exports.stopReplicator = function (callback) {
+  var db = this;
+  var promise = exports.stopReplicatorDaemon.call(db)
+    .then(function () {
+      exports.stopUsingAsReplicatorDB.call(db);
+    });
+  nodify(promise, callback);
+  return promise;
+};
+
+exports.stopReplicatorDaemon = function (callback) {
   //Stops all replications & listening to future changes & relaxes the
   //validation rules for the database again.
   var db = this;
   var data;
+
   try {
     data = dataFor(db);
   } catch (err) {
@@ -265,8 +287,6 @@ exports.stopReplicator = function (callback) {
   dbData.activeReplicationSignaturesByDbIdxAndRepId.splice(index, 1);
   dbData.activeReplicationsByDbIdxAndId.splice(index, 1);
   dbData.changedByReplicatorByDbIdx.splice(index, 1);
-
-  systemDB.uninstallSystemDBProtection(db);
 
   var promise = new Promise(function (resolve, reject) {
     //cancel changes/replications
@@ -294,12 +314,13 @@ exports.stopReplicator = function (callback) {
         cancel(data.activeReplicationsById[id]);
       }
     }
-  }).then(function () {
-    //validation - last because startReplicator checks if the replicator
-    //is already running by checking if validation is active.
-    Validation.uninstallValidationMethods.call(db);
   });
 
   nodify(promise, callback);
   return promise;
+};
+
+exports.stopUsingAsReplicatorDB = function (callback) {
+  systemDB.uninstallSystemDBProtection(this);
+  Validation.uninstallValidationMethods.call(this);
 };
