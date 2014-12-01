@@ -162,7 +162,7 @@ function routeCRUD(db, req, options, docId, remainingPath) {
         return db.get(docId, opts);
       },
       PUT: localCallWithBody.bind(null, put, opts),
-      DELETE: db.remove.bind(db, docId, opts.rev)
+      DELETE: remove.bind(db, docId, opts.rev)
     }[req.method] || throw405.bind(null, req))();
   }
   //attachment level

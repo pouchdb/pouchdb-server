@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-route",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "index.js",
 	"description": "Given a CouchDB request object, return the response of PouchDB's equivalent function.",
 	"repository": {
