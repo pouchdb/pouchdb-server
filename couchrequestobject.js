@@ -117,6 +117,13 @@ function actuallyBuildRequestObject(path, info, userCtx, host, uuid, options) {
   }
 
   extend(true, result, options);
+  //extend doesn't handle empty arrays as required for couchdb paths
+  if (options.path) {
+    result.path = options.path;
+  }
+  if (options.requested_path) {
+    result.requested_path = options.requested_path;
+  }
 
   //add query string to requested_path if necessary
   var i = result.requested_path.length - 1;
