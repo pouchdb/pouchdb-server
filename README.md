@@ -116,8 +116,9 @@ functionality found in CouchDB but not in PouchDB by default:
   interface.
 - [Replicator database][] support. This allows your replications to
   persist past a restart of your application.
-- Support for [show], [list] and [update] functions. These allow you to
-  serve non-json content straight from your database.
+- Support for [show][], [list][] and [update][] functions. These allow
+  you to serve non-json content straight from your database.
+- [Rewrite][] and [Virtual Host][] support, for nicer urls.
 
 [authentication]:       http://docs.couchdb.org/en/latest/intro/security.html
 [authorisation]:        http://docs.couchdb.org/en/latest/intro/overview.html#security-and-validation
@@ -128,6 +129,8 @@ functionality found in CouchDB but not in PouchDB by default:
 [show]:                 http://guide.couchdb.org/editions/1/en/show.html
 [list]:                 http://guide.couchdb.org/editions/1/en/transforming.html
 [update]:               http://docs.couchdb.org/en/latest/couchapp/ddocs.html#update-functions
+[rewrite]:              http://docs.couchdb.org/en/latest/api/ddoc/rewrites.html
+[virtual host]:         http://docs.couchdb.org/en/latest/config/http.html#vhosts
 
 ## Contributing
 
