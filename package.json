@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-size",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adds disk_size to info()'s output for your leveldown backed PouchDB's.",
   "main": "index.js",
   "dependencies": {
@@ -13,7 +13,8 @@
     "memdown": "^1.0.0",
     "mocha": "^2.0.1",
     "pouchdb": "^3.2.0",
-    "jshint": "^2.5.10"
+    "jshint": "^2.5.10",
+    "istanbul": "^0.3.4"
   },
   "scripts": {
     "test": "npm run coverage && npm run jshint",
