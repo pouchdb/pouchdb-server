@@ -1,6 +1,10 @@
 pouchdb-size
 ============
 
+[![Build Status](https://travis-ci.org/marten-de-vries/pouchdb-size.svg?branch=master)](https://travis-ci.org/marten-de-vries/pouchdb-size)
+[![Dependency Status](https://david-dm.org/marten-de-vries/pouchdb-size.svg)](https://david-dm.org/marten-de-vries/pouchdb-size)
+[![devDependency Status](https://david-dm.org/marten-de-vries/pouchdb-size/dev-status.svg)](https://david-dm.org/marten-de-vries/pouchdb-size#info=devDependencies)
+
 Adds disk_size to info()'s output for your leveldown backed PouchDB's.
 
 Example
