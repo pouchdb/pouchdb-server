@@ -18,8 +18,9 @@
 
 var wrappers = require('pouchdb-wrappers');
 var nodify = require('promise-nodify');
-var fs = require('fs');
 var Promise = require('bluebird');
+var fs = require('fs');
+var getSize = require('get-folder-size');
 
 exports.installSizeWrapper = function () {
   var db = this;
@@ -54,10 +55,10 @@ exports.getDiskSize = function (callback) {
 
     // wait until the database is ready. Necessary for at least sqldown,
     // which doesn't write anything to disk sooner.
-    var dbLoaded = db.then || function (cb) {
+    var then = db.then || function (cb) {
       return cb();
     };
-    promise = dbLoaded.call(db, function () {
+    promise = then.call(db, function () {
       return getDBSize(path);
     });
   } else {
@@ -70,27 +71,7 @@ exports.getDiskSize = function (callback) {
 };
 
 function getDBSize(path) {
-  var startSize;
-  return getItemSize(path).then(function (size) {
-    startSize = size;
-
-    return Promise.promisify(fs.readdir)(path).catch(function () {
-      // e.g. sqldown doesn't use a directory, but a file instead.
-      return [];
-    });
-  }).then(function (files) {
-    return Promise.all(files.map(function (file) {
-      return getItemSize(path + "/" + file);
-    }));
-  }).then(function (sizes) {
-    return startSize + sizes.reduce(function (a, b) {
-      return a + b;
-    }, 0);
-  });
-}
-
-function getItemSize(path) {
-  return Promise.promisify(fs.stat)(path).then(function (stat) {
-    return stat.size;
+  return Promise.promisify(fs.lstat)(path).then(function () {
+    return Promise.promisify(getSize)(path);
   });
 }
