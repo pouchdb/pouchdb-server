@@ -19,7 +19,7 @@
 var wrappers = require('pouchdb-wrappers');
 var nodify = require('promise-nodify');
 var fs = require('fs');
-var Promise = require('pouchdb-promise');
+var Promise = require('bluebird');
 
 exports.installSizeWrapper = function () {
   var db = this;
@@ -48,11 +48,18 @@ exports.getDiskSize = function (callback) {
   var db = this;
   var promise;
 
-  if (db.type() === "leveldb") {
-    var prefix = db.__opts.prefix || "";
+  if (db.type() === 'leveldb') {
+    var prefix = db.__opts.prefix || '';
     var path = prefix + db._db_name;
 
-    promise = getLevelDBSize(path);
+    // wait until the database is ready. Necessary for at least sqldown,
+    // which doesn't write anything to disk sooner.
+    var dbLoaded = db.then || function (cb) {
+      return cb();
+    };
+    promise = dbLoaded.call(db, function () {
+      return getDBSize(path);
+    });
   } else {
     var msg = "Can't get the database size for database type '" + db.type() + "'!";
     promise = Promise.reject(new Error(msg));
@@ -62,35 +69,28 @@ exports.getDiskSize = function (callback) {
   return promise;
 };
 
-function getLevelDBSize(dir) {
-  return getItemSize(dir).then(function (size) {
-    return new Promise(function (resolve, reject) {
-      fs.readdir(dir, function (err, files) {
-        /* istanbul ignore if */
-        if (err) {
-          //i don't know of a way to reproduce this, but better to play
-          //it safe.
-          return reject(err);
-        }
-        resolve(Promise.all(files.map(function (file) {
-          return getItemSize(dir + '/' + file);
-        })).then(function (sizes) {
-          return size + sizes.reduce(function (a, b) {
-            return a + b;
-          });
-        }));
-      });
+function getDBSize(path) {
+  var startSize;
+  return getItemSize(path).then(function (size) {
+    startSize = size;
+
+    return Promise.promisify(fs.readdir)(path).catch(function () {
+      // e.g. sqldown doesn't use a directory, but a file instead.
+      return [];
     });
+  }).then(function (files) {
+    return Promise.all(files.map(function (file) {
+      return getItemSize(path + "/" + file);
+    }));
+  }).then(function (sizes) {
+    return startSize + sizes.reduce(function (a, b) {
+      return a + b;
+    }, 0);
   });
 }
 
 function getItemSize(path) {
-  return new Promise(function (resolve, reject) {
-    fs.lstat(path, function (err, stats) {
-      if (err) {
-        return reject(err);
-      }
-      resolve(stats.size);
-    });
+  return Promise.promisify(fs.stat)(path).then(function (stat) {
+    return stat.size;
   });
 }

@@ -7,6 +7,10 @@ var chai = require('chai');
 var should = chai.should();
 var PouchDB = require('pouchdb');
 var memdown = require('memdown');
+var sqldown = require('sqldown');
+var medeadown = require('medeadown');
+var jsondown = require('jsondown');
+var Promise = require('bluebird');
 //pouchdb-size
 PouchDB.plugin(require('../'));
 
@@ -18,8 +22,14 @@ describe('pouchdb-size tests', function () {
     PouchDB.destroy("a").then(function () {
       return PouchDB.destroy('b/chello world!');
     }).then(function () {
-      fs.rmdir("b", done);
-    });
+      return Promise.promisify(fs.rmdir)("b");
+    }).then(function () {
+      return PouchDB.destroy("e", {db: sqldown});
+    }).then(function () {
+      return PouchDB.destroy("./f", {db: medeadown});
+    }).then(function () {
+      return Promise.promisify(fs.unlink)("g");
+    }).then(done);
   });
 
   it("should work in the normal case", function (done) {
@@ -74,6 +84,47 @@ describe('pouchdb-size tests', function () {
     PouchDB.prototype.getDiskSize.call(db4, function (err, size) {
       err.should.exist();
       should.not.exist(size);
+
+      done();
+    });
+  });
+
+  it("should work with sqldown", function (done) {
+    var db = new PouchDB("e", {db: sqldown});
+    db.installSizeWrapper();
+
+    db.getDiskSize().then(function (resp) {
+      resp.should.be.greaterThan(0);
+
+      return db.info();
+    }).then(function (info) {
+      info.db_name.should.equal("e");
+      info.disk_size.should.be.greaterThan(0);
+
+      done();
+    });
+  });
+
+  it("should work with medeadown", function (done) {
+    // ./f instead of f is needed for medeadown.
+    var db = new PouchDB("./f", {db: medeadown});
+    db.installSizeWrapper();
+
+    db.info().then(function (info) {
+      info.db_name.should.equal("./f");
+      info.disk_size.should.be.greaterThan(0);
+
+      done();
+    });
+  });
+
+  it("should work with jsondown", function (done) {
+    var db = new PouchDB("g", {db: jsondown});
+    db.installSizeWrapper();
+
+    db.info().then(function (info) {
+      info.db_name.should.equal("g");
+      info.disk_size.should.be.greaterThan(0);
 
       done();
     });
