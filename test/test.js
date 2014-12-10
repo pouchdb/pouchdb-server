@@ -2,7 +2,6 @@
 
 /*global describe, it, after, before */
 
-var fs = require("fs");
 var chai = require('chai');
 var should = chai.should();
 var PouchDB = require('pouchdb');
@@ -10,25 +9,29 @@ var memdown = require('memdown');
 var sqldown = require('sqldown');
 var medeadown = require('medeadown');
 var jsondown = require('jsondown');
+var locket = require('locket');
 var Promise = require('bluebird');
+var fse = Promise.promisifyAll(require("fs-extra"));
 //pouchdb-size
 PouchDB.plugin(require('../'));
 
 describe('pouchdb-size tests', function () {
   before(function (done) {
-    fs.mkdir("b", done);
+    fse.mkdir("b", done);
   });
   after(function (done) {
     PouchDB.destroy("a").then(function () {
       return PouchDB.destroy('b/chello world!');
     }).then(function () {
-      return Promise.promisify(fs.rmdir)("b");
+      return fse.rmdirAsync("b");
     }).then(function () {
       return PouchDB.destroy("e", {db: sqldown});
     }).then(function () {
       return PouchDB.destroy("./f", {db: medeadown});
     }).then(function () {
-      return Promise.promisify(fs.unlink)("g");
+      return fse.unlinkAsync("g");
+    }).then(function () {
+      return fse.removeAsync("h");
     }).then(done);
   });
 
@@ -124,6 +127,18 @@ describe('pouchdb-size tests', function () {
 
     db.info().then(function (info) {
       info.db_name.should.equal("g");
+      info.disk_size.should.be.greaterThan(0);
+
+      done();
+    });
+  });
+
+  it("should work with locket", function (done) {
+    var db = new PouchDB("h", {db: locket});
+    db.installSizeWrapper();
+
+    db.info().then(function (info) {
+      info.db_name.should.equal("h");
       info.disk_size.should.be.greaterThan(0);
 
       done();

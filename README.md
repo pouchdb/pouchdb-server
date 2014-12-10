@@ -7,9 +7,9 @@ pouchdb-size
 
 Adds disk_size to info()'s output for your *down backed PouchDB's.
 
-Tested with leveldown, sqldown, jsondown and medeadown. When it can't
-determine the database size, it falls back to the default ``info()``
-output.
+Tested with leveldown, sqldown, jsondown, locket and medeadown. When it
+can't determine the database size, it falls back to the default
+``info()`` output.
 
 Example
 -------
