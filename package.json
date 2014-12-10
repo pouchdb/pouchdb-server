@@ -47,6 +47,8 @@
   },
   "scripts": {
     "jshint": "jshint -c .jshintrc lib lib/routes",
-    "test": "npm run jshint"
+    "test-pouchdb": "cd node_modules/pouchdb-server && npm run test-pouchdb",
+    "test-couchdb": "cd node_modules/pouchdb-server && npm run test-couchdb",
+    "test": "npm run jshint && npm run test-pouchdb"
   }
 }

@@ -18,7 +18,7 @@ before_script:
   - "rm -fr node_modules/pouchdb-server/node_modules/express-pouchdb"
   - "ln -s ../../.. node_modules/pouchdb-server/node_modules/express-pouchdb"
 
-script: "cd node_modules/pouchdb-server && npm run $COMMAND"
+script: "npm run $COMMAND"
 
 env:
   global:
@@ -27,6 +27,7 @@ env:
   - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
 
   matrix:
+  - COMMAND=jshint
   - CLIENT=node COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
