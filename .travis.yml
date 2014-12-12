@@ -28,6 +28,7 @@ env:
 
   matrix:
   - COMMAND=jshint
+  - COMMAND=test-express-pouchdb
   - CLIENT=node COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis

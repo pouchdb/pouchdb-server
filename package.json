@@ -21,8 +21,8 @@
     "extend": "^1.2.1",
     "multiparty": "^3.3.1",
     "node-uuid": "1.4.1",
-    "pouchdb-auth": "^1.0.2",
     "pouchdb-all-dbs": "^1.0.0",
+    "pouchdb-auth": "^1.0.2",
     "pouchdb-list": "^1.0.0",
     "pouchdb-replicator": "^2.1.0",
     "pouchdb-rewrite": "^1.0.0",
@@ -31,24 +31,27 @@
     "pouchdb-size": "^1.0.0",
     "pouchdb-update": "^1.0.0",
     "pouchdb-validation": "^1.1.5",
-    "pouchdb-wrappers": "^1.2.0",
     "pouchdb-vhost": "^1.0.0",
+    "pouchdb-wrappers": "^1.2.0",
     "raw-body": "^1.1.5"
   },
   "devDependencies": {
     "express": "4.10.5",
-    "morgan": "^1.0.1",
+    "fs-extra": "^0.13.0",
+    "jshint": "~2.3.0",
+    "mocha": "^2.0.1",
     "pouchdb": "pouchdb/pouchdb",
     "pouchdb-server": "^0.4.0",
-    "jshint": "~2.3.0"
+    "supertest": "^0.15.0"
   },
   "peerDependencies": {
     "express": "^4.8.0"
   },
   "scripts": {
-    "jshint": "jshint -c .jshintrc lib lib/routes",
+    "jshint": "jshint -c .jshintrc lib lib/routes test",
     "test-pouchdb": "cd node_modules/pouchdb-server && npm run test-pouchdb",
     "test-couchdb": "cd node_modules/pouchdb-server && npm run test-couchdb",
-    "test": "npm run jshint && npm run test-pouchdb"
+    "test-express-pouchdb": "./node_modules/.bin/mocha",
+    "test": "npm run jshint && npm run test-express-pouchdb && npm run test-pouchdb"
   }
 }

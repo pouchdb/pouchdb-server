@@ -147,6 +147,21 @@ Please make your changes on a separate branch whose name reflects your changes, 
 
 For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](https://github.com/pouchdb/pouchdb/blob/master/CONTRIBUTING.md).
 
+
+## Testing
+
+To test for regressions, the following comes in handy:
+- the PouchDB test suite: ``npm run test-pouchdb``
+- the jshint command: ``npm run jshint``
+- the express-pouchdb test suite (for express-pouchdb specific things like its API only!): ``npm run test-express-pouchdb``
+
+``npm test`` combines these three.
+
+There is also the possibility to run express-pouchdb against a part of
+the CouchDB test suite. For that, try: ``npm run test-couchdb``. If it
+doesn't work, try using [couchdb-harness](https://github.com/nick-thompson/couchdb-harness),
+which that command is based on, directly.
+
 ### Fauxton
 
 The custom Fauxton theme, with the PouchDB Server name and logo, are kept [in a Fauxton fork](https://github.com/nolanlawson/couchdb-fauxton) for the time being.
