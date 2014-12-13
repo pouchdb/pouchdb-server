@@ -48,7 +48,7 @@
     "express": "^4.8.0"
   },
   "scripts": {
-    "jshint": "jshint -c .jshintrc lib lib/routes test",
+    "jshint": "jshint -c .jshintrc lib test",
     "test-pouchdb": "cd node_modules/pouchdb-server && npm run test-pouchdb",
     "test-couchdb": "cd node_modules/pouchdb-server && npm run test-couchdb",
     "test-express-pouchdb": "./node_modules/.bin/mocha",
