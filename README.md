@@ -1,5 +1,7 @@
 # express-pouchdb
 
+[![Build Status](https://travis-ci.org/pouchdb/express-pouchdb.svg)](https://travis-ci.org/pouchdb/express-pouchdb)
+
 > An Express submodule with a CouchDB style REST interface to PouchDB.
 
 ## Introduction
