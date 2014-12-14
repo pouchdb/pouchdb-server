@@ -42,7 +42,12 @@ before(function (done) {
 });
 
 after(function (done) {
-  fse.remove('./config.json', done);
+  fse.remove('./config.json', function (err) {
+    if (err) {
+      return done(err);
+    }
+    fse.remove('./log.txt', done);
+  });
 });
 
 var prefixes = ['/', '/db/'];
