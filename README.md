@@ -1,4 +1,5 @@
 # pouchdb-server
+[![Build Status](https://travis-ci.org/pouchdb/pouchdb-server.svg)](https://travis-ci.org/pouchdb/pouchdb-server)
 
 > A standalone REST interface server for PouchDB.
 
