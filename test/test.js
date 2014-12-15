@@ -9,10 +9,12 @@ var buildApp = require('..'),
     fse      = require('fs-extra');
 
 var TEST_DATA = __dirname + '/testdata/';
+var LARGE_TIMEOUT = 5000;
 
 var expressApp;
 
 before(function (done) {
+  this.timeout(LARGE_TIMEOUT);
   fse.remove(TEST_DATA, function (err) {
     if (err) {
       return done(err);
