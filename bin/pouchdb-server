@@ -1,29 +1,31 @@
 #!/usr/bin/env node
 
-var express = require('express')
-  , auth    = require('basic-auth')
-  , corser  = require('corser')
-  , favicon = require('serve-favicon')
-  , path    = require('path')
-  , mkdirp  = require('mkdirp')
-  , argv    = require('optimist').argv
-  , port    = +(argv.p || argv.port || 5984)
-  , logger  = argv.l || argv.log || 'dev'
-  , user    = argv.u || argv.user
-  , pass    = argv.s || argv.pass
-  , dbpath  = argv.d || argv.dir || argv.directory || ''
-  , inMem   = argv.m || argv['in-memory']
-  , levelBackend = argv['level-backend']
-  , levelPrefix  = argv['level-prefix']
-  , useAuth = user && pass
-  , app     = express();
+"use strict";
+
+var express      = require('express'),
+    auth         = require('basic-auth'),
+    corser       = require('corser'),
+    favicon      = require('serve-favicon'),
+    path         = require('path'),
+    mkdirp       = require('mkdirp'),
+    argv         = require('optimist').argv,
+    port         = +(argv.p || argv.port || 5984),
+    logger       = argv.l || argv.log || 'dev',
+    user         = argv.u || argv.user,
+    pass         = argv.s || argv.pass,
+    dbpath       = argv.d || argv.dir || argv.directory || '',
+    inMem        = argv.m || argv['in-memory'],
+    levelBackend = argv['level-backend'],
+    levelPrefix  = argv['level-prefix'],
+    useAuth      = user && pass,
+    app          = express();
 
 // Help, display usage information
 if (argv.h || argv.help) {
-  var path = require('path')
-    , fs = require('fs')
-    , fp = path.resolve(__dirname, 'usage.txt')
-    , usage = fs.readFileSync(fp, 'utf8');
+  var path = require('path'),
+      fs = require('fs'),
+      fp = path.resolve(__dirname, 'usage.txt'),
+      usage = fs.readFileSync(fp, 'utf8');
 
   process.stdout.write(usage);
   process.exit(1);
@@ -33,7 +35,9 @@ app.use(favicon(__dirname + '/../favicon.ico'));
 app.use(corser.create({
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
   supportsCredentials: true,
-  requestHeaders: corser.simpleRequestHeaders.concat(["Authorization", "Origin", "Referer"])
+  requestHeaders: corser.simpleRequestHeaders.concat([
+    "Authorization", "Origin", "Referer"
+  ])
 }));
 
 if (logger !== 'off') {
@@ -43,10 +47,14 @@ if (logger !== 'off') {
 if (useAuth) {
   app.use(function (req, res, next) {
     // Default read-only
-    if (req.user || req.method === 'GET') return next();
+    if (req.user || req.method === 'GET') {
+      return next();
+    }
     // Otherwise authenticate
     var creds = auth(req);
-    if (creds && creds.name == user && creds.pass == pass) return next();
+    if (creds && creds.name === user && creds.pass === pass) {
+      return next();
+    }
     res.send(401);
   });
 }
@@ -80,10 +88,11 @@ app.listen(port, function () {
   if (levelPrefix) {
     console.log('all databases will be created with prefix: ' + levelPrefix);
   }
-  console.log('\nnavigate to http://localhost:' + port + '/_utils for the Fauxton UI.\n');
+  var fauxtonUrl = 'http://localhost:' + port + '/_utils';
+  console.log('\nnavigate to ' + fauxtonUrl + ' for the Fauxton UI.\n');
 }).on('error', function (e) {
   if (e.code === 'EADDRINUSE') {
-    console.error('\nError: Port ' + port + ' is already in use.')
+    console.error('\nError: Port ' + port + ' is already in use.');
     console.error('Try another one, e.g. pouchdb-server -p ' +
       (parseInt(port) + 1) + '\n');
   } else {
@@ -93,5 +102,5 @@ app.listen(port, function () {
 });
 
 process.on('SIGINT', function () {
-  process.exit(0)
+  process.exit(0);
 });

@@ -17,7 +17,8 @@
   "scripts": {
     "start": "node ./bin/pouchdb-server",
     "test-pouchdb": "./bin/test-pouchdb.sh",
-    "test-couchdb": "./bin/test-couchdb.sh"
+    "test-couchdb": "./bin/test-couchdb.sh",
+    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -34,5 +35,8 @@
     "optimist": "~0.3.5",
     "pouchdb": "pouchdb/pouchdb",
     "serve-favicon": "~2.0.1"
+  },
+  "devDependencies": {
+    "jshint": "^2.5.10"
   }
 }
