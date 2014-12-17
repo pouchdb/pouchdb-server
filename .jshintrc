@@ -1,5 +1,4 @@
-{ "maxlen": 80,
-  "curly": true,
+{ "curly": true,
   "eqeqeq": true,
   "immed": true,
   "newcap": true,

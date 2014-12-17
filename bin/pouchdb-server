@@ -2,34 +2,89 @@
 
 "use strict";
 
-var express      = require('express'),
-    auth         = require('basic-auth'),
-    corser       = require('corser'),
-    favicon      = require('serve-favicon'),
-    path         = require('path'),
-    mkdirp       = require('mkdirp'),
-    argv         = require('optimist').argv,
-    port         = +(argv.p || argv.port || 5984),
-    logger       = argv.l || argv.log || 'dev',
-    user         = argv.u || argv.user,
-    pass         = argv.s || argv.pass,
-    dbpath       = argv.d || argv.dir || argv.directory || '',
-    inMem        = argv.m || argv['in-memory'],
-    levelBackend = argv['level-backend'],
-    levelPrefix  = argv['level-prefix'],
-    useAuth      = user && pass,
-    app          = express();
+var express  = require('express'),
+    auth     = require('basic-auth'),
+    corser   = require('corser'),
+    favicon  = require('serve-favicon'),
+    path     = require('path'),
+    mkdirp   = require('mkdirp'),
+    nomnom   = require('nomnom'),
+    wordwrap = require('wordwrap');
 
-// Help, display usage information
-if (argv.h || argv.help) {
-  var path = require('path'),
-      fs = require('fs'),
-      fp = path.resolve(__dirname, 'usage.txt'),
-      usage = fs.readFileSync(fp, 'utf8');
+var loggerModes = ['dev', 'short', 'tiny', 'combined', 'off'];
 
-  process.stdout.write(usage);
-  process.exit(1);
+function terminalWrap(text) {
+  // 21 chars from the left of the terminal might change when new
+  // options are added
+  return wordwrap(21, 80)(text).trim();
 }
+
+var options = {
+  port: {
+    abbr: 'p',
+    help: terminalWrap("Port on which to run the server."),
+    default: 5984,
+    callback: function(port) {
+      if (port !== parseInt(port).toString()) {
+        return "port must be an integer";
+      }
+    }
+  },
+  dir: {
+    abbr: 'd',
+    help: terminalWrap("Where to store database files. (Defaults to the current directory).")
+  },
+  inMemory: {
+    abbr: 'm',
+    full: 'in-memory',
+    flag: 'true',
+    help: terminalWrap("Use a pure in-memory database (will be deleted upon restart!)")
+  },
+  logger: {
+    abbr: 'l',
+    default: 'dev',
+    choices: loggerModes,
+    help: terminalWrap("Output log format (" + loggerModes.join('|') + ")")
+  },
+  user: {
+    abbr: 'u',
+    help: terminalWrap("Set Basic Auth username. (Both user and pass required for Basic Auth).")
+  },
+  pass: {
+    abbr: 's',
+    help: terminalWrap("Set Basic Auth password. (Both user and pass required for Basic Auth).")
+  },
+  levelBackend: {
+    full: 'level-backend',
+    help: terminalWrap("Advanced - Alternate LevelDOWN backend (e.g. memdown, riakdown, redisdown) Note that you'll need to manually npm install it first.")
+  },
+  levelPrefix: {
+    full: 'level-prefix',
+    help: terminalWrap("Advanced - Prefix to use for all database names, useful for URLs in alternate backends, e.g. riak://localhost:8087/ for riakdown.")
+  }
+};
+
+var args = nomnom
+  .options(options)
+  .script('pouchdb-server')
+  .help([
+    "Examples:",
+    "",
+    "  pouchdb-server --level-backend riakdown --level-prefix riak://localhost:8087",
+    "  Starts up a pouchdb-server that talks to Riak.",
+    "",
+    "  pouchdb-server --level-backend redis",
+    "  Starts up a pouchdb-server that talks to Redis, on localhost:6379",
+    "",
+    "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
+    "  Starts up a pouchdb-server that uses SQLite, with db files stored in /tmp/"
+  ].join('\n'))
+  .nocolors()
+  .parse();
+
+args.useAuth = args.user && args.pass;
+
+var app = express();
 
 app.use(favicon(__dirname + '/../favicon.ico'));
 app.use(corser.create({
@@ -40,11 +95,11 @@ app.use(corser.create({
   ])
 }));
 
-if (logger !== 'off') {
-  app.use(require('morgan')(logger));
+if (args.logger !== 'off') {
+  app.use(require('morgan')(args.logger));
 }
 
-if (useAuth) {
+if (args.useAuth) {
   app.use(function (req, res, next) {
     // Default read-only
     if (req.user || req.method === 'GET') {
@@ -52,7 +107,7 @@ if (useAuth) {
     }
     // Otherwise authenticate
     var creds = auth(req);
-    if (creds && creds.name === user && creds.pass === pass) {
+    if (creds && creds.name === args.user && creds.pass === args.pass) {
       return next();
     }
     res.send(401);
@@ -61,40 +116,40 @@ if (useAuth) {
 
 var expressPouchDB = require('express-pouchdb');
 var opts = {};
-if (dbpath) {
-  opts.prefix = path.resolve(dbpath) + path.sep;
+if (args.dir) {
+  opts.prefix = path.resolve(args.dir) + path.sep;
   mkdirp.sync(opts.prefix);
-} else if (levelPrefix) {
-  opts.prefix = levelPrefix;
+} else if (args.levelPrefix) {
+  opts.prefix = args.levelPrefix;
 }
-if (inMem) {
+if (args.inMemory) {
   opts.db = require('memdown');
-} else if (levelBackend) {
-  opts.db = require(levelBackend);
+} else if (args.levelBackend) {
+  opts.db = require(args.levelBackend);
 }
 
 var PouchDB = require('pouchdb').defaults(opts);
 app.use(expressPouchDB(PouchDB));
-app.listen(port, function () {
-  console.log('\npouchdb-server listening on port ' + port + '.');
-  if (inMem) {
+app.listen(args.port, function () {
+  console.log('\npouchdb-server listening on port ' + args.port + '.');
+  if (args.inMemory) {
     console.log('database is in-memory; no changes will be saved.');
-  } else if (dbpath) {
+  } else if (args.dir) {
     console.log('database files will be saved to ' + opts.prefix);
   }
-  if (levelBackend) {
-    console.log('using alternative backend: ' + levelBackend);
+  if (args.levelBackend) {
+    console.log('using alternative backend: ' + args.levelBackend);
   }
-  if (levelPrefix) {
-    console.log('all databases will be created with prefix: ' + levelPrefix);
+  if (args.levelPrefix) {
+    console.log('all databases will be created with prefix: ' + args.levelPrefix);
   }
-  var fauxtonUrl = 'http://localhost:' + port + '/_utils';
+  var fauxtonUrl = 'http://localhost:' + args.port + '/_utils';
   console.log('\nnavigate to ' + fauxtonUrl + ' for the Fauxton UI.\n');
 }).on('error', function (e) {
   if (e.code === 'EADDRINUSE') {
-    console.error('\nError: Port ' + port + ' is already in use.');
+    console.error('\nError: Port ' + args.port + ' is already in use.');
     console.error('Try another one, e.g. pouchdb-server -p ' +
-      (parseInt(port) + 1) + '\n');
+      (parseInt(args.port) + 1) + '\n');
   } else {
     console.error('Uncaught error: ' + e);
     console.error(e.stack);
