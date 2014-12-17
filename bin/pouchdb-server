@@ -32,7 +32,12 @@ var options = {
   },
   dir: {
     abbr: 'd',
-    help: terminalWrap("Where to store database files. (Defaults to the current directory).")
+    help: terminalWrap("Where to store database files. (Defaults to /_config/couchdb/database_dir which defaults to the current directory).")
+  },
+  config: {
+    abbr: 'c',
+    help: terminalWrap("The location of the configuration file that backs /_config."),
+    default: './config.json'
   },
   inMemory: {
     abbr: 'm',
@@ -85,15 +90,7 @@ var args = nomnom
 args.useAuth = args.user && args.pass;
 
 var app = express();
-
 app.use(favicon(__dirname + '/../favicon.ico'));
-app.use(corser.create({
-  methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
-  supportsCredentials: true,
-  requestHeaders: corser.simpleRequestHeaders.concat([
-    "Authorization", "Origin", "Referer"
-  ])
-}));
 
 if (args.logger !== 'off') {
   app.use(require('morgan')(args.logger));
@@ -114,28 +111,85 @@ if (args.useAuth) {
   });
 }
 
-var expressPouchDB = require('express-pouchdb');
-var opts = {};
-if (args.dir) {
-  opts.prefix = path.resolve(args.dir) + path.sep;
-  mkdirp.sync(opts.prefix);
-} else if (args.levelPrefix) {
-  opts.prefix = args.levelPrefix;
-}
-if (args.inMemory) {
-  opts.db = require('memdown');
-} else if (args.levelBackend) {
-  opts.db = require(args.levelBackend);
+var pouchDBApp = require('express-pouchdb')({
+  configPath: args.config
+});
+var config = pouchDBApp.couchConfig;
+
+var corsMiddleware;
+function corsChanged() {
+  if (config.get('httpd', 'enable_cors')) {
+    var origins = config.get('cors', 'origins');
+    if (origins === '*') {
+      origins = undefined;
+    }
+    if (origins) {
+      origins = origins.split(', ');
+    }
+
+    corsMiddleware = corser.create({
+      methods: config.get('cors', 'methods').split(', '),
+      supportsCredentials: config.get('cors', 'credentials'),
+      requestHeaders: config.get('cors', 'headers').split(', '),
+      origins: origins
+    });
+  } else {
+    corsMiddleware = null;
+  }
 }
 
-var PouchDB = require('pouchdb').defaults(opts);
-app.use(expressPouchDB(PouchDB));
+[
+  ['httpd', 'enable_cors', true],
+  ['cors', 'credentials', true],
+  ['cors', 'methods', 'GET, HEAD, POST, PUT, DELETE, COPY'],
+  ['cors', 'origins', '*'],
+  ['cors', 'headers', corser.simpleRequestHeaders.concat([
+    'Authorization', 'Origin', 'Referer'
+  ]).join(', ')],
+].forEach(function (info) {
+  config.registerDefault.apply(config, info);
+  config.on(info[0] + '.' + info[1], corsChanged);
+});
+corsChanged();
+
+app.use(function (req, res, next) {
+  if (!corsMiddleware) {
+    return next();
+  }
+  return corsMiddleware(req, res, next);
+});
+
+function updatePouchDB() {
+  var opts = {};
+
+  var dir = config.get('couchdb', 'database_dir') || args.dir;
+  opts.prefix = path.resolve(dir) + path.sep;
+  mkdirp.sync(opts.prefix);
+
+  if (args.levelPrefix) {
+    opts.prefix = args.levelPrefix;
+  }
+  if (args.inMemory) {
+    opts.db = require('memdown');
+  } else if (args.levelBackend) {
+    opts.db = require(args.levelBackend);
+  }
+
+  var PouchDB = require('pouchdb').defaults(opts);
+  pouchDBApp.setPouchDB(PouchDB);
+}
+config.registerDefault('couchdb', 'database_dir', './');
+config.on('couchdb.database_dir', updatePouchDB);
+
+updatePouchDB();
+
+app.use(pouchDBApp);
 app.listen(args.port, function () {
   console.log('\npouchdb-server listening on port ' + args.port + '.');
   if (args.inMemory) {
     console.log('database is in-memory; no changes will be saved.');
   } else if (args.dir) {
-    console.log('database files will be saved to ' + opts.prefix);
+    console.log('database files will be saved to ' + args.dir);
   }
   if (args.levelBackend) {
     console.log('using alternative backend: ' + args.levelBackend);
