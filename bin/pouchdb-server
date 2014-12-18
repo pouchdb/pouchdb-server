@@ -9,7 +9,8 @@ var express  = require('express'),
     path     = require('path'),
     mkdirp   = require('mkdirp'),
     nomnom   = require('nomnom'),
-    wordwrap = require('wordwrap');
+    wordwrap = require('wordwrap'),
+    killable = require('killable');
 
 function terminalWrap(text) {
   // 21 chars from the left of the terminal might change when new
@@ -25,8 +26,7 @@ function parseArgs() {
   var options = {
     port: {
       abbr: 'p',
-      help: terminalWrap("Port on which to run the server."),
-      default: 5984,
+      help: terminalWrap("Port on which to run the server. (Defaults to /_config/httpd/port which defaults to 5984)."),
       callback: function(port) {
         if (port !== parseInt(port).toString()) {
           return "port must be an integer";
@@ -41,6 +41,10 @@ function parseArgs() {
       abbr: 'c',
       help: terminalWrap("The location of the configuration file that backs /_config."),
       default: './config.json'
+    },
+    host: {
+      abbr: 'o',
+      help: terminalWrap("The address to bind the server to. (Defaults to /_config/httpd/bind_address which defaults to 127.0.0.1).")
     },
     inMemory: {
       abbr: 'm',
@@ -188,36 +192,55 @@ function updatePouchDB() {
 }
 config.registerDefault('couchdb', 'database_dir', './');
 config.on('couchdb.database_dir', updatePouchDB);
-
 updatePouchDB();
 
 app.use(pouchDBApp);
-app.listen(args.port, function () {
-  console.log('\npouchdb-server listening on port ' + args.port + '.');
-  if (args.inMemory) {
-    console.log('database is in-memory; no changes will be saved.');
-  } else if (args.dir) {
-    console.log('database files will be saved to ' + args.dir);
-  }
-  if (args.levelBackend) {
-    console.log('using alternative backend: ' + args.levelBackend);
-  }
-  if (args.levelPrefix) {
-    var prefix = args.levelPrefix;
-    console.log('all databases will be created with prefix: ' + prefix);
-  }
-  var fauxtonUrl = 'http://localhost:' + args.port + '/_utils';
-  console.log('\nnavigate to ' + fauxtonUrl + ' for the Fauxton UI.\n');
-}).on('error', function (e) {
-  if (e.code === 'EADDRINUSE') {
-    console.error('\nError: Port ' + args.port + ' is already in use.');
-    console.error('Try another one, e.g. pouchdb-server -p ' +
-      (parseInt(args.port) + 1) + '\n');
-  } else {
-    console.error('Uncaught error: ' + e);
-    console.error(e.stack);
-  }
-});
+
+var server;
+function listen() {
+  var host = args.host || config.get('httpd', 'bind_address');
+  var port = args.port || config.get('httpd', 'port');
+
+  server = app.listen(port, host, function () {
+    console.log('\npouchdb-server listening on port ' + port + '.');
+    if (args.inMemory) {
+      console.log('database is in-memory; no changes will be saved.');
+    } else if (args.dir) {
+      console.log('database files will be saved to ' + args.dir);
+    }
+    if (args.levelBackend) {
+      console.log('using alternative backend: ' + args.levelBackend);
+    }
+    if (args.levelPrefix) {
+      var prefix = args.levelPrefix;
+      console.log('all databases will be created with prefix: ' + prefix);
+    }
+    var fauxtonUrl = 'http://' + host + ':' + port + '/_utils';
+    console.log('\nnavigate to ' + fauxtonUrl + ' for the Fauxton UI.\n');
+  });
+  killable(server);
+
+  server.on('error', function (e) {
+    if (e.code === 'EADDRINUSE') {
+      console.error('\nError: Port ' + port + ' is already in use.');
+      console.error('Try another one, e.g. pouchdb-server -p ' +
+        (parseInt(port) + 1) + '\n');
+    } else {
+      console.error('Uncaught error: ' + e);
+      console.error(e.stack);
+    }
+  });
+}
+
+function rebind() {
+  server.kill(listen);
+}
+
+config.registerDefault('httpd', 'port', 5984);
+config.registerDefault('httpd', 'bind_address', '127.0.0.1');
+config.on('httpd.port', rebind);
+config.on('httpd.bind_address', rebind);
+listen();
 
 process.on('SIGINT', function () {
   process.exit(0);
