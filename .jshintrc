@@ -15,7 +15,7 @@
   "globalstrict": true,
   "globals": {
     "PouchDB": true,
-     "should": true
+    "should": true
   },
   "white": true,
   "indent": 2,
