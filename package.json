@@ -41,6 +41,7 @@
     "express": "4.10.5",
     "fs-extra": "^0.13.0",
     "jshint": "~2.3.0",
+    "memdown": "^1.0.0",
     "mocha": "^2.0.1",
     "pouchdb": "pouchdb/pouchdb",
     "pouchdb-server": "^0.4.0",

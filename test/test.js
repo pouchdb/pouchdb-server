@@ -6,48 +6,55 @@ var buildApp = require('..'),
     PouchDB  = require('pouchdb'),
     express  = require('express'),
     request  = require('supertest'),
-    fse      = require('fs-extra');
+    Promise  = require('bluebird'),
+    fse      = Promise.promisifyAll(require('fs-extra')),
+    memdown  = require('memdown');
 
 var TEST_DATA = __dirname + '/testdata/';
 var LARGE_TIMEOUT = 5000;
 
 var expressApp, expressApp2;
 
+var customApp = buildApp(PouchDB.defaults({
+  db: memdown,
+  prefix: 'c'
+}), {
+  mode: 'custom',
+  overrideMode: {
+    include: ['routes/404']
+  }
+});
+
+var coreApp = buildApp(PouchDB.defaults({
+  db: memdown,
+  prefix: 'd'
+}), {
+  mode: 'minimumForPouchDB',
+});
+
 before(function (done) {
   this.timeout(LARGE_TIMEOUT);
-  fse.remove(TEST_DATA, function (err) {
-    if (err) {
-      return done(err);
-    }
-    fse.mkdirs(TEST_DATA + 'a', function (err) {
-      if (err) {
-        return done(err);
-      }
-      fse.mkdirs(TEST_DATA + 'b', function (err) {
-        if (err) {
-          return done(err);
-        }
-        expressApp = buildApp(PouchDB.defaults({
-          prefix: TEST_DATA + 'a/'
-        }));
-        expressApp2 = buildApp(PouchDB.defaults({
-          prefix: TEST_DATA + 'b/',
-        }), {
-          configPath: TEST_DATA + 'b-config.json'
-        });
-        done();
-      });
+  fse.removeAsync(TEST_DATA).then(function () {
+    return fse.mkdirsAsync(TEST_DATA + 'a');
+  }).then(function () {
+    return fse.mkdirsAsync(TEST_DATA + 'b');
+  }).then(function () {
+    expressApp = buildApp(PouchDB.defaults({
+      prefix: TEST_DATA + 'a/'
+    }));
+    expressApp2 = buildApp(PouchDB.defaults({
+      prefix: TEST_DATA + 'b/',
+    }), {
+      configPath: TEST_DATA + 'b-config.json'
     });
-  });
+    done();
+  }).catch(done);
 });
 
 after(function (done) {
-  fse.remove('./config.json', function (err) {
-    if (err) {
-      return done(err);
-    }
+  fse.removeAsync('./config.json').then(function () {
     fse.remove('./log.txt', done);
-  });
+  }).catch(done);
 });
 
 var prefixes = ['/', '/db/'];
@@ -58,18 +65,22 @@ prefixes.forEach(function (prefix) {
       var app = express();
       app.use(prefix, expressApp);
 
-      request(app)
-        .get(prefix)
-        .expect(200)
-        .expect(function (res) {
-          if (!/Welcome!/.test(res.text)) {
-            return "No 'Welcome!' in response";
-          }
-        })
-        .end(done);
+      testWelcome(app, done, prefix);
     });
   });
 });
+
+function testWelcome(app, done, path) {
+  request(app)
+    .get(path)
+    .expect(200)
+    .expect(function (res) {
+      if (!/Welcome!/.test(res.text)) {
+        return "No 'Welcome!' in response";
+      }
+    })
+    .end(done);
+}
 
 describe('config', function () {
   it('should have ./config.json as default config path', function (done) {
@@ -130,3 +141,48 @@ describe('config', function () {
       .end(done);
   });
 });
+
+describe('modes', function () {
+  it('should always return a 404 in our custom configuration', function (done) {
+    request(customApp)
+      .get('/')
+      .expect(404)
+      .expect(function (res) {
+        if (JSON.parse(res.text).error !== 'not_found') {
+          return "Wrong response body";
+        }
+      })
+      .end(done);
+  });
+  it('should generate a functioning core app', function (done) {
+    testWelcome(coreApp, done, '/');
+  });
+  it('should throw an error when given an invalid mode', function () {
+    assertException(function () {
+      buildApp(PouchDB, {mode: 'unexisting-mode'});
+    }, /Unknown mode: unexisting-mode/);
+  });
+  it('should throw an error when a not included part is excluded', function () {
+    assertException(function () {
+      buildApp(PouchDB, {overrideMode: {exclude: ['abc']}});
+    }, /exclude contains the not included part 'abc'/);
+  });
+  it('should throw an error when an unknown part is included', function () {
+    assertException(function () {
+      buildApp(PouchDB, {overrideMode: {include: ['abc']}});
+    }, /include contains the unknown part 'abc'/);
+  });
+});
+
+function assertException(func, re) {
+  var e;
+  try {
+    func();
+  } catch (err) {
+    if (re.test(err.toString())) {
+      return;
+    }
+    e = err;
+  }
+  throw (e || new Error('no error was thrown'));
+}
