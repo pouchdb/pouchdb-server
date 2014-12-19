@@ -1,0 +1,9 @@
+{
+	"undef": true,
+	"unused": "vars",
+	"predef": ["-Promise"],
+	"node": true,
+	"strict": true,
+	"indent": 2,
+	"maxlen": 100
+}
