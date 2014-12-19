@@ -385,15 +385,22 @@ staticWrapperBuilders.destroy = function (PouchDB, destroy, handlers) {
 };
 
 staticWrapperBuilders.replicate = function (PouchDB, replicate, handlers) {
-  return function (source, target, options) {
+  return function (source, target, options, callback) {
     //no callback
-    var args = parseBaseArgs(PouchDB, this, options);
+    var args = parseBaseArgs(PouchDB, this, options, callback);
     args.source = source;
     args.target = target;
     return callHandlers(handlers, args, function () {
       return replicate.call(this, args.source, args.target, args.options);
     });
   };
+};
+
+staticWrapperBuilders.allDbs = function (PouchDB, allDbs, handlers) {
+  return function (options, callback) {
+    var args = parseBaseArgs(PouchDB, this, options, callback);
+    return callHandlers(handlers, args, makeCall(allDbs));
+  }
 };
 
 //Wrap .plugin()? .on()? .defaults()? No use case yet, but it's
