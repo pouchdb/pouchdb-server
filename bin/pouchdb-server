@@ -52,6 +52,10 @@ function parseArgs() {
       flag: 'true',
       help: terminalWrap("Use a pure in-memory database (will be deleted upon restart!)")
     },
+    proxy: {
+      abbr: 'r',
+      help: terminalWrap("Proxy requests to the specified host. Include a trailing '/'. Defaults to not active ('null')."),
+    },
     logMode: {
       abbr: 'l',
       full: 'log',
@@ -187,7 +191,12 @@ function updatePouchDB() {
     opts.db = require(args.levelBackend);
   }
 
-  var PouchDB = require('pouchdb').defaults(opts);
+  var PouchDB;
+  if (args.proxy) {
+    PouchDB = require('http-pouchdb')(require('pouchdb'), args.proxy);
+  } else {
+    PouchDB = require('pouchdb').defaults(opts);
+  }
   pouchDBApp.setPouchDB(PouchDB);
 }
 config.registerDefault('couchdb', 'database_dir', './');
