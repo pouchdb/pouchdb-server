@@ -47,5 +47,6 @@ module.exports = function (PouchDB, url, opts) {
     }
   });
   wrappers.installStaticWrapperMethods(HTTPPouchDB, api);
+  HTTPPouchDB.isHTTPPouchDB = true;
   return HTTPPouchDB;
 };

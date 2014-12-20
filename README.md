@@ -21,7 +21,8 @@ npm install pouchdb http-pouchdb
 var PouchDB = require('pouchdb');
 var HTTPPouchDB = require('http-pouchdb')(PouchDB, 'http://localhost:5984');
 
-var db = new PouchDB('_users');
+var db = new HTTPPouchDB('_users');
+console.log(HTTPPouchDB.isHTTPPouchDB) //-> true
 // 'db' will be backed by http://localhost:5984/_users ; You can use it
 // like any PouchDB database.
 ```

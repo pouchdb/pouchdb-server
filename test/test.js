@@ -11,6 +11,15 @@ var HTTPPouchDB = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/');
 var XMLHttpRequest = require('xhr2');
 var Promise = require('pouchdb-promise');
 
+describe('isHTTPPouchDB', function () {
+  it('should be set on the HTTPPouchDB object', function () {
+    HTTPPouchDB.isHTTPPouchDB.should.be.ok();
+  });
+  it('should not be set on the PouchDB object', function () {
+    should.not.exist(PouchDB.isHTTPPouchDB);
+  });
+});
+
 describe('constructor', function () {
   it('should create remote databases for normal db names', function (done) {
     var users = new HTTPPouchDB('_users');

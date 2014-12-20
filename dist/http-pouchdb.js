@@ -2,9 +2,9 @@
 (function (global){
 "use strict";
 
-
 var XHR = global.XMLHttpRequest;
 
+/* istanbul ignore else */
 if (typeof XHR === "undefined") {
   XHR = require('xhr2');
 }
@@ -49,6 +49,7 @@ module.exports = function (PouchDB, url, opts) {
     }
   });
   wrappers.installStaticWrapperMethods(HTTPPouchDB, api);
+  HTTPPouchDB.isHTTPPouchDB = true;
   return HTTPPouchDB;
 };
 
