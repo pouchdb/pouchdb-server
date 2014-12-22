@@ -3,14 +3,16 @@
 "use strict";
 
 var express  = require('express'),
-    auth     = require('basic-auth'),
     corser   = require('corser'),
     favicon  = require('serve-favicon'),
     path     = require('path'),
     mkdirp   = require('mkdirp'),
     nomnom   = require('nomnom'),
     wordwrap = require('wordwrap'),
-    killable = require('killable');
+    killable = require('killable'),
+    tailLog  = require('../lib/logging');
+
+// parse command line arguments
 
 function terminalWrap(text) {
   // 21 chars from the left of the terminal might change when new
@@ -20,8 +22,6 @@ function terminalWrap(text) {
 
 function parseArgs() {
   /* jshint maxlen:false */
-
-  var loggerModes = ['dev', 'short', 'tiny', 'combined', 'off'];
 
   var options = {
     port: {
@@ -54,22 +54,13 @@ function parseArgs() {
     },
     proxy: {
       abbr: 'r',
-      help: terminalWrap("Proxy requests to the specified host. Include a trailing '/'. Defaults to not active ('null')."),
+      help: terminalWrap("Proxy requests to the specified host. Include a trailing '/'. Defaults to not active ('null').")
     },
-    logMode: {
-      abbr: 'l',
-      full: 'log',
-      default: 'dev',
-      choices: loggerModes,
-      help: terminalWrap("Output log format (" + loggerModes.join('|') + ")")
-    },
-    user: {
-      abbr: 'u',
-      help: terminalWrap("Set Basic Auth username. (Both user and pass required for Basic Auth).")
-    },
-    pass: {
-      abbr: 's',
-      help: terminalWrap("Set Basic Auth password. (Both user and pass required for Basic Auth).")
+    noColor: {
+      // this option is handled by the 'colors' node module. It's just
+      // here so it shows up in --help
+      full: 'no-color',
+      help: terminalWrap("Disable coloring of logging output.")
     },
     levelBackend: {
       full: 'level-backend',
@@ -99,39 +90,45 @@ function parseArgs() {
     .nocolors()
     .parse();
 
-  result.useAuth = result.user && result.pass;
   return result;
 }
 
 var args = parseArgs();
 
+// build app
+
 var app = express();
-app.use(favicon(__dirname + '/../favicon.ico'));
-
-if (args.logMode !== 'off') {
-  app.use(require('morgan')(args.logMode));
-}
-
-if (args.useAuth) {
-  app.use(function (req, res, next) {
-    // Default read-only
-    if (req.user || req.method === 'GET') {
-      return next();
-    }
-    // Otherwise authenticate
-    var creds = auth(req);
-    if (creds && creds.name === args.user && creds.pass === args.pass) {
-      return next();
-    }
-    res.send(401);
-  });
-}
 
 var pouchDBApp = require('express-pouchdb')({
   configPath: args.config
 });
 var config = pouchDBApp.couchConfig;
+var logger = pouchDBApp.couchLogger;
 
+// favicon
+app.use(favicon(__dirname + '/../favicon.ico'));
+
+// logging
+var stopTailingLogImpl, loggingReady;
+
+function restartTailingLog() {
+  stopTailingLog();
+  loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
+    stopTailingLogImpl = stop;
+  });
+}
+
+function stopTailingLog() {
+  if (stopTailingLogImpl) {
+    stopTailingLogImpl();
+    stopTailingLogImpl = undefined;
+  }
+}
+
+config.on('log.file', restartTailingLog);
+restartTailingLog();
+
+// cors
 var corsMiddleware;
 function corsChanged() {
   if (config.get('httpd', 'enable_cors')) {
@@ -175,6 +172,8 @@ app.use(function (req, res, next) {
   return corsMiddleware(req, res, next);
 });
 
+// determine PouchDB instance
+
 function updatePouchDB() {
   var opts = {};
 
@@ -205,35 +204,44 @@ updatePouchDB();
 
 app.use(pouchDBApp);
 
+// handle listening
+
 var server;
+
 function listen() {
+  loggingReady.then(listenImpl);
+}
+
+function listenImpl() {
   var host = args.host || config.get('httpd', 'bind_address');
   var port = args.port || config.get('httpd', 'port');
 
   server = app.listen(port, host, function () {
-    console.log('\npouchdb-server listening on port ' + port + '.');
+    var address = 'http://' + host + ':' + port + '/';
+    logger.info('pouchdb-server has started on ' + address);
     if (args.inMemory) {
-      console.log('database is in-memory; no changes will be saved.');
+      logger.info('database is in-memory; no changes will be saved.');
     } else if (args.dir) {
-      console.log('database files will be saved to ' + args.dir);
+      logger.info('database files will be saved to ' + args.dir);
     }
     if (args.levelBackend) {
-      console.log('using alternative backend: ' + args.levelBackend);
+      logger.info('using alternative backend: ' + args.levelBackend);
     }
     if (args.levelPrefix) {
       var prefix = args.levelPrefix;
-      console.log('all databases will be created with prefix: ' + prefix);
+      logger.info('all databases will be created with prefix: ' + prefix);
     }
-    var fauxtonUrl = 'http://' + host + ':' + port + '/_utils';
-    console.log('\nnavigate to ' + fauxtonUrl + ' for the Fauxton UI.\n');
+    var fauxtonUrl = address + '_utils';
+    logger.info('navigate to ' + fauxtonUrl + ' for the Fauxton UI.');
   });
   killable(server);
 
   server.on('error', function (e) {
+    stopTailingLog();
     if (e.code === 'EADDRINUSE') {
-      console.error('\nError: Port ' + port + ' is already in use.');
+      console.error('Error: Port ' + port + ' is already in use.');
       console.error('Try another one, e.g. pouchdb-server -p ' +
-        (parseInt(port) + 1) + '\n');
+        (parseInt(port) + 1));
     } else {
       console.error('Uncaught error: ' + e);
       console.error(e.stack);
@@ -250,6 +258,8 @@ config.registerDefault('httpd', 'bind_address', '127.0.0.1');
 config.on('httpd.port', rebind);
 config.on('httpd.bind_address', rebind);
 listen();
+
+// handle exit
 
 process.on('SIGINT', function () {
   process.exit(0);
