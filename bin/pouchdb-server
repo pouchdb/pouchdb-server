@@ -3,18 +3,84 @@
 "use strict";
 
 var express  = require('express'),
-    corser   = require('corser'),
     favicon  = require('serve-favicon'),
     path     = require('path'),
     mkdirp   = require('mkdirp'),
     nomnom   = require('nomnom'),
     wordwrap = require('wordwrap'),
     killable = require('killable'),
-    tailLog  = require('../lib/logging');
-
-var DEFAULT_DIR = './';
+    tailLog  = require('../lib/logging'),
+    cors     = require('../lib/cors');
 
 // parse command line arguments
+
+var options = {
+  port: {
+    abbr: 'p',
+    info: "Port on which to run the server.",
+    couchName: ['httpd', 'port'],
+    couchDefault: 5984,
+    onChange: rebind
+  },
+  dir: {
+    abbr: 'd',
+    info: "Where to store database files.",
+    couchName: ['couchdb', 'database_dir'],
+    couchDefault: './',
+    couchDefaultAlias: 'the current directory',
+    onChange: updatePouchDB
+  },
+  config: {
+    abbr: 'c',
+    info: "The location of the configuration file that backs /_config.",
+    ultimateDefault: './config.json'
+  },
+  host: {
+    abbr: 'o',
+    info: "The address to bind the server to.",
+    couchName: ['httpd', 'bind_address'],
+    couchDefault: '127.0.0.1',
+    onChange: rebind
+  },
+  'in-memory': {
+    abbr: 'm',
+    info: "Use a pure in-memory database which will be deleted upon restart.",
+    flag: true,
+    couchName: ['pouchdb_server', 'in_memory'],
+    couchDefault: false,
+    onChange: updatePouchDB
+  },
+  proxy: {
+    abbr: 'r',
+    info: "Proxy requests to the specified host. Include a trailing '/'.",
+    couchName: ['pouchdb_server', 'proxy'],
+    onChange: updatePouchDB
+  },
+  'no-color': {
+    // this option is handled by the 'colors' node module. It's just
+    // here so it shows up in --help
+    flag: true,
+    help: terminalWrap("Disable coloring of logging output.")
+  },
+  'level-backend': {
+    info: (
+      "Advanced - Alternate LevelDOWN backend (e.g. memdown, " +
+      "riakdown, redisdown). Note that you'll need to manually npm " +
+      "install it first."
+    ),
+    couchName: ['pouchdb_server', 'level_backend'],
+    onChange: updatePouchDB
+  },
+  'level-prefix': {
+    info: (
+      "Advanced - Prefix to use for all database names, useful for " +
+      "URLs in alternate backends, e.g. riak://localhost:8087/ for " +
+      "riakdown."
+    ),
+    couchName: ['pouchdb_server', 'level_prefix'],
+    onChange: updatePouchDB
+  }
+};
 
 function terminalWrap(text) {
   // 21 chars from the left of the terminal might change when new
@@ -22,211 +88,119 @@ function terminalWrap(text) {
   return wordwrap(21, 80)(text).trim();
 }
 
-function parseArgs() {
-  /* jshint maxlen:false */
-
-  var options = {
-    port: {
-      abbr: 'p',
-      help: terminalWrap("Port on which to run the server. (Defaults to /_config/httpd/port which defaults to 5984)."),
-      callback: function(port) {
-        if (port !== parseInt(port).toString()) {
-          return "port must be an integer";
-        }
-      }
-    },
-    dir: {
-      abbr: 'd',
-      help: terminalWrap("Where to store database files. (Defaults to /_config/couchdb/database_dir which defaults to the current directory).")
-    },
-    config: {
-      abbr: 'c',
-      help: terminalWrap("The location of the configuration file that backs /_config."),
-      default: './config.json'
-    },
-    host: {
-      abbr: 'o',
-      help: terminalWrap("The address to bind the server to. (Defaults to /_config/httpd/bind_address which defaults to 127.0.0.1).")
-    },
-    inMemory: {
-      abbr: 'm',
-      full: 'in-memory',
-      flag: 'true',
-      help: terminalWrap("Use a pure in-memory database which will be deleted upon restart. (Defaults to /_config/pouchdb_server/in_memory which defaults to 'false').")
-    },
-    proxy: {
-      abbr: 'r',
-      help: terminalWrap("Proxy requests to the specified host. Include a trailing '/'. (Defaults to /_config/pouchdb_server/proxy which defaults to undefined.)")
-    },
-    noColor: {
-      // this option is handled by the 'colors' node module. It's just
-      // here so it shows up in --help
-      full: 'no-color',
-      flag: true,
-      help: terminalWrap("Disable coloring of logging output.")
-    },
-    levelBackend: {
-      full: 'level-backend',
-      help: terminalWrap("Advanced - Alternate LevelDOWN backend (e.g. memdown, riakdown, redisdown). Note that you'll need to manually npm install it first. (Defaults to /_config/pouchdb_server/level_backend which defaults to undefined).")
-    },
-    levelPrefix: {
-      full: 'level-prefix',
-      help: terminalWrap("Advanced - Prefix to use for all database names, useful for URLs in alternate backends, e.g. riak://localhost:8087/ for riakdown. (Defaults to /_config/pouchdb_server/level_prefix which defaults to undefined).")
+Object.keys(options).forEach(function (key) {
+  var option = options[key];
+  if (!option.help) {
+    var d;
+    if (option.couchName) {
+      d = "/_config/" + option.couchName.join("/")+ " which defaults to ";
+      d += option.couchDefaultAlias || option.couchDefault;
+    } else {
+      d = option.ultimateDefault;
     }
-  };
+    option.help = terminalWrap(option.info + " (Defaults to " + d + ").");
+  }
+});
 
-  var result = nomnom
-    .options(options)
-    .script('pouchdb-server')
-    .help([
-      "Examples:",
-      "",
-      "  pouchdb-server --level-backend riakdown --level-prefix riak://localhost:8087",
-      "  Starts up a pouchdb-server that talks to Riak.",
-      "",
-      "  pouchdb-server --level-backend redis",
-      "  Starts up a pouchdb-server that talks to Redis, on localhost:6379",
-      "",
-      "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
-      "  Starts up a pouchdb-server that uses SQLite, with db files stored in /tmp/"
-    ].join('\n'))
-    .nocolors()
-    .parse();
-
-  return result;
-}
-
-var args = parseArgs();
+var args = nomnom
+  .script('pouchdb-server')
+  .options(options)
+  .help([
+    "Examples:",
+    "",
+    "  pouchdb-server --level-backend riakdown --level-prefix " +
+      "riak://localhost:8087",
+    "  Starts up a pouchdb-server that talks to Riak.",
+    "",
+    "  pouchdb-server --level-backend redis",
+    "  Starts up a pouchdb-server that talks to Redis, on localhost:6379",
+    "",
+    "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
+    "  Starts up a pouchdb-server that uses SQLite, with db files " +
+      "stored in /tmp/"
+  ].join('\n'))
+  .nocolors()
+  .parse();
 
 // build app
 
 var app = express();
 
 var pouchDBApp = require('express-pouchdb')({
-  configPath: args.config
+  configPath: getArg('config')
 });
+
+function getArg(name) {
+  if (options[name].couchName) {
+    return args[name] || config.get.apply(config, options[name].couchName);
+  } else {
+    return args[name] || options[name].ultimateDefault;
+  }
+}
+
 var config = pouchDBApp.couchConfig;
 var logger = pouchDBApp.couchLogger;
+
+// register defaults & change listeners
+Object.keys(options).forEach(function (key) {
+  var option = options[key];
+
+  if (typeof option.couchDefault !== 'undefined') {
+    var args = option.couchName.concat([option.couchDefault]);
+    config.registerDefault.apply(config, args);
+  }
+  if (option.onChange) {
+    config.on(option.couchName.join('.'), option.onChange);
+  }
+});
 
 // favicon
 app.use(favicon(__dirname + '/../favicon.ico'));
 
 // logging
-var stopTailingLogImpl, loggingReady;
+var stopTailingLog, loggingReady;
 
 function restartTailingLog() {
-  stopTailingLog();
-  loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
-    stopTailingLogImpl = stop;
-  });
-}
-
-function stopTailingLog() {
-  if (stopTailingLogImpl) {
-    stopTailingLogImpl();
-    stopTailingLogImpl = undefined;
+  if (stopTailingLog) {
+    stopTailingLog();
+    stopTailingLog = undefined;
   }
+  loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
+    stopTailingLog = stop;
+  });
 }
 
 config.on('log.file', restartTailingLog);
 restartTailingLog();
 
 // cors
-var corsMiddleware;
-function corsChanged() {
-  if (config.get('httpd', 'enable_cors')) {
-    var origins = config.get('cors', 'origins');
-    if (origins === '*') {
-      origins = undefined;
-    }
-    if (origins) {
-      origins = origins.split(', ');
-    }
-
-    corsMiddleware = corser.create({
-      methods: config.get('cors', 'methods').split(', '),
-      supportsCredentials: config.get('cors', 'credentials'),
-      requestHeaders: config.get('cors', 'headers').split(', '),
-      origins: origins
-    });
-  } else {
-    corsMiddleware = null;
-  }
-}
-
-[
-  ['httpd', 'enable_cors', true],
-  ['cors', 'credentials', true],
-  ['cors', 'methods', 'GET, HEAD, POST, PUT, DELETE, COPY'],
-  ['cors', 'origins', '*'],
-  ['cors', 'headers', corser.simpleRequestHeaders.concat([
-    'Authorization', 'Origin', 'Referer'
-  ]).join(', ')],
-].forEach(function (info) {
-  config.registerDefault.apply(config, info);
-  config.on(info[0] + '.' + info[1], corsChanged);
-});
-corsChanged();
-
-app.use(function (req, res, next) {
-  if (!corsMiddleware) {
-    return next();
-  }
-  return corsMiddleware(req, res, next);
-});
+app.use(cors(config));
 
 // determine PouchDB instance
 function updatePouchDB() {
   var opts = {};
 
-  opts.prefix = path.resolve(getDir()) + path.sep;
+  opts.prefix = path.resolve(getArg('dir')) + path.sep;
   mkdirp.sync(opts.prefix);
 
-  if (getLevelPrefix()) {
-    opts.prefix = getLevelPrefix();
+  if (getArg('level-prefix')) {
+    opts.prefix = getArg('level-prefix');
   }
-  if (getInMemory()) {
+  if (getArg('in-memory')) {
     opts.db = require('memdown');
-  } else if (getLevelBackend()) {
-    opts.db = require(getLevelBackend());
+  } else if (getArg('level-backend')) {
+    opts.db = require(getArg('level-backend'));
   }
 
   var PouchDB;
-  if (getProxy()) {
-    PouchDB = require('http-pouchdb')(require('pouchdb'), getProxy());
+  if (getArg('proxy')) {
+    PouchDB = require('http-pouchdb')(require('pouchdb'), getArg('proxy'));
   } else {
     PouchDB = require('pouchdb').defaults(opts);
   }
   pouchDBApp.setPouchDB(PouchDB);
 }
 
-function getDir() {
-  return args.dir || config.get('couchdb', 'database_dir');
-}
-
-function getLevelPrefix() {
-  return args.levelPrefix || config.get('pouchdb_server', 'level_prefix');
-}
-
-function getLevelBackend() {
-  return args.levelBackend || config.get('pouchdb_server', 'level_backend');
-}
-
-function getInMemory() {
-  return args.inMemory || config.get('pouchdb_server', 'in_memory');
-}
-
-function getProxy() {
-  return args.proxy || config.get('pouchdb_server', 'proxy');
-}
-
-config.registerDefault('couchdb', 'database_dir', DEFAULT_DIR);
-config.registerDefault('pouchdb_server', 'in_memory', false);
-config.on('couchdb.database_dir', updatePouchDB);
-config.on('pouchdb_server.level_backend', updatePouchDB);
-config.on('pouchdb_server.level_prefix', updatePouchDB);
-config.on('pouchdb_server.in_memory', updatePouchDB);
-config.on('pouchdb_server.proxy', updatePouchDB);
 updatePouchDB();
 
 app.use(pouchDBApp);
@@ -239,23 +213,27 @@ function listen() {
 }
 
 function listenImpl() {
-  var host = args.host || config.get('httpd', 'bind_address');
-  var port = args.port || config.get('httpd', 'port');
+  var host = getArg('host');
+  var port = getArg('port');
+  if (typeof port !== 'number') {
+    logger.warning("port must be an integer.");
+    port = options.port.couchDefault;
+  }
 
   server = app.listen(port, host, function () {
     var address = 'http://' + host + ':' + port + '/';
     logger.info('pouchdb-server has started on ' + address);
-    if (getProxy()) {
-      logger.info('database is a proxy to ' + getProxy());
-    } else if (getInMemory()) {
+    if (getArg('proxy')) {
+      logger.info('database is a proxy to ' + getArg('proxy'));
+    } else if (getArg('in-memory')) {
       logger.info('database is in-memory; no changes will be saved.');
-    } else if (getDir() !== DEFAULT_DIR) {
-      logger.info('database files will be saved to ' + getDir());
+    } else if (getArg('dir') !== options.dir.couchDefault) {
+      logger.info('database files will be saved to ' + getArg('dir'));
     }
-    if (getLevelBackend()) {
-      logger.info('using alternative backend: ' + getLevelBackend());
+    if (getArg('level-backend')) {
+      logger.info('using alternative backend: ' + getArg('level-backend'));
     }
-    var prefix = getLevelPrefix();
+    var prefix = getArg('level-prefix');
     if (prefix) {
       logger.info('all databases will be created with prefix: ' + prefix);
     }
@@ -281,10 +259,6 @@ function rebind() {
   server.kill(listen);
 }
 
-config.registerDefault('httpd', 'port', 5984);
-config.registerDefault('httpd', 'bind_address', '127.0.0.1');
-config.on('httpd.port', rebind);
-config.on('httpd.bind_address', rebind);
 listen();
 
 // handle exit

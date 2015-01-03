@@ -27,15 +27,16 @@ Options:
    -d, --dir         Where to store database files. (Defaults to
                      /_config/couchdb/database_dir which defaults to the
                      current directory).
-   -c, --config      The location of the configuration file that backs /_config.  [./config.json]
+   -c, --config      The location of the configuration file that backs
+                     /_config. (Defaults to ./config.json).
    -o, --host        The address to bind the server to. (Defaults to
                      /_config/httpd/bind_address which defaults to 127.0.0.1).
    -m, --in-memory   Use a pure in-memory database which will be deleted upon
                      restart. (Defaults to /_config/pouchdb_server/in_memory
-                     which defaults to 'false').
+                     which defaults to false).
    -r, --proxy       Proxy requests to the specified host. Include a trailing
                      '/'. (Defaults to /_config/pouchdb_server/proxy which
-                     defaults to undefined.)
+                     defaults to undefined).
    --no-color        Disable coloring of logging output.
    --level-backend   Advanced - Alternate LevelDOWN backend (e.g. memdown,
                      riakdown, redisdown). Note that you'll need to manually
