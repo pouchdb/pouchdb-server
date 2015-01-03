@@ -27,17 +27,16 @@ $ npm install express-pouchdb
 Here's a sample Express app, which we'll name `app.js`.
 
 ```javascript
-var express = require('express')
-  , app     = express()
-  , PouchDB = require('pouchdb');
+var express = require('express'),
+    app     = express(),
+    PouchDB = require('pouchdb');
 
-app.use(express.logger('tiny'));
 app.use('/db', require('express-pouchdb')(PouchDB));
 
 app.listen(3000);
 ```
 
-Now we can run this little guy and find each of `express-pouch`'s routes at the `/db` prefix.
+Now we can run this little guy and find each of `express-pouchdb`'s routes at the `/db` prefix.
 
 ```bash
 $ node app.js &
@@ -49,21 +48,80 @@ GET / 200 56 - 7 ms
 }
 ```
 
-*Note,* **express-pouchdb** bundles its own JSON parsing middleware which conflicts with 
-[`express.bodyParser()`](http://expressjs.com/api.html#bodyParser). Please avoid using `express.bodyParser()`. Rather,
-you can use `express.urlencoded()` and `express.multipart()` alongside the **express-pouchdb** JSON middleware 
-and you should find the results to be the same as you would have expected with `express.bodyParser()`.
+*Note:* **express-pouchdb** conflicts with some middleware. You can work
+around this by only enabling affected middleware for routes not handled
+by **express-pouchdb**. [body-parser](https://www.npmjs.com/package/body-parser)
+is the most important middleware known to be problematic.
+
+## API
+
+**express-pouchdb** exports a single function that builds an express [application object](http://expressjs.com/4x/api.html#application). Its function signature is:
+
+``require('express-pouchdb')([PouchDB[, options]])``
+- ``PouchDB``: the PouchDB object used to access databases. Optional.
+- ``options``: Optional. These options are supported:
+ - ``configPath``: a path to the configuration file to use. Defaults to './config.json'.
+ - ``mode``: determines which parts of the HTTP API express-pouchdb offers are enabled. There are three values:
+   - ``'fullCouchDB'``: enables every part of the HTTP API, which makes express-pouchdb very close to a full CouchDB replacement. This is the default.
+    - ``'minimumForPouchDB'``: just exposes parts of the HTTP API that map 1-1 to the PouchDB api. This is the minimum required to make the PouchDB test suite run, and a nice start when you just need an HTTP API to replicate with.
+    - ``'custom'``: no parts of the HTTP API are enabled. You can add parts yourself using the ``opts.overrideMode`` discussed below.
+  - ``overrideMode``: Sometimes the preprogrammed modes are insufficient for your needs, or you chose the ``'custom'`` mode. In that case, you can set this to an object. This object can have the following properties:
+    - ``'include'``: a javascript array that specifies parts to include on top of the ones specified by ``opts.mode``. Optional.
+    - ``'exclude'``: a javascript array that specifies parts to exclude from the ones specified by ``opts.mode``. Optional.
+
+The application object returned contains some extra properties that
+offer additional functionality compared to an ordinary express
+application:
+- ``setPouchDB``: a function that allows changing the ``PouchDB`` object **express-pouchdb** uses on the fly. Takes one argument: the new ``PouchDB`` object to use.
+- ``couchConfig``: an object that provides programmatic access to the configuration file and HTTP API express-pouchdb offers. For an overview of available configuration options, take a look at Fauxton's configuration page. (``/_utils#_config``)
+- ``couchLogger``: an object that provides programmatic access to the log file and HTTP API **express-pouchdb** offers.
+
+### Examples
+
+#### Example 1
+
+Builds an HTTP API that exposes a minimal HTTP interface, but adds
+Fauxton as a debugging tool.
 
 ```javascript
-app.use(express.urlencoded());
-app.use(express.multipart());
-app.use(require('express-pouchdb')(require('pouchdb')));
+var app = require('express-pouchdb')({
+  mode: 'minimumForPouchDB',
+  overrideMode: {
+    include: ['fauxton']
+  }
+});
+// when not specifying PouchDB as an argument to the main function, you
+// need to specify it like this before requests are routed to ``app``
+app.setPouchDB(require('pouchdb'));
+```
+
+#### Example 2
+
+builds a full HTTP API but excludes express-pouchdb's authentication
+logic (say, because it interferes with custom authentication logic used
+in our own express app):
+
+```javascript
+var app2 = require('express-pouchdb')(require('pouchdb'), {
+  mode: 'fullCouchDB' // specified for clarity. It's the default so not necessary.
+  overrideMode: {
+    exclude: [
+      'routes/authentication',
+      // disabling the above, gives error messages which require you to disable the
+      // following parts too. Which makes sense since they depend on it.
+      'routes/authorization',
+      'routes/session'
+    ]
+  }
+});
 ```
 
 ### Using your own PouchDB
 
-Since you pass in the `PouchDB` that you would like to use with express-pouchb, you can drop
-express-pouchdb into an existing Node-based PouchDB application and get all the benefits of the HTTP interface without having to change your code.
+Since you pass in the `PouchDB` that you would like to use with
+express-pouchb, you can drop express-pouchdb into an existing Node-based
+PouchDB application and get all the benefits of the HTTP interface
+without having to change your code.
 
 ```js
 var express = require('express')
@@ -80,9 +138,7 @@ var myPouch = new PouchDB('foo');
 
 ### PouchDB defaults
 
-**Warning: this feature will be added in PouchDB 3.0.0. Use the PouchDB master branch if you can't wait.**
-
-When you use your own PouchDB code in tandem with express-pouchdb, the `PouchDB.defaults()` API can be very convenient for specifying some default settings for how PouchDB databases are created.
+When you use your own PouchDB code in tandem with **express-pouchdb**, the `PouchDB.defaults()` API can be very convenient for specifying some default settings for how PouchDB databases are created.
 
 For instance, if you want to use an in-memory [MemDOWN](https://github.com/rvagg/memdown)-backed pouch, you can simply do:
 
@@ -104,12 +160,22 @@ app.use('/db', require('express-pouchdb')(TempPouchDB));
 var myPouch = new TempPouchDB('foo');
 ```
 
+If you want express-pouchdb to proxy requests to another CouchDB-style
+HTTP API, you can use [http-pouchdb](https://www.npmjs.com/package/http-pouchdb):
+
+```javascript
+var TempPouchDB = require('http-pouchdb')(PouchDB, 'http://localhost:5984');
+app.use('/db', require('express-pouchdb')(TempPouchDB));
+```
+
 ## Functionality
 
 On top of the exposing everything PouchDB offers through a CouchDB-like
 interface, **express-pouchdb** also offers the following extra
-functionality found in CouchDB but not in PouchDB by default:
+functionality found in CouchDB but not in PouchDB by default (depending
+on the mode used, of course):
 
+- [Fauxton][], a web interface for the HTTP API.
 - [Authentication][] and [authorisation][] support. HTTP basic
   authentication and cookie authentication are available. Authorisation
   is handled by [validation functions][] and [security documents][].
@@ -122,6 +188,7 @@ functionality found in CouchDB but not in PouchDB by default:
   you to serve non-json content straight from your database.
 - [Rewrite][] and [Virtual Host][] support, for nicer urls.
 
+[fauxton]:              https://www.npmjs.com/package/fauxton
 [authentication]:       http://docs.couchdb.org/en/latest/intro/security.html
 [authorisation]:        http://docs.couchdb.org/en/latest/intro/overview.html#security-and-validation
 [validation functions]: http://docs.couchdb.org/en/latest/couchapp/ddocs.html#vdufun
@@ -134,71 +201,11 @@ functionality found in CouchDB but not in PouchDB by default:
 [rewrite]:              http://docs.couchdb.org/en/latest/api/ddoc/rewrites.html
 [virtual host]:         http://docs.couchdb.org/en/latest/config/http.html#vhosts
 
-## Contributing
-
-Want to help me make this thing awesome? Great! Here's how you should get started.
-
-1. Because PouchDB is still developing so rapidly, you'll want to clone `git@github.com:daleharvey/pouchdb.git`, and run `npm link` from the root folder of your clone.
-2. Fork **express-pouchdb**, and clone it to your local machine.
-3. From the root folder of your clone run `npm link pouchdb` to install PouchDB from your local repository from Step 1.
-4. `npm install`
-
-Please make your changes on a separate branch whose name reflects your changes, push them to your fork, and open a pull request!
-
-For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](https://github.com/pouchdb/pouchdb/blob/master/CONTRIBUTING.md).
-
-
-## Testing
-
-To test for regressions, the following comes in handy:
-- the PouchDB test suite: ``npm run test-pouchdb``
-- the jshint command: ``npm run jshint``
-- the express-pouchdb test suite (for express-pouchdb specific things like its API only!): ``npm run test-express-pouchdb``
-
-``npm test`` combines these three.
-
-There is also the possibility to run express-pouchdb against a part of
-the CouchDB test suite. For that, try: ``npm run test-couchdb``. If it
-doesn't work, try using [couchdb-harness](https://github.com/nick-thompson/couchdb-harness),
-which that command is based on, directly.
-
-### Fauxton
-
-The custom Fauxton theme, with the PouchDB Server name and logo, are kept [in a Fauxton fork](https://github.com/nolanlawson/couchdb-fauxton) for the time being.
-
 ## Contributors
 
-A huge thanks goes out to all of the following people for helping me get this to where it is now.
-
-* Dale Harvey ([@daleharvey](https://github.com/daleharvey))
-* Nolan Lawson ([@nolanlawson](https://github.com/nolanlawson)) 
-* Ryan Ramage ([@ryanramage](https://github.com/ryanramage))
-* Garren Smith ([@garrensmith](https://github.com/garrensmith))
-* ([@copongcopong](https://github.com/copongcopong))
-* ([@zevero](https://github.com/zevero))
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/express-pouchdb/graphs/contributors)
+then check out the [contributing guide](https://github.com/pouchdb/express-pouchdb/blob/master/CONTRIBUTING.md)!
 
 ## License
 
-Copyright (c) 2013 Nick Thompson
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
+The MIT License. See [the LICENSE file](https://github.com/pouchdb/express-pouchdb/blob/master/LICENSE) for more information.
