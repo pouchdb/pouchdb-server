@@ -19,7 +19,6 @@
 var wrappers = require('pouchdb-wrappers');
 var nodify = require('promise-nodify');
 var Promise = require('bluebird');
-var fs = require('fs');
 var getSize = require('get-folder-size');
 
 exports.installSizeWrapper = function () {
@@ -71,7 +70,5 @@ exports.getDiskSize = function (callback) {
 };
 
 function getDBSize(path) {
-  return Promise.promisify(fs.lstat)(path).then(function () {
-    return Promise.promisify(getSize)(path);
-  });
+  return Promise.promisify(getSize)(path);
 }
