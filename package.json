@@ -40,7 +40,7 @@
   "devDependencies": {
     "express": "4.10.5",
     "fs-extra": "^0.13.0",
-    "jshint": "~2.3.0",
+    "jshint": "~2.5.10",
     "memdown": "^1.0.0",
     "mocha": "^2.0.1",
     "pouchdb": "pouchdb/pouchdb",
@@ -50,8 +50,9 @@
   "scripts": {
     "jshint": "jshint -c .jshintrc lib test",
     "test-pouchdb": "cd node_modules/pouchdb-server && npm run test-pouchdb",
+    "test-pouchdb-minimum": "cd node_modules/pouchdb && SERVER=express-pouchdb-minimum npm test",
     "test-couchdb": "cd node_modules/pouchdb-server && npm run test-couchdb",
     "test-express-pouchdb": "./node_modules/.bin/mocha",
-    "test": "npm run jshint && npm run test-express-pouchdb && npm run test-pouchdb"
+    "test": "npm run jshint && npm run test-express-pouchdb && npm run test-pouchdb && npm run test-pouchdb-minimum"
   }
 }
