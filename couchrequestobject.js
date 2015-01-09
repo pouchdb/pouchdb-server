@@ -108,11 +108,14 @@ function actuallyBuildRequestObject(path, info, userCtx, host, uuid, options) {
   }
 
   if (options && options.headers) {
-    for (var header in options.headers) {
-      if (options.headers.hasOwnProperty(header)) {
+    Object.keys(options.headers).forEach(function (header) {
+      // keep this header lower case (like CouchDB does)
+      if (['x-couchdb-requested-path'].indexOf(header) === -1) {
         result.headers[normalizeHeaderCase(header)] = options.headers[header];
+      } else {
+        result.headers[header] = options.headers[header];
       }
-    }
+    });
     delete options.headers;
   }
 

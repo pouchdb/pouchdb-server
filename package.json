@@ -1,6 +1,6 @@
 {
 	"name": "couchdb-objects",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"main": "index.js",
 	"description": "Aids in the construction of JSON objects as used by CouchDB.",
 	"repository": {
