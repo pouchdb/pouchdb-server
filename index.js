@@ -153,8 +153,9 @@ function onChanged(db, doc) {
     var replication = PouchDB.replicate(doc.source, doc.target, opts);
     data.activeReplicationsById[doc._id] = replication;
     data.activeReplicationSignaturesByRepId[doc._replication_id] = currentSignature;
-    replication.on("complete", onReplicationComplete.bind(null, db, doc._id));
-    replication.on("error", onReplicationError.bind(null, db, doc._id));
+
+    replication.then(onReplicationComplete.bind(null, db, doc._id));
+    replication.catch(onReplicationError.bind(null, db, doc._id));
   }
 
   if (!equals(doc, docCopy)) {
@@ -222,7 +223,7 @@ function updateExistingDoc(db, docId, func) {
 
 function putAsReplicatorChange(db, doc) {
   if (doc._replication_state) {
-    doc._replication_state_time = Date.now();
+    doc._replication_state_time = new Date().toISOString();
   }
 
   var data = dataFor(db);
