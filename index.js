@@ -19,7 +19,6 @@
 
   - secure_rewrite; false by default is ok, but it might be nice to be
     able to set it to true as an option.
-  - set x-couchdb-requested-path header in the request object.
   - loop protection.
 
   Tests for all those can be found in the final part of the CouchDB
@@ -106,6 +105,11 @@ function buildRewriteResultReqObj(db, designDocName, rewriteUrl, options) {
     pathEnd.push.apply(pathEnd, match.url);
 
     options.query = match.query;
+
+    options.headers = options.headers || {};
+    if (!options.headers['x-couchdb-requested-path'] && options.requested_path) {
+      options.headers['x-couchdb-requested-path'] = '/' + options.requested_path.join('/');
+    }
 
     return couchdb_objects.buildRequestObject(db, pathEnd, options);
   });
