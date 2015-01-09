@@ -58,7 +58,7 @@ function adminOnlyWrapper(error, orig, args) {
 function create401(urlName) {
   return {
     status: 401,
-    name: "forbidden",
+    name: "unauthorized",
     message: "Only admins can access " + urlName + " of system databases."
   };
 }

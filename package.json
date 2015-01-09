@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-system-db",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "index.js",
 	"description": "Protects PouchDB system databases by wrapping their methods.",
 	"repository": {
