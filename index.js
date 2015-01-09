@@ -400,7 +400,7 @@ staticWrapperBuilders.allDbs = function (PouchDB, allDbs, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(PouchDB, this, options, callback);
     return callHandlers(handlers, args, makeCall(allDbs));
-  }
+  };
 };
 
 //Wrap .plugin()? .on()? .defaults()? No use case yet, but it's
