@@ -28,7 +28,7 @@ module.exports = function completeRespObj(resp, contentType) {
     resp = {body: resp};
   }
   if (Object.prototype.toString.call(resp) !== "[object Object]") {
-    resp = {body: ""};
+    resp = {};
   }
   //check for keys that shouldn't be in the resp object
   var copy = extend({}, resp);
@@ -57,15 +57,22 @@ module.exports = function completeRespObj(resp, contentType) {
   resp.headers.Vary = resp.headers.Vary || "Accept";
   //if a content type is known by now, use it.
   resp.headers["Content-Type"] = resp.headers["Content-Type"] || contentType;
-  if (resp.json) {
+  if (typeof resp.json !== 'undefined') {
     resp.body = JSON.stringify(resp.json);
     resp.headers["Content-Type"] = resp.headers["Content-Type"] || "application/json";
   }
-  if (resp.base64) {
+  if (typeof resp.base64 !== 'undefined') {
     resp.headers["Content-Type"] = resp.headers["Content-Type"] || "application/binary";
   }
   //the default content type
   resp.headers["Content-Type"] = resp.headers["Content-Type"] || "text/html; charset=utf-8";
+
+  //the user isn't allowed to set the etag header
+  delete resp.headers.Etag;
+
+  if (typeof resp.body === "undefined" && typeof resp.base64 === "undefined") {
+    resp.body = "";
+  }
 
   return resp;
 };
