@@ -37,7 +37,7 @@ exports.update = function (updatePath, options, callback) {
 
   var designDocName = updatePath.split("/")[0];
   var updateName = updatePath.split("/")[1];
-  var docId = updatePath.split("/")[2];
+  var docId = updatePath.split("/").slice(2).join("/");
 
   //build request object
   var pathEnd = ["_design", designDocName, "_update", updateName];
@@ -65,6 +65,14 @@ exports.update = function (updatePath, options, callback) {
 };
 
 function offlineQuery(db, designDocName, updateName, docId, req, options) {
+  if (req.method === "GET") {
+    return Promise.reject(new PouchPluginError({
+      status: 500, // should be 405, but for CouchDB compatibility...
+      name: "method_not_allowed",
+      message: "Update functions do not allow GET"
+    }));
+  }
+
   //get the documents involved
   var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
     if (!(designDoc.updates || {}).hasOwnProperty(updateName)) {
@@ -91,21 +99,26 @@ function offlineQuery(db, designDocName, updateName, docId, req, options) {
       } catch (e) {
         throw coucheval.wrapExecutionError(e);
       }
-      var savePromise;
+      var code = (result[1] || {}).code;
+      var couchResp = completeRespObj(result[1]);
+      function setCode(proposedCode) {
+        couchResp.code = code || proposedCode;
+      }
       //save result[0] if necessary
+      var savePromise = Promise.resolve();
       if (result[0] === null) {
-        savePromise = Promise.resolve(200);
+        setCode(200);
       } else {
         var methodName = options.withValidation ? "validatingPut" : "put";
-        savePromise = db[methodName](result[0], options).then(function () {
-          return 201;
+        savePromise = db[methodName](result[0]).then(function (resp) {
+          couchResp.headers['X-Couch-Id'] = resp.id;
+          couchResp.headers['X-Couch-Update-NewRev'] = resp.rev;
+          setCode(201);
         });
       }
       //then return the result
-      return savePromise.then(function (status) {
-        var resp = completeRespObj(result[1]);
-        resp.code = status;
-        return resp;
+      return savePromise.then(function () {
+        return couchResp;
       });
     }, null));
 }
