@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-seamless-auth",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "index.js",
 	"description": "Seamless switching between online (CouchDB) and offline (PouchDB) authentication.",
 	"repository": {
