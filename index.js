@@ -37,10 +37,7 @@ exports.show = function (showPath, options, callback) {
   var splitted = showPath.split("/");
   var designDocName = splitted[0];
   var showName = splitted[1];
-  var docId = splitted[2];
-  if (docId === "_design" && splitted.length > 3) {
-    docId += "/" + splitted[3];
-  }
+  var docId = splitted.slice(2).join("/");
 
   //build request object
   var pathEnd = ["_design", designDocName, "_show", showName];
@@ -75,11 +72,22 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
     //doc might not exist - that's ok and expected.
     return null;
   });
+  var doc;
   return Promise.all([ddocPromise, docPromise])
-    .then(Function.prototype.apply.bind(function (designDoc, doc) {
+    .then(Function.prototype.apply.bind(function (designDoc, theDoc) {
+      doc = theDoc;
       //all data collected - do the magic that is a show function
       var source = designDoc.shows[showName];
 
       return render(source, designDoc, doc, req);
-    }, null));
+    }, null)).catch(function (err) {
+      if (doc === null && req.path.length > 5) {
+        throw new PouchPluginError({
+          status: 404,
+          name: "not_found",
+          message: "document not found"
+        });
+      }
+      throw err;
+    });
 }
