@@ -56,7 +56,9 @@ exports.list = function (listPath, options, callback) {
 };
 
 function offlineQuery(db, designDocName, listName, viewName, req, options) {
-  if (req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json") {
+  var notJSON = req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json";
+  var hasBody = req.body && req.body !== "undefined";
+  if (notJSON && hasBody) {
     return Promise.reject(new PouchPluginError({
       status: 400,
       name: "bad_request",
@@ -75,22 +77,32 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
     }
     return designDoc;
   });
-  var viewPromise = db.query(designDocName + "/" + viewName, options.query);
+  var viewOpts = extend({}, options.query);
+  if (req.method !== 'GET') {
+    extend(viewOpts, options.json);
+  }
+  var viewPromise = db.query(designDocName + "/" + viewName, viewOpts);
 
   //not Promise.all because the error order matters.
   var args = [];
   return viewPromise.then(function (viewResp) {
     args.push(viewResp);
 
+    return db.info();
+  }).then(function (info) {
+    args.push(info);
+
     return ddocPromise;
   }).then(function (ddoc) {
     args.push(ddoc);
 
     return args;
-  }).then(Function.prototype.apply.bind(function (viewResp, designDoc) {
+
+  }).then(Function.prototype.apply.bind(function (viewResp, info, designDoc) {
     var head = {
       offset: viewResp.offset,
-      total_rows: viewResp.total_rows
+      total_rows: viewResp.total_rows,
+      update_seq: info.update_seq
     };
 
     var respInfo;
@@ -98,7 +110,6 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
 
     var listApi = {
       getRow: function () {
-        listApi.start({});
         return viewResp.rows.shift() || null;
       },
       send: function (chunk) {
