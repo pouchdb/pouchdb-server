@@ -140,8 +140,6 @@ function documentModificationWrapper(original, args, docId) {
 
 function isMember(userCtx, security) {
   var thereAreMembers = (
-    security.admins.names.length ||
-    security.admins.roles.length ||
     security.members.names.length ||
     security.members.roles.length
   );
