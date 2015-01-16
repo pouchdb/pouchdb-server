@@ -32,16 +32,23 @@ var systemDB = require("pouchdb-system-db");
 var DESIGN_DOC = require("./designdoc.js");
 var ADMIN_RE = /^-pbkdf2-([\da-f]+),([\da-f]+),([0-9]+)$/;
 var IS_HASH_RE = /^-(?:pbkdf2|hashed)-/;
+var SESSION_DB_NAME = 'pouch__auth_sessions__';
+
+var sessionDB;
+function getSessionDB(PouchDB) {
+  if (!sessionDB) {
+    sessionDB = new PouchDB(SESSION_DB_NAME, {auto_compaction: true});
+  }
+  return sessionDB;
+}
 
 var dbData = {
   dbs: [],
-  sessionDBsByDBIdx: [],
   isOnlineAuthDBsByDBIdx: []
 };
 function dbDataFor(db) {
   var i = dbData.dbs.indexOf(db);
   return {
-    sessionDB: dbData.sessionDBsByDBIdx[i],
     isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i],
   };
 }
@@ -72,21 +79,8 @@ exports.useAsAuthenticationDB = function (opts, callback) {
   var promise;
   if (args.opts.isOnlineAuthDB) {
     promise = Promise.resolve();
-    //keep the indexes in sync
-    dbData.sessionDBsByDBIdx[i] = null;
   } else {
-    promise = args.db.info()
-      .then(function (info) {
-        return "-session-" + encodeURIComponent(info.db_name);
-      })
-      .then(function (sessionDBName) {
-        return args.db.registerDependentDatabase(sessionDBName);
-      }).then(function (info) {
-        info.db.auto_compaction = true;
-        dbData.sessionDBsByDBIdx[i] = info.db;
-
-        return args.db.put(DESIGN_DOC);
-      })
+    promise = args.db.put(DESIGN_DOC)
       .catch(function (err) {
         if (err.status !== 409) {
           throw err;
@@ -116,6 +110,8 @@ function processArgs(db, opts, callback) {
   }
   return {
     db: db,
+    //|| {} for hashAdminPasswords e.g.
+    PouchDB: (db || {}).constructor,
     opts: opts,
     callback: callback
   };
@@ -261,7 +257,7 @@ api.logIn = function (username, password, opts, callback) {
         if (derived_key !== userDoc.derived_key) {
           throw "invalid_password";
         }
-        return data.sessionDB.get(args.opts.sessionID).catch(function () {
+        return getSessionDB(args.PouchDB).get(args.opts.sessionID).catch(function () {
           //non-existing doc is fine
           return {_id: args.opts.sessionID};
         });
@@ -269,7 +265,7 @@ api.logIn = function (username, password, opts, callback) {
       .then(function (sessionDoc) {
         sessionDoc.username = userDoc.name;
 
-        return data.sessionDB.put(sessionDoc);
+        return getSessionDB(args.PouchDB).put(sessionDoc);
       })
       .then(function () {
           return {
@@ -307,9 +303,9 @@ api.logOut = function (opts, callback) {
       return JSON.parse(resp.body);
     });
   } else {
-    promise = data.sessionDB.get(args.opts.sessionID)
+    promise = getSessionDB(args.PouchDB).get(args.opts.sessionID)
       .then(function (doc) {
-        return data.sessionDB.remove(doc);
+        return getSessionDB(args.PouchDB).remove(doc);
       })
       .catch(function () {/* fine, no session -> already logged out */})
       .then(function () {
@@ -352,7 +348,7 @@ api.session = function (opts, callback) {
       .then(function (info) {
         resp.info.authentication_db = info.db_name;
 
-        return data.sessionDB.get(args.opts.sessionID);
+        return getSessionDB(args.PouchDB).get(args.opts.sessionID);
       })
       .then(function (sessionDoc) {
         var adminDoc = args.opts.admins[sessionDoc.username];
@@ -390,20 +386,17 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
     }
   }
 
-  var sessionDB = dbData.sessionDBsByDBIdx.splice(i, 1)[0];
   var isOnlineAuthDB = dbData.isOnlineAuthDBsByDBIdx.splice(i, 1)[0];
-  var promise;
-  if (isOnlineAuthDB) {
-    promise = Promise.resolve();
-  } else {
+  if (!isOnlineAuthDB) {
     systemDB.uninstallSystemDBProtection(db);
     wrappers.uninstallWrapperMethods(db, writeWrappers);
-    promise = sessionDB.destroy()
-      .then(function () {/* empty success value */});
   }
 
   Validation.uninstallValidationMethods.call(db);
 
+  //backwards compatibility: this once contained async logic, even
+  //though today it's all synchronous.
+  var promise = Promise.resolve();
   nodify(promise, callback);
   return promise;
 };
