@@ -110,14 +110,22 @@ var args = nomnom
     "",
     "  pouchdb-server --level-backend riakdown --level-prefix " +
       "riak://localhost:8087",
-    "  Starts up a pouchdb-server that talks to Riak.",
+    [
+      "  Starts up a pouchdb-server that talks to Riak.", 
+      "  Requires: npm install riakdown"
+    ].join('\n'),
     "",
-    "  pouchdb-server --level-backend redis",
-    "  Starts up a pouchdb-server that talks to Redis, on localhost:6379",
+    "  pouchdb-server --level-backend redisdown",
+    [
+      "  Starts up a pouchdb-server that talks to Redis, on localhost:6379.", 
+      "  Requires: npm install redisdown"
+    ].join('\n'),
     "",
     "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
-    "  Starts up a pouchdb-server that uses SQLite, with db files " +
-      "stored in /tmp/"
+    [
+      "  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.", 
+      "  Requires: npm install sqldown sqlite3"
+    ].join('\n')
   ].join('\n'))
   .nocolors()
   .parse();
