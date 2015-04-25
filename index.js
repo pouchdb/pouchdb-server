@@ -1,5 +1,5 @@
 /*
-    Copyright 2014, Marten de Vries
+    Copyright 2014-2015, Marten de Vries
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,6 +24,27 @@ exports.installStaticWrapperMethods = function (PouchDB, handlers) {
   PouchDB.new = PouchDB.new || function (name, options, callback) {
     return new PouchDB(name, options, callback);
   };
+
+  //PouchDB.destroy() is (going to be) deprecated by PouchDB, but the
+  //semantics from db.destroy() differ when wrapped so re-add it.
+  if (!(PouchDB.destroy || {}).isResurrected) {
+    var orig = PouchDB.destroy;
+    PouchDB.destroy = function (name, options, callback) {
+      var args = parseBaseArgs(PouchDB, this, options, callback);
+
+      //3.2.2 deprecates .destroy() and introduces opts.internal for as
+      //long as PouchDB will still use the method internally (hopefully)
+      var newerThan322 = PouchDB.version >= '3.2.2';
+      if (!newerThan322 || args.options.internal) {
+        return orig.apply(this, arguments);
+      }
+      var db = new PouchDB(name, args.options);
+      var promise = db.destroy();
+      nodify(promise, args.callback);
+      return promise;
+    };
+    PouchDB.destroy.isResurrected = true;
+  }
 
   installWrappers(PouchDB, handlers, exports.createStaticWrapperMethod);
 };
@@ -376,9 +397,13 @@ staticWrapperBuilders.destroy = function (PouchDB, destroy, handlers) {
       args = parseBaseArgs(PouchDB, this, options, callback);
       args.options.name = name;
     }
+    if (args.options.internal) {
+      return destroy.apply(PouchDB, arguments);
+    }
     return callHandlers(handlers, args, function () {
       var name = args.options.name;
       delete args.options.name;
+
       return destroy.call(this, name, args.options);
     });
   };
