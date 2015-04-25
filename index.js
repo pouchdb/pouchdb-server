@@ -1,5 +1,5 @@
 /*
-  Copyright 2014, Marten de Vries
+  Copyright 2014-2015, Marten de Vries
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ var nodify = require("promise-nodify");
 var httpQuery = require("pouchdb-req-http-query");
 var wrappers = require("pouchdb-wrappers");
 var createBulkDocsWrapper = require("pouchdb-bulkdocs-wrapper");
+var createChangeslikeWrapper = require("pouchdb-changeslike-wrapper");
 var PouchDBPluginError = require("pouchdb-plugin-error");
 
 var DOC_ID = "_local/_security";
@@ -183,11 +184,16 @@ var requiresMemberWrapper = securityWrapper.bind(null, function (userCtx, securi
 });
 
 [].concat(
-  "get allDocs changes replicate.to replicate.from".split(" "),
-  "sync getAttachment info revsDiff getSecurity list show".split(" "),
-  "update rewriteResultRequestObject".split(" ")
+  "get allDocs getAttachment info revsDiff getSecurity list".split(" "),
+  "show update rewriteResultRequestObject".split(" ")
 ).forEach(function (name) {
   securityWrappers[name] = requiresMemberWrapper;
+});
+
+[].concat(
+  'changes sync replicate.to replicate.from'.split(' ')
+).forEach(function (name) {
+  securityWrappers[name] = createChangeslikeWrapper(requiresMemberWrapper);
 });
 
 var staticSecurityWrappers = {};
@@ -199,7 +205,8 @@ staticSecurityWrappers.replicate = function (original, args) {
   var PouchDB = args.base;
   args.db = new PouchDB(args.source);
   //and call its handler
-  return requiresMemberWrapper(original, args);
+  var handler = securityWrappers['replicate.to'];
+  return handler(original, args);
 };
 
 exports.uninstallSecurityMethods = function () {
