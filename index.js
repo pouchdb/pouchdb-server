@@ -17,6 +17,7 @@
 "use strict";
 
 var wrappers = require("pouchdb-wrappers");
+var createChangeslikeWrapper = require("pouchdb-changeslike-wrapper");
 var Security = require("pouchdb-security");
 var PouchDBPluginError = require("pouchdb-plugin-error");
 
@@ -65,14 +66,20 @@ function create401(urlName) {
 
 var systemWrappers = {};
 systemWrappers.allDocs = adminOnlyWrapper.bind(null, create401("_all_docs"));
-systemWrappers.changes = adminOnlyWrapper.bind(null, create401("_changes"));
+systemWrappers.changes = createChangeslikeWrapper(
+  adminOnlyWrapper.bind(null, create401("_changes"))
+);
 systemWrappers.query = adminOnlyWrapper.bind(null, create401("_view (or _temp_view)"));
 
 //CouchDB just crashes because of the 404 below for these. Use this
 //error instead because PouchDB doesn't crash on it.
-systemWrappers.sync = adminOnlyWrapper.bind(null, create401(".sync()"));
-systemWrappers["replicate.from"] = adminOnlyWrapper.bind(null, create401(".replicate.from()"));
-systemWrappers["replicate.to"] = adminOnlyWrapper.bind(null, create401(".replicate.to()"));
+systemWrappers.sync = createChangeslikeWrapper(adminOnlyWrapper.bind(null, create401(".sync()")));
+systemWrappers["replicate.from"] = createChangeslikeWrapper(
+  adminOnlyWrapper.bind(null, create401(".replicate.from()"))
+);
+systemWrappers["replicate.to"] = createChangeslikeWrapper(
+  adminOnlyWrapper.bind(null, create401(".replicate.to()"))
+);
 
 systemWrappers.get = adminOnlyWrapper.bind(null, {
   status: 404,
