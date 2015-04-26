@@ -25,27 +25,6 @@ exports.installStaticWrapperMethods = function (PouchDB, handlers) {
     return new PouchDB(name, options, callback);
   };
 
-  //PouchDB.destroy() is (going to be) deprecated by PouchDB, but the
-  //semantics from db.destroy() differ when wrapped so re-add it.
-  if (!(PouchDB.destroy || {}).isResurrected) {
-    var orig = PouchDB.destroy;
-    PouchDB.destroy = function (name, options, callback) {
-      var args = parseBaseArgs(PouchDB, this, options, callback);
-
-      //3.2.2 deprecates .destroy() and introduces opts.internal for as
-      //long as PouchDB will still use the method internally (hopefully)
-      var newerThan322 = PouchDB.version >= '3.2.2';
-      if (!newerThan322 || args.options.internal) {
-        return orig.apply(this, arguments);
-      }
-      var db = new PouchDB(name, args.options);
-      var promise = db.destroy();
-      nodify(promise, args.callback);
-      return promise;
-    };
-    PouchDB.destroy.isResurrected = true;
-  }
-
   installWrappers(PouchDB, handlers, exports.createStaticWrapperMethod);
 };
 
