@@ -34,7 +34,7 @@ var coreApp = buildApp(PouchDB.defaults({
 
 before(function (done) {
   this.timeout(LARGE_TIMEOUT);
-  fse.removeAsync(TEST_DATA).then(function () {
+  cleanUp().then(function () {
     return fse.mkdirsAsync(TEST_DATA + 'a');
   }).then(function () {
     return fse.mkdirsAsync(TEST_DATA + 'b');
@@ -52,51 +52,48 @@ before(function (done) {
 });
 
 after(function (done) {
-  fse.removeAsync('./config.json').then(function () {
-    fse.remove('./log.txt', done);
+  cleanUp().then(function () {
+    done();
   }).catch(done);
 });
 
-var prefixes = ['/', '/db/'];
-
-prefixes.forEach(function (prefix) {
-  describe('basics for ' + prefix, function () {
-    it('GET / should respond with a welcome page', function (done) {
-      var app = express();
-      app.use(prefix, expressApp);
-
-      testWelcome(app, done, prefix);
-    });
-  });
-});
-
-function testWelcome(app, done, path) {
-  request(app)
-    .get(path)
-    .expect(200)
-    .expect(function (res) {
-      if (!/Welcome!/.test(res.text)) {
-        return "No 'Welcome!' in response";
-      }
-    })
-    .end(done);
+function cleanUp() {
+  return Promise.all([
+    fse.removeAsync(TEST_DATA),
+    fse.removeAsync('./config.json'),
+    fse.removeAsync('./log.txt')
+  ]);
 }
 
 describe('config', function () {
-  it('should have ./config.json as default config path', function (done) {
+  it('should not create empty config file', function (done) {
     fse.exists('./config.json', function (exists) {
-      if (!exists) {
-        return done(new Error("config.json doesn't exist!"));
+      if (exists) {
+        return done(new Error("config.json should not have been created!"));
       }
       done();
     });
   });
+
+  it('should have ./config.json as default config path', function (done) {
+    expressApp.couchConfig.set('demo', 'demo', true, function () {
+      fse.exists('./config.json', function (exists) {
+        if (!exists) {
+          return done(new Error("config.json doesn't exist!"));
+        }
+        done();
+      });
+    });
+  });
   it('should support setting a different config path', function (done) {
-    fse.exists(TEST_DATA + 'b-config.json', function (exists) {
-      if (!exists) {
-        return done(new Error("b-config.json doesn't exist!"));
-      }
-      done();
+    // make sure the file is written to disk.
+    expressApp2.couchConfig.set('demo', 'demo', true, function () {
+      fse.exists(TEST_DATA + 'b-config.json', function (exists) {
+        if (!exists) {
+          return done(new Error("b-config.json doesn't exist!"));
+        }
+        done();
+      });
     });
   });
   it('should support externally adding a default', function (done) {
@@ -141,6 +138,31 @@ describe('config', function () {
       .end(done);
   });
 });
+
+var prefixes = ['/', '/db/'];
+
+prefixes.forEach(function (prefix) {
+  describe('basics for ' + prefix, function () {
+    it('GET / should respond with a welcome page', function (done) {
+      var app = express();
+      app.use(prefix, expressApp);
+
+      testWelcome(app, done, prefix);
+    });
+  });
+});
+
+function testWelcome(app, done, path) {
+  request(app)
+    .get(path)
+    .expect(200)
+    .expect(function (res) {
+      if (!/Welcome!/.test(res.text)) {
+        return "No 'Welcome!' in response";
+      }
+    })
+    .end(done);
+}
 
 describe('modes', function () {
   it('should always return a 404 in our custom configuration', function (done) {
