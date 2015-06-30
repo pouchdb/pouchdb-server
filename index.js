@@ -46,7 +46,15 @@ module.exports = function (PouchDB, url, opts) {
       return getHost(getName(name), extend({}, opts, specificOpts));
     }
   });
+
+  // https://github.com/marten-de-vries/http-pouchdb/issues/1
+  HTTPPouchDB.adapters.http.use_prefix = false;
+
+  /* istanbul ignore next */
+  // noop that can be 'wrapped' soon
+  HTTPPouchDB.allDbs = function () {};
   wrappers.installStaticWrapperMethods(HTTPPouchDB, api);
+
   HTTPPouchDB.isHTTPPouchDB = true;
   return HTTPPouchDB;
 };
