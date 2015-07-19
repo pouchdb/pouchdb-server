@@ -50,9 +50,9 @@
   },
   "scripts": {
     "jshint": "jshint -c .jshintrc lib test",
-    "test-pouchdb": "cd node_modules/pouchdb-server && npm run test-pouchdb",
-    "test-pouchdb-minimum": "cd node_modules/pouchdb && SERVER=express-pouchdb-minimum npm test",
-    "test-couchdb": "cd node_modules/pouchdb-server && npm run test-couchdb",
+    "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
+    "test-pouchdb-minimum": "./bin/test-setup.sh && ./bin/test-pouchdb-minimum.sh",
+    "test-couchdb": "./bin/test-setup.sh && cd node_modules/pouchdb-server && npm run test-couchdb",
     "test-express-pouchdb": "./node_modules/.bin/mocha",
     "test": "npm run jshint && npm run test-express-pouchdb && npm run test-pouchdb && npm run test-pouchdb-minimum"
   }
