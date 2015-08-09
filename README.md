@@ -75,6 +75,44 @@ on that, check out [express-pouchdb](https://github.com/nick-thompson/express-po
 
 **pouchdb-server** currently supports an experimental version of CouchDB's [Fauxton](http://docs.couchdb.org/en/latest/fauxton/index.html). Fauxton, the successor to CouchDB's original Futon, is a simple web UI for interacting with your databases. With your server running, navigate to `/_utils` to check it out!
 
+## Configuration
+
+By default, you can configure pouchdb-server using a `config.json` file, which is
+typically expected at the root of wherever you run pouchdb-server, but may be specified with the `--config` option.
+
+Below are some examples of `config.json` options:
+
+### log.level
+
+To change the log output level, you can create a `config.json` file containing e.g.:
+
+```js
+{
+  "log": {
+    "level": "none"
+  }
+}
+
+```
+
+The available values are `debug`, `info`, `warning`, `error`, and `none`. The default
+is `info`.
+
+### log.file
+
+To choose the file where logs are written, you can create a `config.json` file containing e.g.:
+
+```js
+{
+  "log": {
+    "file": "/path/to/log.txt"
+  }
+}
+
+```
+
+By default, logs are written to `./log.txt`.
+
 ## Testing
 
 One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself. To do that, you can simply,
@@ -101,7 +139,7 @@ Or to test in PhantomJS (WebSQL):
 $ CLIENT=selenium:phantomjs ES5_SHIM=true npm run test-pouchdb
 ```
 
-Additionally, we've started porting CouchDB's JavaScript test harness to 
+Additionally, we've started porting CouchDB's JavaScript test harness to
 [a simple Node module](https://github.com/nick-thompson/couchdb-harness), which can be run against PouchDB via **pouchdb-server**.
 
 ```bash
