@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "node ./bin/pouchdb-server",
-    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-pouchdb": "dont-break pouchdb",
     "test-couchdb": "./bin/test-couchdb.sh",
     "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
   },
@@ -42,6 +42,7 @@
     "wordwrap": "0.0.2"
   },
   "devDependencies": {
+    "dont-break": "^0.3.3",
     "jshint": "^2.5.10"
   }
 }
