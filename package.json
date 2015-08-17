@@ -36,7 +36,7 @@
     "memdown": "0.10.1",
     "mkdirp": "^0.5.0",
     "nomnom": "^1.8.1",
-    "pouchdb": "^4.0.0",
+    "pouchdb": "pouchdb/pouchdb#f2f5c5ee7c602db573b3ccf0cc5277656a430bfc",
     "serve-favicon": "~2.0.1",
     "tail": "^0.4.0",
     "wordwrap": "0.0.2"
