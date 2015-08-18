@@ -1,12 +1,9 @@
 {
 	"name": "couchdb-resp-completer",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "index.js",
 	"description": "Builds a complete CouchDB-like response object from a very marginal one. (Can be just a string at first.)",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
+	"repository": "pouchdb/couchdb-resp-completer",
 	"bugs": "https://bugs.launchpad.net/python-pouchdb",
 	"keywords": [
 		"pouch",
@@ -22,13 +19,5 @@
 		"extend": "^1.2.1",
 		"is-empty": "^0.0.1",
 		"pouchdb-plugin-error": "^0.2.0"
-	},
-	"devDependencies": {
-		"es3ify": "^0.1.3"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
 	}
 }
