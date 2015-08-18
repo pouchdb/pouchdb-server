@@ -48,7 +48,15 @@ module.exports = function (PouchDB, url, opts) {
       return getHost(getName(name), extend({}, opts, specificOpts));
     }
   });
+
+  // https://github.com/marten-de-vries/http-pouchdb/issues/1
+  HTTPPouchDB.adapters.http.use_prefix = false;
+
+  /* istanbul ignore next */
+  // noop that can be 'wrapped' soon
+  HTTPPouchDB.allDbs = function () {};
   wrappers.installStaticWrapperMethods(HTTPPouchDB, api);
+
   HTTPPouchDB.isHTTPPouchDB = true;
   return HTTPPouchDB;
 };
@@ -58,12 +66,20 @@ module.exports = function (PouchDB, url, opts) {
 
 },{}],3:[function(require,module,exports){
 var hasOwn = Object.prototype.hasOwnProperty;
-var toString = Object.prototype.toString;
+var toStr = Object.prototype.toString;
 var undefined;
+
+var isArray = function isArray(arr) {
+	if (typeof Array.isArray === 'function') {
+		return Array.isArray(arr);
+	}
+
+	return toStr.call(arr) === '[object Array]';
+};
 
 var isPlainObject = function isPlainObject(obj) {
 	'use strict';
-	if (!obj || toString.call(obj) !== '[object Object]') {
+	if (!obj || toStr.call(obj) !== '[object Object]') {
 		return false;
 	}
 
@@ -115,10 +131,10 @@ module.exports = function extend() {
 				}
 
 				// Recurse if we're merging plain objects or arrays
-				if (deep && copy && (isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
+				if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
 					if (copyIsArray) {
 						copyIsArray = false;
-						clone = src && Array.isArray(src) ? src : [];
+						clone = src && isArray(src) ? src : [];
 					} else {
 						clone = src && isPlainObject(src) ? src : {};
 					}
@@ -458,38 +474,73 @@ var types = [
   require('./timeout')
 ];
 var draining;
+var currentQueue;
+var queueIndex = -1;
 var queue = [];
+var scheduled = false;
+function cleanUpNextTick() {
+  draining = false;
+  if (currentQueue && currentQueue.length) {
+    queue = currentQueue.concat(queue);
+  } else {
+    queueIndex = -1;
+  }
+  if (queue.length) {
+    nextTick();
+  }
+}
+
 //named nextTick for less confusing stack traces
 function nextTick() {
+  scheduled = false;
   draining = true;
-  var i, oldQueue;
   var len = queue.length;
+  var timeout = setTimeout(cleanUpNextTick);
   while (len) {
-    oldQueue = queue;
+    currentQueue = queue;
     queue = [];
-    i = -1;
-    while (++i < len) {
-      oldQueue[i]();
+    while (++queueIndex < len) {
+      currentQueue[queueIndex].run();
     }
+    queueIndex = -1;
     len = queue.length;
   }
+  queueIndex = -1;
   draining = false;
+  clearTimeout(timeout);
 }
 var scheduleDrain;
 var i = -1;
 var len = types.length;
-while (++ i < len) {
+while (++i < len) {
   if (types[i] && types[i].test && types[i].test()) {
     scheduleDrain = types[i].install(nextTick);
     break;
   }
 }
+// v8 likes predictible objects
+function Item(fun, array) {
+  this.fun = fun;
+  this.array = array;
+}
+Item.prototype.run = function () {
+  this.fun.apply(null, this.array);
+};
 module.exports = immediate;
 function immediate(task) {
-  if (queue.push(task) === 1 && !draining) {
+  var args = new Array(arguments.length - 1);
+  if (arguments.length > 1) {
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+  }
+  queue.push(new Item(task, args));
+  if (!scheduled && !draining) {
+    scheduled = true;
     scheduleDrain();
   }
 }
+
 },{"./messageChannel":18,"./mutation.js":19,"./nextTick":2,"./stateChange":20,"./timeout":21}],18:[function(require,module,exports){
 (function (global){
 'use strict';
@@ -576,7 +627,7 @@ exports.install = function (t) {
 };
 },{}],22:[function(require,module,exports){
 /*
-    Copyright 2014, Marten de Vries
+    Copyright 2014-2015, Marten de Vries
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -755,6 +806,9 @@ wrapperBuilders.bulkDocs = function (db, bulkDocs, handlers) {
   return function (docs, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     //support the deprecated signature.
+    if ('new_edits' in docs) {
+      args.options.new_edits = docs.new_edits;
+    }
     args.docs = docs.docs || docs;
     return callHandlers(handlers, args, function () {
       return bulkDocs.call(this, args.docs, args.options);
@@ -953,9 +1007,13 @@ staticWrapperBuilders.destroy = function (PouchDB, destroy, handlers) {
       args = parseBaseArgs(PouchDB, this, options, callback);
       args.options.name = name;
     }
+    if (args.options.internal) {
+      return destroy.apply(PouchDB, arguments);
+    }
     return callHandlers(handlers, args, function () {
       var name = args.options.name;
       delete args.options.name;
+
       return destroy.call(this, name, args.options);
     });
   };
@@ -977,7 +1035,7 @@ staticWrapperBuilders.allDbs = function (PouchDB, allDbs, handlers) {
   return function (options, callback) {
     var args = parseBaseArgs(PouchDB, this, options, callback);
     return callHandlers(handlers, args, makeCall(allDbs));
-  }
+  };
 };
 
 //Wrap .plugin()? .on()? .defaults()? No use case yet, but it's
