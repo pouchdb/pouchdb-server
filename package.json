@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-size",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Adds disk_size to info()'s output for your leveldown backed PouchDB's.",
   "main": "index.js",
   "dependencies": {
