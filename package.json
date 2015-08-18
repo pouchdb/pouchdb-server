@@ -1,12 +1,9 @@
 {
 	"name": "couchdb-objects",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"main": "index.js",
 	"description": "Aids in the construction of JSON objects as used by CouchDB.",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
+	"repository": "pouchdb/couchdb-objects",
 	"bugs": "https://bugs.launchpad.net/python-pouchdb",
 	"keywords": [
 		"pouch",
@@ -23,13 +20,5 @@
 		"pouchdb-promise": "^0.0.0",
 		"random-uuid-v4": "^0.0.4",
 		"header-case-normalizer": "^1.0.0"
-	},
-	"devDependencies": {
-		"es3ify": "^0.1.3"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
 	}
 }
