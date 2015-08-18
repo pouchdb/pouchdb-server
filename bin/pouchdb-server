@@ -10,7 +10,8 @@ var express  = require('express'),
     wordwrap = require('wordwrap'),
     killable = require('killable'),
     tailLog  = require('../lib/logging'),
-    cors     = require('../lib/cors');
+    cors     = require('../lib/cors'),
+    Promise  = require('bluebird');
 
 // parse command line arguments
 
@@ -56,6 +57,14 @@ var options = {
     couchName: ['pouchdb_server', 'proxy'],
     onChange: updatePouchDB
   },
+  'no-stdout-logs': {
+    abbr: 'n',
+    info: "Stops the log file from also being written to stdout.",
+    flag: true,
+    couchName: ['pouchdb_server', 'no-stdout-logs'],
+    couchDefault: false,
+    onChange: restartTailingLog
+  },
   'no-color': {
     // this option is handled by the 'colors' node module. It's just
     // here so it shows up in --help
@@ -83,9 +92,9 @@ var options = {
 };
 
 function terminalWrap(text) {
-  // 21 chars from the left of the terminal might change when new
+  // 26 chars from the left of the terminal might change when new
   // options are added
-  return wordwrap(21, 80)(text).trim();
+  return wordwrap(26, 80)(text).trim();
 }
 
 Object.keys(options).forEach(function (key) {
@@ -111,19 +120,19 @@ var args = nomnom
     "  pouchdb-server --level-backend riakdown --level-prefix " +
       "riak://localhost:8087",
     [
-      "  Starts up a pouchdb-server that talks to Riak.", 
+      "  Starts up a pouchdb-server that talks to Riak.",
       "  Requires: npm install riakdown"
     ].join('\n'),
     "",
     "  pouchdb-server --level-backend redisdown",
     [
-      "  Starts up a pouchdb-server that talks to Redis, on localhost:6379.", 
+      "  Starts up a pouchdb-server that talks to Redis, on localhost:6379.",
       "  Requires: npm install redisdown"
     ].join('\n'),
     "",
     "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
     [
-      "  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.", 
+      "  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.",
       "  Requires: npm install sqldown sqlite3"
     ].join('\n')
   ].join('\n'))
@@ -173,9 +182,13 @@ function restartTailingLog() {
     stopTailingLog();
     stopTailingLog = undefined;
   }
-  loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
-    stopTailingLog = stop;
-  });
+  if (getArg('no-stdout-logs')) {
+    loggingReady = Promise.resolve();
+  } else {
+    loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
+      stopTailingLog = stop;
+    });
+  }
 }
 
 config.on('log.file', restartTailingLog);

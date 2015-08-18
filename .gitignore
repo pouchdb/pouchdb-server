@@ -4,8 +4,8 @@ test_*
 _pouch_*
 _allDbs
 pouch__all_dbs__
+pouch__auth_sessions__
 npm-debug.log
--session-_users
 _users
 _replicator
 config.json

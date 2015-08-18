@@ -22,43 +22,52 @@ $ npm install -g pouchdb-server
 Usage: pouchdb-server [options]
 
 Options:
-   -p, --port        Port on which to run the server. (Defaults to
-                     /_config/httpd/port which defaults to 5984).
-   -d, --dir         Where to store database files. (Defaults to
-                     /_config/couchdb/database_dir which defaults to the
-                     current directory).
-   -c, --config      The location of the configuration file that backs
-                     /_config. (Defaults to ./config.json).
-   -o, --host        The address to bind the server to. (Defaults to
-                     /_config/httpd/bind_address which defaults to 127.0.0.1).
-   -m, --in-memory   Use a pure in-memory database which will be deleted upon
-                     restart. (Defaults to /_config/pouchdb_server/in_memory
-                     which defaults to false).
-   -r, --proxy       Proxy requests to the specified host. Include a trailing
-                     '/'. (Defaults to /_config/pouchdb_server/proxy which
-                     defaults to undefined).
-   --no-color        Disable coloring of logging output.
-   --level-backend   Advanced - Alternate LevelDOWN backend (e.g. memdown,
-                     riakdown, redisdown). Note that you'll need to manually
-                     npm install it first. (Defaults to
-                     /_config/pouchdb_server/level_backend which defaults to
-                     undefined).
-   --level-prefix    Advanced - Prefix to use for all database names, useful
-                     for URLs in alternate backends, e.g.
-                     riak://localhost:8087/ for riakdown. (Defaults to
-                     /_config/pouchdb_server/level_prefix which defaults to
-                     undefined).
+   -p, --port             Port on which to run the server. (Defaults to
+                          /_config/httpd/port which defaults to 5984).
+   -d, --dir              Where to store database files. (Defaults to
+                          /_config/couchdb/database_dir which defaults to the
+                          current directory).
+   -c, --config           The location of the configuration file that backs
+                          /_config. (Defaults to ./config.json).
+   -o, --host             The address to bind the server to. (Defaults to
+                          /_config/httpd/bind_address which defaults to
+                          127.0.0.1).
+   -m, --in-memory        Use a pure in-memory database which will be deleted
+                          upon restart. (Defaults to
+                          /_config/pouchdb_server/in_memory which defaults to
+                          false).
+   -r, --proxy            Proxy requests to the specified host. Include a
+                          trailing '/'. (Defaults to
+                          /_config/pouchdb_server/proxy which defaults to
+                          undefined).
+   -n, --no-stdout-logs   Stops the log file from also being written to stdout.
+                          (Defaults to /_config/pouchdb_server/no-stdout-logs
+                          which defaults to false).
+   --no-color             Disable coloring of logging output.
+   --level-backend        Advanced - Alternate LevelDOWN backend (e.g. memdown,
+                          riakdown, redisdown). Note that you'll need to
+                          manually npm install it first. (Defaults to
+                          /_config/pouchdb_server/level_backend which defaults
+                          to undefined).
+   --level-prefix         Advanced - Prefix to use for all database names,
+                          useful for URLs in alternate backends, e.g.
+                          riak://localhost:8087/ for riakdown. (Defaults to
+                          /_config/pouchdb_server/level_prefix which defaults
+                          to undefined).
 
 Examples:
 
   pouchdb-server --level-backend riakdown --level-prefix riak://localhost:8087
   Starts up a pouchdb-server that talks to Riak.
+  Requires: npm install riakdown
 
-  pouchdb-server --level-backend redis
-  Starts up a pouchdb-server that talks to Redis, on localhost:6379
+  pouchdb-server --level-backend redisdown
+  Starts up a pouchdb-server that talks to Redis, on localhost:6379.
+  Requires: npm install redisdown
 
   pouchdb-server --level-backend sqldown --level-prefix /tmp/
-  Starts up a pouchdb-server that uses SQLite, with db files stored in /tmp/
+  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.
+  Requires: npm install sqldown sqlite3
 ```
 
 A simple example might be,
