@@ -1,12 +1,9 @@
 {
 	"name": "couchdb-eval",
 	"main": "index.js",
-	"version": "1.0.4",
+	"version": "1.0.6",
 	"description": "Compiles a piece of code to a function object, providing a CouchDB-like JavaScript context.",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
+	"repository": "pouchdb/couchdb-eval",
 	"bugs": "https://bugs.launchpad.net/python-pouchdb",
 	"keywords": [
 		"pouch",
@@ -20,13 +17,5 @@
 	"dependencies": {
 		"extend": "^1.2.1",
 		"pouchdb-plugin-error": "^1.0.0"
-	},
-	"devDependencies": {
-		"es3ify": "^0.1.3"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
 	}
 }
