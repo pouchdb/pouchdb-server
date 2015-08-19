@@ -1,13 +1,9 @@
 {
 	"name": "pouchdb-seamless-auth",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "index.js",
 	"description": "Seamless switching between online (CouchDB) and offline (PouchDB) authentication.",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
-	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"repository": "marten-de-vries/pouchdb-seamless-auth",
 	"keywords": [
 		"pouch",
 		"pouchdb",
@@ -34,12 +30,7 @@
 		"es3ify": "^0.1.3"
 	},
 	"scripts": {
-		"build-js": "mkdir -p ../../dist && browserify index.js -s SeamlessAuth -o ../../dist/pouchdb-seamless-auth.js",
-		"build": "npm run build-js; cd ../../dist; uglifyjs pouchdb-seamless-auth.js -mc > pouchdb-seamless-auth.min.js"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
+		"build-js": "mkdir -p dist && browserify index.js -s SeamlessAuth -g es3ify -o dist/pouchdb-seamless-auth.js",
+		"build": "npm run build-js; cd dist; uglifyjs pouchdb-seamless-auth.js -mc > pouchdb-seamless-auth.min.js"
 	}
 }
