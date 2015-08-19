@@ -178,6 +178,9 @@ wrapperBuilders.bulkDocs = function (db, bulkDocs, handlers) {
   return function (docs, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     //support the deprecated signature.
+    if ('new_edits' in docs) {
+      args.options.new_edits = docs.new_edits;
+    }
     args.docs = docs.docs || docs;
     return callHandlers(handlers, args, function () {
       return bulkDocs.call(this, args.docs, args.options);
