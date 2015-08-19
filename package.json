@@ -1,14 +1,10 @@
 {
 	"name": "pouchdb-vhost",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "index.js",
 	"description": "A PouchDB plug-in that allows you to re-use your CouchDB vhost config on the client side.",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
+	"repository": "pouchdb/pouchdb-vhost",
 	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
-	"bugs": "https://bugs.launchpad.net/python-pouchdb",
 	"keywords": [
 		"pouch",
 		"pouchdb",
@@ -29,12 +25,7 @@
 		"uglify-js": "^2.4.13"
 	},
 	"scripts": {
-		"build-js": "mkdir -p ../../dist && browserify index.js -s VirtualHost -o ../../dist/pouchdb-vhost.js",
-		"build": "npm run build-js; cd ../../dist; uglifyjs pouchdb-vhost.js -mc > pouchdb-vhost.min.js"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
+		"build-js": "mkdir -p dist && browserify index.js -s VirtualHost -g es3ify -o dist/pouchdb-vhost.js",
+		"build": "npm run build-js; cd dist; uglifyjs pouchdb-vhost.js -mc > pouchdb-vhost.min.js"
 	}
 }
