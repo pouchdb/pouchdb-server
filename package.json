@@ -1,13 +1,9 @@
 {
 	"name": "pouchdb-security",
-	"version": "1.2.3",
+	"version": "1.2.4",
 	"main": "index.js",
 	"description": "PouchDB database access restrictions using a security document.",
-	"repository": {
-		"type": "bzr",
-		"url": "http://bazaar.launchpad.net/~marten-de-vries/python-pouchdb/0.x"
-	},
-	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"repository": "pouchdb/pouchdb-security",
 	"keywords": [
 		"pouch",
 		"pouchdb",
@@ -36,12 +32,7 @@
 		"es3ify": "^0.1.3"
 	},
 	"scripts": {
-		"build-js": "mkdir -p ../../dist && browserify index.js -s Security -o ../../dist/pouchdb-security.js",
-		"build": "npm run build-js; cd ../../dist; uglifyjs pouchdb-security.js -mc > pouchdb-security.min.js"
-	},
-	"browserify": {
-		"transform": [
-			"es3ify"
-		]
+		"build-js": "mkdir -p dist && browserify index.js -g es3ify -s Security -o dist/pouchdb-security.js",
+		"build": "npm run build-js; cd dist; uglifyjs pouchdb-security.js -mc > pouchdb-security.min.js"
 	}
 }
