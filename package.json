@@ -1,6 +1,6 @@
 {
 	"name": "pouchdb-auth",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"main": "index.js",
 	"description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
 	"repository": "pouchdb/pouchdb-auth",
