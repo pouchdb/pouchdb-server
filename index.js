@@ -24,7 +24,7 @@ var normalizeHeaderCase = require("header-case-normalizer");
 var extend = require("extend");
 
 if (typeof global.XMLHttpRequest === "undefined") {
-  global.XMLHttpRequest = require("xhr2"); //coverage: ignore
+  global.XMLHttpRequest = require("xmlhttprequest-cookie").XMLHttpRequest;
 }
 
 module.exports = function httpQuery(db, req) {
