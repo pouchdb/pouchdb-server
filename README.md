@@ -1,5 +1,9 @@
 # pouchdb-auth
 
+[![Build Status](https://travis-ci.org/pouchdb/pouchdb-auth.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-auth)
+[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-auth.svg)](https://david-dm.org/pouchdb/pouchdb-auth)
+[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-auth/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-auth#info=devDependencies)
+
 > A PouchDB plug-in that simulates CouchDB's authentication daemon.
 
 Includes a users db that functions like CouchDB's.
@@ -39,7 +43,7 @@ db.hashAdminPasswords({ 'admin': 'secret' }
 See below ("How it works") for more background information
 
 
-### db.useAsAuthenticationDB([isOnlineAuthDB[, callback]])
+### db.useAsAuthenticationDB([options[, callback]])
 
 This function transforms the database on which it is called into an
 authentication database. It does that by installing strict validation
@@ -52,7 +56,7 @@ to the db (documented below):
 - `db.logOut(options[, callback])`
 - `db.session(options[, callback])`
 
-`isOnlineAuthDB`: If `true`, password hashing, keeping
+`options.isOnlineAuthDB`: If `true`, password hashing, keeping
 track of the session and doc validation is all handled by the
 CouchDB on the other end. Defaults to `true` if called on an http
 database, otherwise `false`. Having this enabled makes it impossible to

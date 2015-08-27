@@ -1,42 +1,42 @@
 {
-	"name": "pouchdb-auth",
-	"version": "1.0.5",
-	"main": "index.js",
-	"description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
-	"repository": "pouchdb/pouchdb-auth",
-	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
-	"bugs": "https://bugs.launchpad.net/python-pouchdb",
-	"keywords": [
-		"pouch",
-		"pouchdb",
-		"couch",
-		"couchdb",
-		"users",
-		"authentication",
-		"auth"
-	],
-	"license": "Apache-2.0",
-	"author": "Marten de Vries",
-	"dependencies": {
-		"crypto-lite": "^0.0.4",
-		"extend": "^1.3.0",
-		"pouchdb-plugin-error": "^1.0.0",
-		"pouchdb-promise": "^0.0.0",
-		"pouchdb-req-http-query": "^1.0.0",
-		"pouchdb-validation": "^1.1.0",
-		"pouchdb-system-db": "^1.0.0",
-		"promise-nodify": "^1.0.0",
-		"secure-random": "^1.1.1",
-		"pouchdb-wrappers": "^1.0.0",
-		"pouchdb-bulkdocs-wrapper": "^1.0.0"
-	},
-	"devDependencies": {
-		"browserify": "^4.1.8",
-		"uglify-js": "^2.4.13",
-		"es3ify": "^0.1.3"
-	},
-	"scripts": {
-		"build-js": "mkdir -p dist && browserify index.js -g es3ify -s Auth -o dist/pouchdb-auth.js",
-		"build": "npm run build-js; cd dist; uglifyjs pouchdb-auth.js -mc > pouchdb-auth.min.js"
-	}
+  "name": "pouchdb-auth",
+  "main": "index.js",
+  "description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-auth.git"
+  },
+  "homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "users",
+    "authentication",
+    "auth"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "crypto-lite": "^0.1.0",
+    "extend": "^3.0.0",
+    "pouchdb-plugin-error": "^1.0.0",
+    "pouchdb-promise": "^0.0.0",
+    "pouchdb-req-http-query": "^1.0.2",
+    "pouchdb-validation": "^1.1.0",
+    "pouchdb-system-db": "^1.0.0",
+    "promise-nodify": "^1.0.0",
+    "secure-random": "^1.1.1",
+    "pouchdb-wrappers": "^1.0.0",
+    "pouchdb-bulkdocs-wrapper": "^1.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-plugin-helper": "^0.1.0"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Auth"
+  }
 }
