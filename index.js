@@ -1,5 +1,5 @@
 /*
-	Copyright 2014, Marten de Vries
+	Copyright 2014-2015, Marten de Vries
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ var dbData = {
 function dbDataFor(db) {
   var i = dbData.dbs.indexOf(db);
   return {
-    isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i],
+    isOnlineAuthDB: dbData.isOnlineAuthDBsByDBIdx[i]
   };
 }
 
@@ -82,6 +82,7 @@ exports.useAsAuthenticationDB = function (opts, callback) {
   } else {
     promise = args.db.put(DESIGN_DOC)
       .catch(function (err) {
+        /* istanbul ignore if */
         if (err.status !== 409) {
           throw err;
         }
@@ -120,6 +121,7 @@ function processArgs(db, opts, callback) {
 function parseAdmins(admins) {
   var result = {};
   for (var name in admins) {
+    /* istanbul ignore else */
     if (admins.hasOwnProperty(name)) {
       var info = admins[name].match(ADMIN_RE);
       if (info) {
@@ -179,8 +181,9 @@ function arrayToString(array) {
 function hashPassword(password, salt, iterations) {
   return new Promise(function (resolve, reject) {
     crypto.pbkdf2(password, salt, iterations, 20, function (err, derived_key) {
+      /* istanbul ignore if */
       if (err) {
-        reject(err); //coverage: ignore
+        reject(err);
       } else {
         resolve(derived_key.toString("hex"));
       }
@@ -324,7 +327,7 @@ api.session = function (opts, callback) {
   if (data.isOnlineAuthDB) {
     promise = httpQuery(args.db, {
       raw_path: "/_session",
-      method: "GET",
+      method: "GET"
     }).then(function (resp) {
       return JSON.parse(resp.body);
     });
@@ -333,7 +336,7 @@ api.session = function (opts, callback) {
       ok: true,
       userCtx: {
         name: null,
-        roles: [],
+        roles: []
       },
       info: {
         authentication_handlers: ["api"]
@@ -372,6 +375,7 @@ api.session = function (opts, callback) {
 };
 
 exports.stopUsingAsAuthenticationDB = function (opts, callback) {
+  var args = processArgs(this, opts, callback);
   var db = this;
 
   var i = dbData.dbs.indexOf(db);
@@ -381,6 +385,7 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
   dbData.dbs.splice(i, 1);
 
   for (var name in api) {
+    /* istanbul ignore else */
     if (api.hasOwnProperty(name)) {
       delete db[name];
     }
@@ -397,7 +402,7 @@ exports.stopUsingAsAuthenticationDB = function (opts, callback) {
   //backwards compatibility: this once contained async logic, even
   //though today it's all synchronous.
   var promise = Promise.resolve();
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
