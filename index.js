@@ -24,6 +24,13 @@ exports.installStaticWrapperMethods = function (PouchDB, handlers) {
   PouchDB.new = PouchDB.new || function (name, options, callback) {
     return new PouchDB(name, options, callback);
   };
+  PouchDB.destroy = PouchDB.destroy || function (name, options, callback) {
+    var args = parseBaseArgs(PouchDB, this, options, callback);
+    var db = new PouchDB(name, args.options);
+    var promise = db.destroy();
+    nodify(promise, args.callback);
+    return promise;
+  };
 
   installWrappers(PouchDB, handlers, exports.createStaticWrapperMethod);
 };
