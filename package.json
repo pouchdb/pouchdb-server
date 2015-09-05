@@ -35,7 +35,7 @@
     "pouchdb-update": "^1.0.0",
     "pouchdb-validation": "^1.1.5",
     "pouchdb-vhost": "^1.0.0",
-    "pouchdb-wrappers": "^1.3.0",
+    "pouchdb-wrappers": "^1.3.6",
     "raw-body": "^1.1.5"
   },
   "devDependencies": {
