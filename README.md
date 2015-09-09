@@ -6,10 +6,10 @@
 
 ## Introduction
 
-The **express-pouchdb** module is a fully qualified [Express](http://expressjs.com/) application with routing defined to 
-mimic most of the [CouchDB](http://couchdb.apache.org/) REST API, and whose behavior is handled by 
-[PouchDB](http://pouchdb.com/). The intention is for **express-pouchdb** to be mounted into other Express apps for 
-extended usability. A simple example of this is [pouchdb-server](https://github.com/nick-thompson/pouchdb-server), 
+The **express-pouchdb** module is a fully qualified [Express](http://expressjs.com/) application with routing defined to
+mimic most of the [CouchDB](http://couchdb.apache.org/) REST API, and whose behavior is handled by
+[PouchDB](http://pouchdb.com/). The intention is for **express-pouchdb** to be mounted into other Express apps for
+extended usability. A simple example of this is [pouchdb-server](https://github.com/nick-thompson/pouchdb-server),
 which is primarily used as a quick-and-dirty drop-in replacement for CouchDB in Node.js.
 
 ## Screencasts
@@ -87,7 +87,7 @@ Fauxton as a debugging tool.
 var app = require('express-pouchdb')({
   mode: 'minimumForPouchDB',
   overrideMode: {
-    include: ['fauxton']
+    include: ['routes/fauxton']
   }
 });
 // when not specifying PouchDB as an argument to the main function, you

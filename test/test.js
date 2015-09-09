@@ -30,6 +30,9 @@ var coreApp = buildApp(PouchDB.defaults({
   prefix: 'd'
 }), {
   mode: 'minimumForPouchDB',
+  overrideMode: {
+    include: ['routes/fauxton']
+  }
 });
 
 before(function (done) {
@@ -193,6 +196,26 @@ describe('modes', function () {
     assertException(function () {
       buildApp(PouchDB, {overrideMode: {include: ['abc']}});
     }, /include contains the unknown part 'abc'/);
+  });
+});
+
+describe('redirects', function () {
+  it('GET /_utils should redirect to /_utils/', function (done) {
+    request(coreApp)
+      .get('/_utils')
+      .expect(301)
+      .end(done);
+  });
+  it('GET /_utils/ should return fauxton', function (done) {
+    request(coreApp)
+      .get('/_utils/')
+      .expect(200)
+      .expect(function (res) {
+        if (!/<title>PouchDB Server<\/title>/.test(res.text)) {
+          return "No '<title>PouchDB Server</title>' in response";
+        }
+      })
+      .end(done);
   });
 });
 
