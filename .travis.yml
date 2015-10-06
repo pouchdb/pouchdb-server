@@ -16,7 +16,7 @@ before_script:
   - "sudo sed -i 's/^127\\.0\\.0\\.1.*$/127.0.0.1 localhost/' /etc/hosts"
 
 addons:
-  firefox: "latest"
+  firefox: "41.0.1"
 
 script: npm run $COMMAND
 
@@ -32,7 +32,7 @@ env:
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
-  - CLIENT=selenium:firefox COMMAND=test-pouchdb
+  - CLIENT=selenium:firefox:41.0.1 COMMAND=test-pouchdb
   - CLIENT=selenium:phantomjs ES5_SHIM=true COMMAND=test-pouchdb
 
   # Test against the couchdb harness
