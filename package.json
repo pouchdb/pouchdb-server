@@ -1,6 +1,6 @@
 {
   "name": "http-pouchdb",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Access remote CouchDB databases like you would access your local PouchDB ones.",
   "main": "index.js",
   "scripts": {
@@ -35,19 +35,18 @@
     "xhr2": false
   },
   "devDependencies": {
-    "browserify": "^7.0.3",
-    "chai": "^1.10.0",
-    "es3ify": "^0.1.3",
-    "istanbul": "^0.3.5",
-    "jshint": "^2.5.11",
-    "mocha": "^2.0.1",
-    "pouchdb": "^3.2.0",
-    "uglify-js": "^2.4.16"
+    "browserify": "^11.2.0",
+    "chai": "^3.4.0",
+    "es3ify": "^0.1.4",
+    "istanbul": "^0.4.0",
+    "jshint": "^2.8.0",
+    "mocha": "^2.3.3",
+    "uglify-js": "^2.5.0"
   },
   "dependencies": {
-    "extend": "^2.0.0",
-    "pouchdb-promise": "0.0.0",
-    "pouchdb-wrappers": "^1.3.0",
-    "xhr2": "^0.1.0"
+    "pouchdb": "^5.0.0",
+    "extend": "^3.0.0",
+    "pouchdb-wrappers": "^1.3.6",
+    "xhr2": "^0.1.3"
   }
 }

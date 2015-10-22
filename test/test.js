@@ -1,6 +1,7 @@
 "use strict";
 
 /* global describe, it */
+/*jshint expr: true*/
 
 var PouchDB = require('pouchdb');
 //var buildHTTPPouchDB = require('http-pouchdb');
@@ -9,11 +10,11 @@ var should = require('chai').should();
 
 var HTTPPouchDB = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/');
 var XMLHttpRequest = require('xhr2');
-var Promise = require('pouchdb-promise');
+var Promise = require('pouchdb/extras/promise');
 
 describe('isHTTPPouchDB', function () {
   it('should be set on the HTTPPouchDB object', function () {
-    HTTPPouchDB.isHTTPPouchDB.should.be.ok();
+    HTTPPouchDB.isHTTPPouchDB.should.be.ok;
   });
   it('should not be set on the PouchDB object', function () {
     should.not.exist(PouchDB.isHTTPPouchDB);
@@ -21,12 +22,12 @@ describe('isHTTPPouchDB', function () {
 });
 
 describe('constructor', function () {
-  it('should create remote databases for normal db names', function (done) {
+  it('should create remote databases for normal db names', function () {
     var users = new HTTPPouchDB('_users');
-    users.info().then(function (info) {
+    return users.info().then(function (info) {
       // a couchdb-only property. Even pouchdb-size doesn't provide it.
       info.should.have.property('data_size');
-    }).then(done);
+    });
   });
 
   it('should still accept http urls', function (done) {
@@ -45,7 +46,7 @@ describe('constructor', function () {
 describe('destroy', function () {
   it("should be possible using the 'class method'", function (done) {
     new HTTPPouchDB('test');
-    PouchDB.destroy('test', done);
+    HTTPPouchDB.destroy('test', done);
   });
   it('should be possible using the method', function (done) {
     var db = new HTTPPouchDB('test');
@@ -54,16 +55,16 @@ describe('destroy', function () {
 });
 
 describe('replicate', function () {
-  it('should work', function (done) {
+  it('should work', function () {
     HTTPPouchDB.replicate('test-a', 'test-b').on('complete', function (resp) {
       resp.status.should.equal('complete');
 
-      dbShouldExist('test-a').then(function () {
+      return dbShouldExist('test-a').then(function () {
         return dbShouldExist('test-b');
       }).then(function () {
-        return HTTPPouchDB.destroy('http://localhost:5984/test-a');
+        return new PouchDB.destroy('http://localhost:5984/test-a');
       }).then(function () {
-        HTTPPouchDB.destroy('test-b', done);
+        return new PouchDB('test-b').destroy();
       });
     });
   });

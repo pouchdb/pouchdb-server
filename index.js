@@ -6,9 +6,10 @@ var XHR = global.XMLHttpRequest;
 if (typeof XHR === "undefined") {
   XHR = require('xhr2');
 }
-var Promise = require('pouchdb-promise');
+var Promise = require('pouchdb/extras/promise');
 var extend = require('extend');
 var wrappers = require('pouchdb-wrappers');
+var getHost = require('./gethost');
 
 module.exports = function (PouchDB, url, opts) {
   var api = {};
@@ -39,13 +40,12 @@ module.exports = function (PouchDB, url, opts) {
     return name;
   }
 
-  var getHost = new PouchDB('test', {adapter: 'http'}).getHost;
-  var HTTPPouchDB = PouchDB.defaults({
+  var HTTPPouchDB = PouchDB.defaults(extend({}, opts, {
     adapter: 'http',
-    getHost: function (name, specificOpts) {
-      return getHost(getName(name), extend({}, opts, specificOpts));
+    getHost: function (name) {
+      return getHost(getName(name));
     }
-  });
+  }));
 
   // https://github.com/marten-de-vries/http-pouchdb/issues/1
   HTTPPouchDB.adapters.http.use_prefix = false;

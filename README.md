@@ -1,9 +1,9 @@
 http-pouchdb
 ============
 
-[![Build Status](https://travis-ci.org/marten-de-vries/http-pouchdb.svg?branch=master)](https://travis-ci.org/marten-de-vries/http-pouchdb)
-[![Dependency Status](https://david-dm.org/marten-de-vries/http-pouchdb.svg)](https://david-dm.org/marten-de-vries/http-pouchdb)
-[![devDependency Status](https://david-dm.org/marten-de-vries/http-pouchdb/dev-status.svg)](https://david-dm.org/marten-de-vries/http-pouchdb#info=devDependencies)
+[![Build Status](https://travis-ci.org/pouchdb/http-pouchdb.svg?branch=master)](https://travis-ci.org/pouchdb/http-pouchdb)
+[![Dependency Status](https://david-dm.org/pouchdb/http-pouchdb.svg)](https://david-dm.org/pouchdb/http-pouchdb)
+[![devDependency Status](https://david-dm.org/pouchdb/http-pouchdb/dev-status.svg)](https://david-dm.org/pouchdb/http-pouchdb#info=devDependencies)
 
 Access remote CouchDB databases like you would access your local PouchDB
 ones. Tested support for ``new PouchDB('name')``,
