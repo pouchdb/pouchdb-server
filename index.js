@@ -203,7 +203,7 @@ staticSecurityWrappers.destroy = requiresServerAdmin;
 staticSecurityWrappers.replicate = function (original, args) {
   //emulate replicate.to/replicate.from
   var PouchDB = args.base;
-  args.db = new PouchDB(args.source);
+  args.db = args.source instanceof PouchDB ? args.source : new PouchDB(args.source);
   //and call its handler
   var handler = securityWrappers['replicate.to'];
   return handler(original, args);
