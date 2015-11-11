@@ -103,7 +103,7 @@ in our own express app):
 
 ```javascript
 var app2 = require('express-pouchdb')(require('pouchdb'), {
-  mode: 'fullCouchDB' // specified for clarity. It's the default so not necessary.
+  mode: 'fullCouchDB', // specified for clarity. It's the default so not necessary.
   overrideMode: {
     exclude: [
       'routes/authentication',
