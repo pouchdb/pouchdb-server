@@ -6,7 +6,7 @@
 
 > A PouchDB plug-in that simulates CouchDB's authentication daemon.
 
-Includes a users db that functions like CouchDB's.
+Includes a users db that functions like CouchDB's. Also works in the browser.
 
 ## Usage
 
