@@ -1,5 +1,5 @@
 /*
-	Copyright 2013-2014, Marten de Vries
+	Copyright 2013-2015, Marten de Vries
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -60,9 +60,9 @@ function validate(validationFuncs, newDoc, oldDoc, options) {
   //passed all validation functions (no errors thrown) -> success
 }
 
-function doValidation(db, newDoc, options, callback) {
+function doValidation(db, newDoc, options) {
   var isHttp = ["http", "https"].indexOf(db.type()) !== -1;
-  if (isHttp && !(options || {}).checkHttp) {
+  if (isHttp && !options.checkHttp) {
     //CouchDB does the checking for itself. Validate succesful.
     return Promise.resolve();
   }
@@ -86,9 +86,6 @@ function doValidation(db, newDoc, options, callback) {
 }
 
 function completeValidationOptions(db, options) {
-  if (!options) {
-    options = {};
-  }
   if (!options.secObj) {
     options.secObj = {};
   }
@@ -106,7 +103,7 @@ function completeValidationOptions(db, options) {
   });
 }
 
-function getValidationFunctions(db, callback) {
+function getValidationFunctions(db) {
   return db.allDocs({
     startkey: "_design/",
     endkey: "_design0",
@@ -154,7 +151,7 @@ wrapperApi.bulkDocs = createBulkDocsWrapper(function (doc, args) {
 
 wrapperApi.putAttachment = function (orig, args) {
   return args.db.get(args.docId, {rev: args.rev, revs: true})
-    .catch(function (err) {
+    .catch(function () {
       return {_id: args.docId};
     })
     .then(function (doc) {
