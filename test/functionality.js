@@ -7,9 +7,7 @@ beforeEach(() =>
   db = setup()
 );
 
-afterEach(async () =>
-  await teardown()
-);
+afterEach(teardown);
 
 describe('SyncAuthTests', () => {
   beforeEach(async () => {
