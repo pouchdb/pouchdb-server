@@ -32,7 +32,7 @@
     "pouchdb-bulkdocs-wrapper": "^1.0.0"
   },
   "devDependencies": {
-    "pouchdb-plugin-helper": "^1.0.0"
+    "pouchdb-plugin-helper": "^2.0.0"
   },
   "scripts": {
     "helper": "./node_modules/.bin/pouchdb-plugin-helper",
