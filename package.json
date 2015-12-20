@@ -3,7 +3,10 @@
   "version": "1.2.5",
   "main": "index.js",
   "description": "PouchDB database access restrictions using a security document.",
-  "repository": "pouchdb/pouchdb-security",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-security.git"
+  },
   "keywords": [
     "pouch",
     "pouchdb",
@@ -22,17 +25,17 @@
     "promise-nodify": "^1.0.0",
     "pouchdb-req-http-query": "^1.0.0",
     "pouchdb-bulkdocs-wrapper": "^1.0.0",
-    "pouchdb-wrappers": "^1.1.0",
+    "pouchdb-wrappers": "^1.3.6",
     "pouchdb-plugin-error": "^1.0.0",
     "pouchdb-changeslike-wrapper": "^1.0.0"
   },
   "devDependencies": {
-    "browserify": "^4.1.8",
-    "uglify-js": "^2.4.13",
-    "es3ify": "^0.1.3"
+    "pouchdb-plugin-helper": "^2.0.0",
+    "pouchdb-show": "^1.0.7"
   },
   "scripts": {
-    "build-js": "mkdir -p dist && browserify index.js -g es3ify -s Security -o dist/pouchdb-security.js",
-    "build": "npm run build-js; cd dist; uglifyjs pouchdb-security.js -mc > pouchdb-security.min.js"
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Security"
   }
 }
