@@ -3,16 +3,12 @@ import extend from 'extend';
 
 let db;
 
-beforeEach(() =>
-  db = setup()
-);
-
-afterEach(teardown);
-
 describe('SyncAuthTests', () => {
   beforeEach(async () => {
+    db = setup()
     should.not.exist(await db.useAsAuthenticationDB({isOnlineAuthDB: false}));
   });
+  afterEach(teardown);
 
   it('should test the daemon', () => {
     // handled by beforeEach and afterEach
@@ -201,6 +197,10 @@ describe('SyncAuthTests', () => {
 });
 
 describe('AsyncAuthTests', () => {
+  beforeEach(async () => {
+    db = setup()
+  });
+  afterEach(teardown);
   it('should suport the basics', done => {
     function cb(err) {
       if (err) {
@@ -213,6 +213,11 @@ describe('AsyncAuthTests', () => {
 });
 
 describe('AsyncAuthTestsWithoutDaemon', () => {
+  beforeEach(async () => {
+    db = setup()
+  });
+  afterEach(teardown);
+
   it('should be impossible to use the various exposed methods', () => {
     should.not.exist(db.signUp);
     should.not.exist(db.session);
