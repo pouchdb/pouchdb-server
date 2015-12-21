@@ -82,6 +82,9 @@ module.exports = function httpQuery(db, req) {
     xhr.open(req.method, url, true);
     for (var name in headers) {
       if (headers.hasOwnProperty(name)) {
+        if (xhr.setDisableHeaderCheck) {
+          xhr.setDisableHeaderCheck(true);
+        }
         xhr.setRequestHeader(name, headers[name]);
       }
     }
