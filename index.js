@@ -68,7 +68,7 @@ function offlineQuery(db, designDocName, showName, docId, req, options) {
     }
     return designDoc;
   });
-  var docPromise = db.get(docId, options).catch(function (err) {
+  var docPromise = db.get(docId, options).catch(function () {
     //doc might not exist - that's ok and expected.
     return null;
   });
