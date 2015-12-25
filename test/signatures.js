@@ -1,4 +1,4 @@
-import {PouchDB, Auth} from './utils';
+import {setup, teardown, Auth} from './utils';
 
 describe('hashAdminPasswords', () => {
   it('should return a promise', async () => {
@@ -11,11 +11,14 @@ describe('hashAdminPasswords', () => {
 });
 
 describe('workflow', () => {
+  let db;
+  beforeEach(() => {
+    db = setup();
+  });
+  afterEach(teardown);
   it('should not throw and methods should return promises', async () => {
-    const db = new PouchDB('test');
     await db.useAsAuthenticationDB();
     await db.session(() => {});
-    await db.stopUsingAsAuthenticationDB();
-    await db.destroy();
+    db.stopUsingAsAuthenticationDB();
   });
 });

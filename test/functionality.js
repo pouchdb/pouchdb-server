@@ -3,6 +3,49 @@ import extend from 'extend';
 
 let db;
 
+function shouldBeAdminParty(session) {
+  session.info.should.eql({
+    "authentication_handlers": ["api"],
+    "authentication_db": "test"
+  });
+  session.userCtx.should.eql({
+    "name": null,
+    "roles": ["_admin"]
+  });
+  session.ok.should.be.ok;
+}
+
+function shouldNotBeLoggedIn(session) {
+  session.info.should.eql({
+    authentication_handlers: ["api"],
+    authentication_db: "test"
+  });
+  session.userCtx.should.eql({
+    name: null,
+    roles: []
+  });
+  session.ok.should.be.ok;
+}
+
+function shouldBeSuccesfulLogIn(data, roles) {
+  var copy = extend({}, data);
+  // irrelevant
+  delete copy.sessionID;
+  copy.should.eql({
+    "ok": true,
+    "name": "username",
+    "roles": roles
+  });
+}
+
+function shouldBeLoggedIn(session, roles) {
+  session.userCtx.should.eql({
+    "name": "username",
+    "roles": roles
+  });
+  session.info.authenticated.should.equal("api");
+}
+
 describe('SyncAuthTests', () => {
   beforeEach(async () => {
     db = setup()
@@ -58,7 +101,7 @@ describe('SyncAuthTests', () => {
     const session2 = await db.session();
     shouldBeLoggedIn(session2, ["test"]);
 
-    const session3 = await db.session({sessionID: "not-the-default-one"});
+    const session3 = await db.multiUserSession();
     shouldBeAdminParty(session3);
 
     const logOutData = await db.logOut();
@@ -78,34 +121,6 @@ describe('SyncAuthTests', () => {
     error.message.should.equal("Name or password is incorrect.");
   });
 
-  function shouldBeAdminParty(session) {
-    session.info.should.eql({
-      "authentication_handlers": ["api"],
-      "authentication_db": "test"
-    });
-    session.userCtx.should.eql({
-      "name": null,
-      "roles": ["_admin"]
-    });
-    session.ok.should.be.ok;
-  }
-
-  function shouldBeSuccesfulLogIn(data, roles) {
-    data.should.eql({
-			"ok": true,
-			"name": "username",
-			"roles": roles
-		});
-  }
-
-  function shouldBeLoggedIn(session, roles) {
-		session.userCtx.should.eql({
-			"name": "username",
-			"roles": roles
-		});
-		session.info.authenticated.should.equal("api");
-  }
-
   it('should support sign up without roles', async () => {
     const result = await db.signUp("username", "password");
 		result.ok.should.be.ok;
@@ -123,38 +138,6 @@ describe('SyncAuthTests', () => {
     const resp = await db.bulkDocs([{}]);
     resp[0].status.should.equal(403);
   });
-
-  it('should support admin logins', async () => {
-    const admins = {
-      username: "-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10"
-		};
-		shouldNotBeLoggedIn(await db.session({admins: admins}));
-		const logInData = await db.logIn("username", "test", {admins: admins});
-		shouldBeSuccesfulLogIn(logInData, ["_admin"]);
-
-		//if admins not supplied, there's no session (admin party!)
-    shouldBeAdminParty(await db.session());
-		//otherwise there is
-		const sessionData = await db.session({admins: admins});
-		shouldBeLoggedIn(sessionData, ["_admin"]);
-
-		//check if logout works (shouldn't need to know about admins -
-		//just cancel the session.)
-		await db.logOut();
-		shouldNotBeLoggedIn(await db.session({admins: admins}));
-  });
-
-  function shouldNotBeLoggedIn(session) {
-    session.info.should.eql({
-			authentication_handlers: ["api"],
-			authentication_db: "test"
-		});
-		session.userCtx.should.eql({
-			name: null,
-			roles: []
-		});
-		session.ok.should.be.ok;
-  }
 
   it('should handle conflicting logins', async () => {
 		const doc1 = {
@@ -178,17 +161,13 @@ describe('SyncAuthTests', () => {
     error.message.should.contain("conflict");
   });
 
-  it('should handle invalid admins field on login', async () => {
-    const admins = {
-      username: "-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10",
-      username2: 'this-is-no-hash'
-    };
-    shouldNotBeLoggedIn(await db.session({admins: admins}));
-    const error = await shouldThrowError(async () =>
-      await db.logIn("username2", "test", {admins: admins})
-    );
-    error.status.should.equal(401);
-    shouldNotBeLoggedIn(await db.session({admins: admins}));
+  it('should not accept invalid session ids', async () => {
+    const err = await shouldThrowError(async () => {
+      await db.multiUserSession('invalid-session-id');
+    });
+    err.status.should.equal(400);
+    err.name.should.equal('bad_request');
+    err.message.should.contain('Malformed');
   });
 
   afterEach(async () => {
@@ -198,15 +177,13 @@ describe('SyncAuthTests', () => {
 
 describe('AsyncAuthTests', () => {
   beforeEach(async () => {
-    db = setup()
+    db = setup();
   });
   afterEach(teardown);
   it('should suport the basics', done => {
     function cb(err) {
-      if (err) {
-        return done(err);
-      }
-      db.stopUsingAsAuthenticationDB(done);
+      db.stopUsingAsAuthenticationDB();
+      done(err);
     }
     db.useAsAuthenticationDB(cb);
   });
@@ -243,5 +220,74 @@ describe('AsyncAuthTestsWithoutDaemon', () => {
     }, {iterations: 11});
     resp.abc.indexOf("-pbkdf2-").should.equal(0);
     resp.abc.lastIndexOf(",11").should.equal(resp.abc.length - 3);
+  });
+});
+
+describe('No automated test setup', () => {
+  beforeEach(() => {
+    db = setup();
+  });
+  afterEach(teardown);
+
+  it('should support admin logins', async () => {
+    const opts = {
+      admins: {
+        username: '-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10'
+      },
+      secret: db.generateSecret()
+    };
+    await db.useAsAuthenticationDB(opts);
+
+    shouldNotBeLoggedIn(await db.multiUserSession());
+    const logInData = await db.multiUserLogIn('username', 'test');
+    shouldBeSuccesfulLogIn(logInData, ['_admin']);
+
+    db.stopUsingAsAuthenticationDB();
+    await db.useAsAuthenticationDB({/* no admins */});
+
+    //if admins not supplied, there's no session (admin party!)
+    shouldBeAdminParty(await db.multiUserSession(logInData.sessionID));
+
+    db.stopUsingAsAuthenticationDB();
+    await db.useAsAuthenticationDB(opts);
+
+    //otherwise there is
+    const sessionData = await db.multiUserSession(logInData.sessionID);
+    shouldBeLoggedIn(sessionData, ["_admin"]);
+
+    //check if logout works (i.e. forgetting the session id.)
+    shouldNotBeLoggedIn(await db.multiUserSession());
+  });
+
+  it('should handle invalid admins field on login', async () => {
+    const admins = {
+      username: "-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10",
+      username2: 'this-is-no-hash'
+    };
+    await db.useAsAuthenticationDB({admins: admins});
+
+    shouldNotBeLoggedIn(await db.session());
+    const error = await shouldThrowError(async () =>
+      await db.logIn("username2", "test")
+    );
+    error.status.should.equal(401);
+    shouldNotBeLoggedIn(await db.session());
+  });
+
+  it('should not accept timed out sessions', async () => {
+    // example stolen from calculate-couchdb-session-id's test suite. That
+    // session timed out quite a bit ago.
+
+    await db.useAsAuthenticationDB({
+      secret: '4ed13457964f05535fbb54c0e9f77a83',
+      timeout: 3600,
+      admins: {
+        // password 'test'
+        'jan': '-pbkdf2-2be978bc2be874f755d8899cfddad18ed78e3c09,d5513283df4f649c72757a91aa30bdde,10'
+      }
+    })
+
+    var sessionID = 'amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm';
+    shouldNotBeLoggedIn(await db.multiUserSession(sessionID));
   });
 });

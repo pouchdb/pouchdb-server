@@ -22,11 +22,12 @@ var db = new PouchDB('_users')
 `pouchdb-auth` adds 3 methods to the PouchDB API
 
 1. `db.hashAdminPasswords(admins)`
-2. `db.useAsAuthenticationDB()`
-3. `db.stopUsingAsAuthenticationDB`
+2. `db.generateSecret()`
+3. `db.useAsAuthenticationDB()`
+4. `db.stopUsingAsAuthenticationDB`
 
 
-### db.hashAdminPasswords(admins[, callback])
+### db.hashAdminPasswords(admins[, options[, callback]])
 
 `admins` is an object in the form of `'username': 'password'`.
 
@@ -40,8 +41,15 @@ db.hashAdminPasswords({ 'admin': 'secret' }
 })
 ```
 
+- `options.iterations`: The number of pbkdf2 iterations to use when hashing the
+  passwords. Defaults to CouchDB's 10.
+
 See below ("How it works") for more background information
 
+### db.generateSecret()
+
+Generates a secret that you can use for useAsAuthenticationDB(). This is a
+synchronous method.
 
 ### db.useAsAuthenticationDB([options[, callback]])
 
@@ -53,14 +61,27 @@ to the db (documented below):
 
 - `db.signUp(username, password[, options[, callback]])`
 - `db.logIn(username, password[, options[, callback]])`
-- `db.logOut(options[, callback])`
-- `db.session(options[, callback])`
+- `db.logOut([options[, callback]])`
+- `db.session([options[, callback]])`
+- `db.multiUserLogIn([callback])`
+- `db.multiUserSession([sessionID[, callback]])`
 
-`options.isOnlineAuthDB`: If `true`, password hashing, keeping
-track of the session and doc validation is all handled by the
-CouchDB on the other end. Defaults to `true` if called on an http
-database, otherwise `false`. Having this enabled makes it impossible to
-use the `options.sessionID` option in methods that support it.
+- `options.isOnlineAuthDB`: If `true`, password hashing, keeping
+  track of the session and doc validation is all handled by the
+  CouchDB on the other end. Defaults to `true` if called on an http
+  database, otherwise `false`. An online db currently doesn't provide the
+  `db.multiUser*` methods.
+- `options.timeout`: By default, a session is valid for 600 seconds. If you want
+  to renew the session, call ``db.session()`` within this time window, or set
+  the expiration time higher (or to 0, which sets it to infinite), by changing
+  this value.
+- `options.secret`: To calculate the session keys, a secret is necessary. You
+  can pass in your own using this parameter. Otherwise, a random one is
+  generated for the authentication db.
+- `options.admins` (optional): Allows to pass in an admins object that looks
+  like the one defined in CouchDB's `_config`.
+- `options.iterations`: The number of pbkdf2 iterations to use when hashing the
+  passwords. Defaults to CouchDB's 10.
 
 Returns a promise, unless `callback` is passed. Resolves with nothing.
 
@@ -73,15 +94,14 @@ db.useAsAuthenticationDB()
 })
 ```
 
-### db.stopUsingAsAuthenticationDB([callback])
+### db.stopUsingAsAuthenticationDB()
 
 Removes custom behavior and methods applied by `db.useAsAuthenticationDB()`.
 
-Returns a promise, unless `callback` is passed. Resolves with nothing.
+Returns nothing. This is a synchronous method.
 
 ```js
-db.useAsAuthenticationDB()
-.then(function () {})
+db.stopUsingAsAuthenticationDB();
 ```
 
 
@@ -111,23 +131,12 @@ db.signUp('john', 'secret')
 })
 ```
 
-### db.logIn(username, password[, options[, callback]])
+### db.logIn(username, password[, callback])
 
 Tries to get the user specified by `username` from the database,
 if its `password` (after hashing) matches, the user is considered
-to be logged in. This fact is then saved to a db, allowing the
+to be logged in. This fact is then stored in memory, allowing the
 other methods (`db.logOut` & `db.session`) to use it later on.
-
-- `options.sessionID` (optional, default `"default"`)
-
-  Under this key the session is saved to a db.
-  This allows you to have multiple sessions
-  running alongside each other.
-
-` `options.admins` (optional)
-
-  Allows to pass in an admins object that looks
-  like the one defined in CouchDB's `_config`.
 
 Returns a promise, unless `callback` is passed. Resolves with `name`
 and `roles`. If username and/or password is incorrect, rejects with
@@ -138,54 +147,43 @@ db.logIn('john', 'secret')
 .then(function (response) {
   // {
   //   ok: true,
-  //   name: 'username',
+  //   name: 'john',
   //   roles: ['roles', 'here']
   // }
-})
+});
 
 db.logIn('john', 'wrongsecret')
 .catch(function (error) {
   // error.name === `unauthorized`
   // error.status === 401
   // error.message === 'Name or password is incorrect.'
-})
+});
 ```
 
 
-### db.logOut([options[, callback]])
+### db.logOut(callback)
 
 Removes the current session.
 
-Returns a promise, unless `callback` is passed.
+Returns a promise that resolves to `{ok: true}`, to match a CouchDB logout. This
+method never fails, it works even if there is no session.
 
 ```js
 db.logOut()
-.then(function (response) {
+.then(function (resp) {
   // { ok: true }
-})
+});
+```
 
-
-### db.session([options[, callback]])
+### db.session([callback])
 
 Reads the current session from the db.
 
-- `options.sessionID` (optional, default `"default"`)
-
-  Under this key the session is saved to a db.
-  This allows you to have multiple sessions
-  running alongside each other.
-
-` `options.admins` (optional)
-
-  Allows to pass in an admins object that looks
-  like the one defined in CouchDB's `_config`.
-
 Returns a promise, unless `callback` is passed. Note that
 `db.session()` does not return an error if the current
-user has no valid session, just like CouchDB`s `GET /_session`
-returns a `200` status. To determine whether the current user
-has a valid session or not, check if `response.userCtx.name`
-is set.
+user has no valid session, just like CouchDB returns a `200` status to a
+`GET /_session` request. To determine whether the current user has a valid
+session or not, check if `response.userCtx.name` is set.
 
 ```js
 db.session()
@@ -203,6 +201,59 @@ db.session()
 })
 ```
 
+### db.multiUserLogIn(username, password[, callback])
+
+This works the same as ``db.logIn()``, but returns an extra property
+(``sessionID``), so multiple sessions can be managed at the same time. You pass
+in this property to the ``db.multiUserSession`` function as a reminder which
+session you are talking about.
+
+As a matter of fact, the normal functions are just a small wrapper over the
+``db.multiUser*`` functions. They just store and re-use the last sessionID
+internally.
+
+```js
+db.multiUserLogIn('john', 'secret')
+.then(response) {
+  // {
+  //   ok: true,
+  //   name: 'username',
+  //   roles: ['roles', 'here'],
+  //   sessionID: 'amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm'
+  // }
+});
+```
+
+### db.multiUserSession(sessionID[, callback])
+
+The same as ``db.session()``, but supporting multiple sessions at the same time.
+Pass in a ``sessionID`` obtained from a ``db.multiUserLogIn()`` call. If
+``sessionID`` is not given, a normal non-logged in session will be returned.
+A new updated ``sessionID`` is generated and included to prevent the session
+from expiring.
+
+```js
+db.multiUserSession('amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm')
+.then(response) {
+  // {
+  //   "ok": true,
+  //   "userCtx": {
+  //     "name": 'john',
+  //     "roles": [],
+  //   },
+  //   "info": {
+  //     "authentication_handlers": ["api"]
+  //   },
+  //   sessionID: 'some-new-session-id'
+  // }
+}
+```
+
+### db.multiUserLogOut()
+
+Contrary to what you might expect, this method **does not exist**. Multi user
+logouts are as simple as just forgetting the ``sessionID``. That is the only
+thing the ``db.logOut()`` method does internally. No other state is kept.
 
 ## How it works
 
@@ -214,10 +265,11 @@ Admin users are not stored in the `_users` database, but in the `[admins]` secti
 of couch.ini, see http://docs.couchdb.org/en/latest/config/auth.html
 
 When setting passwords clear text, CouchDB will automatically overwrite
-them with hashed passwords on restart.
+them with hashed passwords on restart. the ``hashAdminPasswords`` function
+can be used to emulate that behaviour with PouchDB-Auth.
 
 The `roles` property of `_users` documents is used by CouchDB to determine access to databases,
-which can be set in each database's `_security` setting. There are now default roles by CouchDB,
+which can be set in the `_security` setting of each database. There are now default roles by CouchDB,
 so you are free to set your own (With the excepion of system roles starting with a `_`). The
 `roles` property can only be changed by CouchDB admin users. More on authorization in CouchDB:
 http://docs.couchdb.org/en/latest/intro/security.html#authorization

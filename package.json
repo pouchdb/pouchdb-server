@@ -1,12 +1,12 @@
 {
   "name": "pouchdb-auth",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "version": "2.0.0",
   "description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
   "repository": {
     "type": "git",
     "url": "https://github.com/pouchdb/pouchdb-auth.git"
   },
-  "homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
   "keywords": [
     "pouch",
     "pouchdb",
@@ -19,20 +19,23 @@
   "license": "Apache-2.0",
   "author": "Marten de Vries",
   "dependencies": {
+    "base64url": "^1.0.5",
+    "couchdb-calculate-session-id": "^1.1.0",
     "crypto-lite": "^0.1.0",
-    "extend": "^3.0.0",
+    "pouchdb": "^5.1.0",
+    "pouchdb-bulkdocs-wrapper": "^1.0.0",
     "pouchdb-plugin-error": "^1.0.0",
     "pouchdb-promise": "^0.0.0",
     "pouchdb-req-http-query": "^1.0.2",
-    "pouchdb-validation": "^1.1.0",
     "pouchdb-system-db": "^1.0.0",
-    "promise-nodify": "^1.0.0",
-    "secure-random": "^1.1.1",
+    "pouchdb-validation": "^1.1.0",
     "pouchdb-wrappers": "^1.0.0",
-    "pouchdb-bulkdocs-wrapper": "^1.0.0"
+    "promise-nodify": "^1.0.0",
+    "secure-random": "^1.1.1"
   },
   "devDependencies": {
-    "pouchdb-plugin-helper": "^2.0.0"
+    "extend": "^3.0.0",
+    "pouchdb-plugin-helper": "^2.0.1"
   },
   "scripts": {
     "helper": "./node_modules/.bin/pouchdb-plugin-helper",
