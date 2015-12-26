@@ -1,31 +1,34 @@
 {
-	"name": "pouchdb-vhost",
-	"version": "1.0.1",
-	"main": "index.js",
-	"description": "A PouchDB plug-in that allows you to re-use your CouchDB vhost config on the client side.",
-	"repository": "pouchdb/pouchdb-vhost",
-	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
-	"keywords": [
-		"pouch",
-		"pouchdb",
-		"couch",
-		"couchdb",
-		"vhost",
-		"design"
-	],
-	"license": "Apache-2.0",
-	"author": "Marten de Vries",
-	"dependencies": {
-		"promise-nodify": "^1.0.0",
-		"pouchdb-route": "^1.0.0"
-	},
-	"devDependencies": {
-		"browserify": "^4.1.8",
-		"es3ify": "^0.1.3",
-		"uglify-js": "^2.4.13"
-	},
-	"scripts": {
-		"build-js": "mkdir -p dist && browserify index.js -s VirtualHost -g es3ify -o dist/pouchdb-vhost.js",
-		"build": "npm run build-js; cd dist; uglifyjs pouchdb-vhost.js -mc > pouchdb-vhost.min.js"
-	}
+  "name": "pouchdb-vhost",
+  "version": "1.0.1",
+  "main": "index.js",
+  "description": "A PouchDB plug-in that allows you to re-use your CouchDB vhost config on the client side.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-vhost.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "vhost",
+    "design"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "promise-nodify": "^1.0.0",
+    "pouchdb-route": "^1.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-plugin-helper": "^2.0.1",
+    "pouchdb-rewrite": "^1.0.6",
+    "pouchdb-show": "^1.0.7"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build VirtualHost"
+  }
 }

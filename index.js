@@ -51,6 +51,7 @@ module.exports = function (PouchDB) {
     var hostHeader = splitHost(headers.Host || headers.host || '');
     var match, targetParts;
     for (var unsplittedVHost in vhosts) {
+      /* istanbul ignore else */
       if (vhosts.hasOwnProperty(unsplittedVHost)) {
         var vhost = splitHost(unsplittedVHost);
         targetParts = splitUrl(vhosts[unsplittedVHost]);
