@@ -1,3 +1,5 @@
+/* global log, isArray */
+
 module.exports = {
   _id: "_design/_replicator",
   language: "javascript",

@@ -1,39 +1,39 @@
 {
-	"name": "pouchdb-replicator",
-	"version": "2.1.2",
-	"main": "index.js",
-	"description": "A PouchDB plug-in that simulates CouchDB's replicator database daemon.",
-	"repository": "pouchdb/pouchdb-replicator",
-	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
-	"bugs": "https://bugs.launchpad.net/python-pouchdb",
-	"keywords": [
-		"pouch",
-		"pouchdb",
-		"couch",
-		"couchdb",
-		"replication",
-		"replicator",
-		"replicate"
-	],
-	"license": "Apache-2.0",
-	"author": "Marten de Vries",
-	"dependencies": {
-		"promise-nodify": "^1.0.0",
-		"pouchdb-promise": "^0.0.0",
-		"random-uuid-v4": "^0.0.4",
-		"pouchdb-validation": "^1.1.0",
-		"extend": "^1.3.0",
-		"equals": "^0.3.6",
-		"pouchdb-plugin-error": "^1.0.0",
-		"pouchdb-system-db": "^1.0.0"
-	},
-	"devDependencies": {
-		"browserify": "^4.1.8",
-		"uglify-js": "^2.4.13",
-		"es3ify": "^0.1.3"
-	},
-	"scripts": {
-		"build-js": "mkdir -p dist && browserify index.js -g es3ify -s Replicator -o dist/pouchdb-replicator.js",
-		"build": "npm run build-js; cd dist; uglifyjs pouchdb-replicator.js -mc > pouchdb-replicator.min.js"
-	}
+  "name": "pouchdb-replicator",
+  "version": "2.1.2",
+  "main": "index.js",
+  "description": "A PouchDB plug-in that simulates CouchDB's replicator database daemon.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-replicator.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "replication",
+    "replicator",
+    "replicate"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "promise-nodify": "^1.0.0",
+    "pouchdb-promise": "^0.0.0",
+    "random-uuid-v4": "^0.0.4",
+    "pouchdb-validation": "^1.1.0",
+    "extend": "^1.3.0",
+    "equals": "^1.0.1",
+    "pouchdb-plugin-error": "^1.0.0",
+    "pouchdb-system-db": "^1.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-plugin-helper": "^2.0.1"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Replicator"
+  }
 }

@@ -1,39 +1,36 @@
 /*
-	Copyright 2014, Marten de Vries
+	Copyright 2014-2015, Marten de Vries
 
-	Licensed under the Apache License, Version 2.0 (the "License");
+	Licensed under the Apache License, Version 2.0 (the 'License');
 	you may not use this file except in compliance with the License.
 	You may obtain a copy of the License at
 
 	http://www.apache.org/licenses/LICENSE-2.0
 
 	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
+	distributed under the License is distributed on an 'AS IS' BASIS,
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	See the License for the specific language governing permissions and
 	limitations under the License.
 */
 
-"use strict";
+'use strict';
 
-var Promise = require("pouchdb-promise");
-var nodify = require("promise-nodify");
-var uuid = require("random-uuid-v4");
-var Validation = require("pouchdb-validation");
-var equals = require("equals");
-var extend = require("extend");
-var PouchPluginError = require("pouchdb-plugin-error");
-var systemDB = require("pouchdb-system-db");
+var Promise = require('pouchdb-promise');
+var nodify = require('promise-nodify');
+var uuid = require('random-uuid-v4');
+var Validation = require('pouchdb-validation');
+var equals = require('equals');
+var extend = require('extend');
+var PouchPluginError = require('pouchdb-plugin-error');
+var systemDB = require('pouchdb-system-db');
 
 //to update: http://localhost:5984/_replicator/_design/_replicator & remove _rev.
-var DESIGN_DOC = require("./designdoc.js");
+var DESIGN_DOC = require('./designdoc.js');
 
 var dbData = {
   dbs: [],
-  changesByDbIdx: [],
-  activeReplicationsByDbIdxAndId: [],
-  activeReplicationSignaturesByDbIdxAndRepId: [],
-  changedByReplicatorByDbIdx: [],
+  data: []
 };
 
 exports.startReplicator = function (callback) {
@@ -58,15 +55,18 @@ exports.startReplicatorDaemon = function (callback) {
   if (dbData.dbs.indexOf(db) !== -1) {
     return Promise.reject(new PouchPluginError({
       status: 500,
-      name: "already_active",
+      name: 'already_active',
       message: "Replicator already active on this database."
     }));
   }
 
   var i = dbData.dbs.push(db) - 1;
-  dbData.activeReplicationsByDbIdxAndId[i] = {};
-  dbData.activeReplicationSignaturesByDbIdxAndRepId[i] = {};
-  dbData.changedByReplicatorByDbIdx[i] = [];
+  dbData.data[i] = {
+    // changes is set below
+    activeReplicationsById: {},
+    activeReplicationSignaturesByRepId: {},
+    changedByReplicator: []
+  };
 
   var promise = db.put(DESIGN_DOC)
     .catch(function () {/*that's fine, probably already there*/})
@@ -84,15 +84,15 @@ exports.startReplicatorDaemon = function (callback) {
     .then(function () {
       //start listening for changes on the replicator db
       var changes = db.changes({
-        since: "now",
+        since: 'now',
         live: true,
         returnDocs: false,
         include_docs: true
       });
-      changes.on("change", function (change) {
+      changes.on('change', function (change) {
         onChanged(db, change.doc);
       });
-      dbData.changesByDbIdx[i] = changes;
+      dbData.data[i].changes = changes;
     });
 
   nodify(promise, callback);
@@ -108,7 +108,7 @@ function onChanged(db, doc) {
   if (isReplicatorChange) {
     data.changedByReplicator.splice(doc._id, 1);
   }
-  if (isReplicatorChange || doc._id.indexOf("_design") === 0) {
+  if (isReplicatorChange || doc._id.indexOf('_design') === 0) {
     //prevent recursion & design docs respectively
     return;
   }
@@ -142,10 +142,10 @@ function onChanged(db, doc) {
       doc._replication_id = repId;
     } else {
       doc._replication_id = uuid();
-      doc._replication_state = "triggered";
+      doc._replication_state = 'triggered';
     }
   }
-  if (doc._replication_state === "triggered") {
+  if (doc._replication_state === 'triggered') {
     //(re)start actual replication
     var PouchDB = db.constructor;
     doc.userCtx = doc.user_ctx;
@@ -168,12 +168,7 @@ function dataFor(db) {
   if (dbIdx === -1) {
     throw new Error("db doesn't exist");
   }
-  return {
-    changes: dbData.changesByDbIdx[dbIdx],
-    activeReplicationsById: dbData.activeReplicationsByDbIdxAndId[dbIdx],
-    activeReplicationSignaturesByRepId: dbData.activeReplicationSignaturesByDbIdxAndRepId[dbIdx],
-    changedByReplicator: dbData.changedByReplicatorByDbIdx[dbIdx]
-  };
+  return dbData.data[dbIdx];
 }
 
 function cleanupReplicationData(db, doc) {
@@ -188,8 +183,12 @@ function getMatchingSignatureId(db, searchedSignature) {
   var data = dataFor(db);
 
   for (var repId in data.activeReplicationSignaturesByRepId) {
+    /* istanbul ignore else */
     if (data.activeReplicationSignaturesByRepId.hasOwnProperty(repId)) {
       var signature = data.activeReplicationSignaturesByRepId[repId];
+      // it's hard to guarantee that a signature isn't being found first in a
+      // test, with little benefit:
+      /* istanbul ignore else*/
       if (equals(signature, searchedSignature)) {
         return repId;
       }
@@ -201,7 +200,7 @@ function onReplicationComplete(db, docId, info) {
   delete info.status;
   delete info.ok;
   updateExistingDoc(db, docId, function (doc) {
-    doc._replication_state = "completed";
+    doc._replication_state = 'completed';
     doc._replication_stats = info;
   });
 }
@@ -212,9 +211,11 @@ function updateExistingDoc(db, docId, func) {
 
     func(doc);
     putAsReplicatorChange(db, doc).catch(function (err) {
-      if (err.status === 409) { //coverage: ignore
-        updateExistingDoc(db, docId, func); //coverage: ignore
+      /* istanbul ignore else */
+      if (err.status === 409) {
+        updateExistingDoc(db, docId, func);
       } else {
+        // should never happen, but there for debugging purposes.
         throw err;
       }
     });
@@ -231,24 +232,24 @@ function putAsReplicatorChange(db, doc) {
 
   return db.put(doc, {
     userCtx: {
-      roles: ["_replicator", "_admin"],
+      roles: ['_replicator', '_admin']
     }
   }).catch(function (err) {
-    var idx = data.changedByReplicator.indexOf(doc._id); //coverage: ignore
-    data.changedByReplicator.splice(idx, 1); //coverage: ignore
+    var idx = data.changedByReplicator.indexOf(doc._id);
+    data.changedByReplicator.splice(idx, 1);
 
-    throw err; //coverage: ignore
+    throw err;
   });
 }
 
 function onReplicationError(db, docId, info) {
   updateExistingDoc(db, docId, function (doc) {
-    doc._replication_state = "error";
+    doc._replication_state = 'error';
     doc._replication_state_reason = info.message;
   });
 }
 
-exports.useAsReplicatorDB = function (callback) {
+exports.useAsReplicatorDB = function () {
   //applies strict validation rules (using the pouchdb-validation
   //plug-in behind the screens) to the database.
 
@@ -277,19 +278,16 @@ exports.stopReplicatorDaemon = function (callback) {
   } catch (err) {
     return Promise.reject(new PouchPluginError({
       status: 500,
-      name: "already_inactive",
+      name: 'already_inactive',
       message: "Replicator already inactive on this database."
     }));
   }
   var index = dbData.dbs.indexOf(db);
   //clean up
   dbData.dbs.splice(index, 1);
-  dbData.changesByDbIdx.splice(index, 1);
-  dbData.activeReplicationSignaturesByDbIdxAndRepId.splice(index, 1);
-  dbData.activeReplicationsByDbIdxAndId.splice(index, 1);
-  dbData.changedByReplicatorByDbIdx.splice(index, 1);
+  dbData.data.splice(index, 1);
 
-  var promise = new Promise(function (resolve, reject) {
+  var promise = new Promise(function (resolve) {
     //cancel changes/replications
     var stillCancellingCount = 0;
     function doneCancelling(eventEmitter) {
@@ -302,15 +300,16 @@ exports.stopReplicatorDaemon = function (callback) {
       }
     }
     function cancel(cancelable) {
-      cancelable.on("complete", doneCancelling.bind(null, cancelable));
-      cancelable.on("error", doneCancelling.bind(null, cancelable));
+      cancelable.on('complete', doneCancelling.bind(null, cancelable));
+      cancelable.on('error', doneCancelling.bind(null, cancelable));
       process.nextTick(cancelable.cancel.bind(cancelable));
       stillCancellingCount += 1;
     }
     cancel(data.changes);
-    data.changes.removeAllListeners("change");
+    data.changes.removeAllListeners('change');
 
     for (var id in data.activeReplicationsById) {
+      /* istanbul ignore next */
       if (data.activeReplicationsById.hasOwnProperty(id)) {
         cancel(data.activeReplicationsById[id]);
       }
@@ -321,7 +320,7 @@ exports.stopReplicatorDaemon = function (callback) {
   return promise;
 };
 
-exports.stopUsingAsReplicatorDB = function (callback) {
+exports.stopUsingAsReplicatorDB = function () {
   systemDB.uninstallSystemDBProtection(this);
   Validation.uninstallValidationMethods.call(this);
 };
