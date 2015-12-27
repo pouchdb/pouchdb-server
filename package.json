@@ -1,36 +1,38 @@
 {
-	"name": "pouchdb-seamless-auth",
-	"version": "1.0.2",
-	"main": "index.js",
-	"description": "Seamless switching between online (CouchDB) and offline (PouchDB) authentication.",
-	"repository": "marten-de-vries/pouchdb-seamless-auth",
-	"keywords": [
-		"pouch",
-		"pouchdb",
-		"couch",
-		"couchdb",
-		"users",
-		"authentication",
-		"auth",
-		"seamless",
-		"online",
-		"offline"
-	],
-	"license": "Apache-2.0",
-	"author": "Marten de Vries",
-	"dependencies": {
-		"pouchdb-promise": "^0.0.0",
-		"extend": "^1.2.1",
-		"promise-nodify": "^1.0.0",
-		"pouchdb-auth": "^1.0.0"
-	},
-	"devDependencies": {
-		"browserify": "^4.1.8",
-		"uglify-js": "^2.4.13",
-		"es3ify": "^0.1.3"
-	},
-	"scripts": {
-		"build-js": "mkdir -p dist && browserify index.js -s SeamlessAuth -g es3ify -o dist/pouchdb-seamless-auth.js",
-		"build": "npm run build-js; cd dist; uglifyjs pouchdb-seamless-auth.js -mc > pouchdb-seamless-auth.min.js"
-	}
+  "name": "pouchdb-seamless-auth",
+  "version": "1.0.3",
+  "main": "index.js",
+  "description": "Seamless switching between online (CouchDB) and offline (PouchDB) authentication.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marten-de-vries/pouchdb-seamless-auth.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "users",
+    "authentication",
+    "auth",
+    "seamless",
+    "online",
+    "offline"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "pouchdb-promise": "^0.0.0",
+    "extend": "^1.2.1",
+    "promise-nodify": "^1.0.0",
+    "pouchdb-auth": "^2.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-plugin-helper": "^2.0.1"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build SeamlessAuth"
+  }
 }

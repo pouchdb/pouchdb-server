@@ -1,5 +1,5 @@
 /*
-  Copyright 2014, Marten de Vries
+  Copyright 2014-2015, Marten de Vries
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
   limitations under the License.
 */
 
-"use strict";
+'use strict';
 
-var Auth = require("pouchdb-auth");
-var extend = require("extend");
-var Promise = require("pouchdb-promise");
-var nodify = require("promise-nodify");
+var Auth = require('pouchdb-auth');
+var extend = require('extend');
+var Promise = require('pouchdb-promise');
+var nodify = require('promise-nodify');
 
 var PouchDB, local, remote;
 var cacheInvalidated;
@@ -27,7 +27,7 @@ var cache;
 
 module.exports = function (thePouchDB) {
   PouchDB = thePouchDB;
-  local = new PouchDB("_users");
+  local = new PouchDB('_users');
 
   return Auth.useAsAuthenticationDB.call(local)
     .then(invalidateCache)
@@ -63,12 +63,12 @@ api.invalidateSeamlessAuthCache = function () {
 };
 
 api.seamlessSession = function (opts, callback) {
-  //Getting the session is something that can happen quite often in a
-  //row. HTTP is slow (and _session is not HTTP cached), so a manual
-  //cache is implemented here.
+  // Getting the session is something that can happen quite often in a row. HTTP
+  // is slow (and _session is not HTTP cached), so a manual cache is implemented
+  // here.
   var args = parseArgs(opts, callback);
   if (cacheInvalidated) {
-    cache = callFromAvailableSource("session", args.opts)
+    cache = callFromAvailableSource('session', args.opts)
       .then(function (info) {
         if (info.resp.userCtx.name !== null) {
           return startReplication(info.resp.userCtx.name, info);
@@ -85,7 +85,7 @@ api.seamlessSession = function (opts, callback) {
 
 api.seamlessLogIn = function (username, password, opts, callback) {
   var args = parseArgs(opts, callback);
-  var promise = callFromAvailableSource("logIn", username, password, args.opts, args.callback)
+  var promise = callFromAvailableSource('logIn', username, password, args.opts)
     .then(startReplication.bind(null, username))
     .then(invalidateCache)
     .then(returnResp);
@@ -95,7 +95,7 @@ api.seamlessLogIn = function (username, password, opts, callback) {
 
 api.seamlessLogOut = function (opts, callback) {
   var args = parseArgs(opts, callback);
-  var promise = callFromAvailableSource("logOut", args.opts, args.callback)
+  var promise = callFromAvailableSource('logOut', args.opts)
     .then(invalidateCache)
     .then(returnResp);
   nodify(promise, args.callback);
@@ -104,11 +104,11 @@ api.seamlessLogOut = function (opts, callback) {
 
 api.seamlessSignUp = function (username, password, opts, callback) {
   var args = parseArgs(opts, callback);
-  var promise = callFromAvailableSource("signUp", username, password, args.opts, args.callback)
+  var promise = callFromAvailableSource('signUp', username, password, args.opts)
     .then(startReplication.bind(null, username))
     .then(invalidateCache)
     .then(returnResp);
-  nodify(promise, callback);
+  nodify(promise, args.callback);
   return promise;
 };
 
@@ -116,21 +116,21 @@ function callFromAvailableSource(name/*, arg1, ...*/) {
   var args = Array.prototype.slice.call(arguments, 1);
   return Promise.resolve()
     .then(function () {
-      //promisifies the 'undefined has no attribute apply' error too
-      //when in a then-function instead of on top.
-      return remote[name].apply(remote, args)
-        .then(function (resp) {
-          return {
-            type: "remote",
-            resp: resp
-          };
-        });
+      // promisifies the 'undefined has no attribute apply' error too when in a
+      // then-function instead of on top.
+      return remote[name].apply(remote, args);
+    })
+    .then(function (resp) {
+      return {
+        type: 'remote',
+        resp: resp
+      };
     })
     .catch(function () {
       return local[name].apply(local, args)
         .then(function (resp) {
           return {
-            type: "local",
+            type: 'local',
             resp: resp
           };
         });
@@ -142,7 +142,7 @@ function returnResp(info) {
 }
 
 function parseArgs(opts, callback) {
-  if (typeof opts === "function") {
+  if (typeof opts === 'function') {
     callback = opts;
     opts = {};
   }
@@ -153,13 +153,13 @@ function parseArgs(opts, callback) {
 }
 
 function startReplication(username, info) {
-  //can't use real replication because the changes feed of _users isn't
-  //publicly accessable for non-admins.
-  if (info.type === "remote") {
-    //can only 'replicate' when the remote db is available.
-    var getRemote = remote.get("org.couchdb.user:" + username, {revs: true})
+  // can't use real replication because the changes feed of _users isn't
+  // publicly accessable for non-admins.
+  if (info.type === 'remote') {
+    // can only 'replicate' when the remote db is available.
+    var getRemote = remote.get('org.couchdb.user:' + username, {revs: true})
       .catch(useEmptyDoc);
-    var getLocal = local.get("org.couchdb.user:" + username, {revs: true})
+    var getLocal = local.get('org.couchdb.user:' + username, {revs: true})
       .catch(useEmptyDoc);
     Promise.all([getRemote, getLocal])
       .then(Function.prototype.apply.bind(function (remoteDoc, localDoc) {
@@ -168,8 +168,8 @@ function startReplication(username, info) {
         } else if (remoteDoc._rev < localDoc._rev) {
           remote.bulkDocs([localDoc], {new_edits: false});
         } else {
-          //both were up-to-date already. Prevent cache invalidation by
-          //returning directly.
+          // both were up-to-date already. Prevent cache invalidation by
+          // returning directly.
           return;
         }
         invalidateCache();
@@ -179,5 +179,5 @@ function startReplication(username, info) {
 }
 
 function useEmptyDoc() {
-  return {_rev: "0"};
+  return {_rev: '0'};
 }
