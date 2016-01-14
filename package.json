@@ -23,7 +23,7 @@
   "author": "Marten de Vries",
   "dependencies": {
     "pouchdb-promise": "^0.0.0",
-    "extend": "^1.2.1",
+    "extend": "^3.0.0",
     "promise-nodify": "^1.0.0",
     "pouchdb-auth": "^2.0.0"
   },
