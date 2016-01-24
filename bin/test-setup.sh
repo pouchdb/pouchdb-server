@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# link pouchdb back to us
-cd node_modules/pouchdb
+# install pouchdb from git master rather than npm,
+# so we can run its own tests
+rm -fr node_modules/pouchdb
+git clone --depth 1 --single-branch --branch master \
+  https://github.com/pouchdb/pouchdb.git node_modules/pouchdb
+
+cd node_modules/pouchdb/
 npm install
 cd node_modules/pouchdb-server/node_modules
 rm -fr express-pouchdb
