@@ -1,24 +1,21 @@
 language: node_js
 
-
 node_js:
-  - "0.12"
+  - "stable"
+
+sudo: false
   
 git:
   depth: 30
-
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - "sleep 5"
-
-    # Workaround for Selenium #3280 issue
-  - "sudo sed -i 's/^127\\.0\\.0\\.1.*$/127.0.0.1 localhost/' /etc/hosts"
 
 addons:
   firefox: "41.0.1"
 
 script: npm run $COMMAND
+
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
 
 env:
   global:
@@ -32,8 +29,8 @@ env:
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
-  - CLIENT=selenium:firefox:41.0.1 COMMAND=test-pouchdb
-  - CLIENT=selenium:phantomjs ES5_SHIM=true COMMAND=test-pouchdb
+  - CLIENT=selenium:firefox COMMAND=test-pouchdb
+  - CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
   # Test against the couchdb harness
   - COMMAND=test-couchdb
@@ -45,4 +42,3 @@ matrix:
 branches:
   only:
   - master
-  - /^pull*$/

@@ -11,7 +11,7 @@ npm install
 
 cd ../..
 
-./bin/pouchdb-server -p 6984 $SERVER_ARGS &
+./bin/pouchdb-server -n -p 6984 $SERVER_ARGS &
 POUCHDB_SERVER_PID=$!
 
 cd node_modules/pouchdb/
