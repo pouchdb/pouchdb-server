@@ -57,7 +57,7 @@ var options = {
     couchName: ['pouchdb_server', 'proxy'],
     onChange: updatePouchDB
   },
-  'no-stdout-logs': {
+  'silent': {
     abbr: 'n',
     info: "Stops the log file from also being written to stdout.",
     flag: true,
@@ -94,7 +94,7 @@ var options = {
 function terminalWrap(text) {
   // 26 chars from the left of the terminal might change when new
   // options are added
-  return wordwrap(26, 80)(text).trim();
+  return wordwrap(21, 80)(text).trim();
 }
 
 Object.keys(options).forEach(function (key) {
@@ -182,7 +182,7 @@ function restartTailingLog() {
     stopTailingLog();
     stopTailingLog = undefined;
   }
-  if (getArg('no-stdout-logs')) {
+  if (getArg('silent')) {
     loggingReady = Promise.resolve();
   } else {
     loggingReady = tailLog(config.get('log', 'file')).then(function (stop) {
