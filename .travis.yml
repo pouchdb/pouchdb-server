@@ -1,8 +1,7 @@
 language: node_js
 
-
 node_js:
-  - "0.12"
+  - "stable"
 
 sudo: false
   
@@ -26,7 +25,7 @@ env:
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
-  - CLIENT=selenium:firefox COMMAND=test-pouchdb
+  - CLIENT=selenium:firefox:41.0.1 COMMAND=test-pouchdb
   - CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
   # Test against the couchdb harness
@@ -39,4 +38,3 @@ matrix:
 branches:
   only:
   - master
-
