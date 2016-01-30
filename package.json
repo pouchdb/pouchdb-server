@@ -43,5 +43,6 @@
   },
   "devDependencies": {
     "jshint": "2.8.0"
-  }
+  },
+  "files": ["lib", "bin/pouchdb-server", "favicon.ico"]
 }
