@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server",
   "description": "A standalone REST interface server for PouchDB.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/pouchdb/pouchdb-server",
   "author": {
     "name": "Nick Thompson",
@@ -44,5 +44,9 @@
   "devDependencies": {
     "jshint": "2.8.0"
   },
-  "files": ["lib", "bin/pouchdb-server", "favicon.ico"]
+  "files": [
+    "lib",
+    "bin/pouchdb-server",
+    "favicon.ico"
+  ]
 }
