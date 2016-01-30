@@ -13,6 +13,10 @@ addons:
 
 script: npm run $COMMAND
 
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+
 env:
   global:
   - secure: "WYQbfTXYwPfqz7t3ycqpXIDQdZ7C9kQJAP+08OF0cuR8eqhm7HxCiu9LjSNqoLAdlDmc55ygeS16Kn3Oht3zZ/i2Y7Gm75HcQfzUIb1sDv1xVm3aQmqZDJfAQ/r7fN8upBCLii/W8IUkJr1k717MpbdsTerIjyfPOb27hw0kJTM="
@@ -25,7 +29,7 @@ env:
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
-  - CLIENT=selenium:firefox:41.0.1 COMMAND=test-pouchdb
+  - CLIENT=selenium:firefox COMMAND=test-pouchdb
   - CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
   # Test against the couchdb harness

@@ -30,7 +30,7 @@
     "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.3",
     "express": "^4.10.4",
-    "express-pouchdb": "^1.0.0",
+    "express-pouchdb": "^1.0.2",
     "http-pouchdb": "^1.1.0",
     "killable": "^1.0.0",
     "memdown": "^1.0.0",
