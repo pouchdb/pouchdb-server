@@ -42,6 +42,6 @@
     "wordwrap": "0.0.2"
   },
   "devDependencies": {
-    "jshint": "^2.5.10"
+    "jshint": "2.8.0"
   }
 }
