@@ -31,7 +31,7 @@ env:
 
   # Test in firefox/phantomjs running on travis
   - CLIENT=selenium:firefox COMMAND=test-pouchdb
-  - CLIENT=selenium:phantomjs ES5_SHIM=true COMMAND=test-pouchdb
+  - CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
   # Test against the couchdb harness
   - COMMAND=test-couchdb
