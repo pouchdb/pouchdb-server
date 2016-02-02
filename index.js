@@ -34,19 +34,30 @@ exports.list = function (listPath, options, callback) {
     callback = options;
     options = {};
   }
-  var designDocName = listPath.split("/")[0];
-  var listName = listPath.split("/")[1];
-  var viewName = listPath.split("/")[2];
+  var listPathElems = listPath.split("/");
+  var listDDocName = listPathElems[0];
+  var listName = listPathElems[1];
+  var viewName, viewDDocName;
+  if (listPathElems.length === 3) {
+    viewDDocName = listDDocName;
+    viewName = listPathElems[2];
+  } else {
+    viewDDocName = listPathElems[2];
+    viewName = listPathElems[3];
+  }
 
   //build request object
-  var pathEnd = ["_design", designDocName, "_list", listName];
+  var pathEnd = ["_design", listDDocName, "_list", listName];
+  if (viewDDocName !== listDDocName) {
+    pathEnd.push(viewDDocName);
+  }
   if (viewName) {
     pathEnd.push(viewName);
   }
   var reqPromise = couchdb_objects.buildRequestObject(db, pathEnd, options);
   var promise = reqPromise.then(function (req) {
     if (["http", "https"].indexOf(db.type()) === -1) {
-      return offlineQuery(db, designDocName, listName, viewName, req, options);
+      return offlineQuery(db, listDDocName, listName, viewDDocName, viewName, req, options);
     } else {
       return httpQuery(db, req);
     }
@@ -55,7 +66,7 @@ exports.list = function (listPath, options, callback) {
   return promise;
 };
 
-function offlineQuery(db, designDocName, listName, viewName, req, options) {
+function offlineQuery(db, listDDocName, listName, viewDDocName, viewName, req, options) {
   var notJSON = req.headers["Content-Type"] && req.headers["Content-Type"] !== "application/json";
   var hasBody = req.body && req.body !== "undefined";
   if (notJSON && hasBody) {
@@ -67,12 +78,12 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
   }
 
   //get the data involved.
-  var ddocPromise = db.get("_design/" + designDocName).then(function (designDoc) {
+  var ddocPromise = db.get("_design/" + listDDocName).then(function (designDoc) {
     if (!(designDoc.lists || {}).hasOwnProperty(listName)) {
       throw new PouchPluginError({
         status: 404,
         name: "not_found",
-        message: "missing list function " + listName + " on design doc _design/" + designDocName
+        message: "missing list function " + listName + " on design doc _design/" + listDDocName
       });
     }
     return designDoc;
@@ -81,7 +92,7 @@ function offlineQuery(db, designDocName, listName, viewName, req, options) {
   if (req.method !== 'GET') {
     extend(viewOpts, options.json);
   }
-  var viewPromise = db.query(designDocName + "/" + viewName, viewOpts);
+  var viewPromise = db.query(viewDDocName + "/" + viewName, viewOpts);
 
   //not Promise.all because the error order matters.
   var args = [];
