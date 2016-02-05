@@ -35,9 +35,9 @@
     "xhr2": false
   },
   "devDependencies": {
-    "browserify": "^11.2.0",
+    "browserify": "^13.0.0",
     "chai": "^3.4.0",
-    "es3ify": "^0.1.4",
+    "es3ify": "^0.2.0",
     "istanbul": "^0.4.0",
     "jshint": "^2.8.0",
     "mocha": "^2.3.3",
