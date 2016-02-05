@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-security",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "main": "index.js",
   "description": "PouchDB database access restrictions using a security document.",
   "repository": {
