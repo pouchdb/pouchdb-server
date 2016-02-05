@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "author": "Marten de Vries",
   "dependencies": {
-    "extend": "^1.2.1",
+    "extend": "^3.0.0",
     "pouchdb-promise": "^0.0.0",
     "promise-nodify": "^1.0.0",
     "pouchdb-req-http-query": "^1.0.0",
