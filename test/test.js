@@ -1,6 +1,7 @@
 "use strict";
 
 /*global describe, it, after, before */
+/*jshint expr: true */
 
 var chai = require('chai');
 var should = chai.should();
@@ -16,23 +17,23 @@ var fse = Promise.promisifyAll(require("fs-extra"));
 PouchDB.plugin(require('../'));
 
 describe('pouchdb-size tests', function () {
-  before(function (done) {
-    fse.mkdir("b", done);
+  before(function () {
+    return fse.mkdirAsync("b");
   });
-  after(function (done) {
-    PouchDB.destroy("a").then(function () {
-      return PouchDB.destroy('b/chello world!');
+  after(function () {
+    return new PouchDB("a").destroy().then(function () {
+      return new PouchDB('b/chello world!').destroy();
     }).then(function () {
       return fse.rmdirAsync("b");
     }).then(function () {
-      return PouchDB.destroy("e", {db: sqldown});
+      return new PouchDB("e", {db: sqldown}).destroy();
     }).then(function () {
-      return PouchDB.destroy("./f", {db: medeadown});
+      return new PouchDB("./f", {db: medeadown}).destroy();
     }).then(function () {
       return fse.unlinkAsync("g");
     }).then(function () {
       return fse.removeAsync("h");
-    }).then(done);
+    });
   });
 
   it("should work in the normal case", function (done) {
@@ -68,7 +69,7 @@ describe('pouchdb-size tests', function () {
 
       var promise = db3.getDiskSize(function (err, size) {
         //getDiskSize() should provide a more solid error.
-        err.should.exist();
+        err.should.exist;
         should.not.exist(size);
 
         done();
@@ -85,7 +86,7 @@ describe('pouchdb-size tests', function () {
       }
     };
     PouchDB.prototype.getDiskSize.call(db4, function (err, size) {
-      err.should.exist();
+      err.should.exist;
       should.not.exist(size);
 
       done();
