@@ -4,23 +4,23 @@
   "description": "Adds disk_size to info()'s output for your leveldown backed PouchDB's.",
   "main": "index.js",
   "dependencies": {
-    "bluebird": "^2.3.11",
-    "get-folder-size": "^0.1.1",
+    "bluebird": "^3.2.1",
+    "get-folder-size": "^1.0.0",
     "pouchdb-wrappers": "^1.2.0",
     "promise-nodify": "^1.0.1"
   },
   "devDependencies": {
-    "chai": "^1.10.0",
-    "fs-extra": "^0.12.0",
-    "istanbul": "^0.3.4",
+    "chai": "^3.5.0",
+    "fs-extra": "^0.26.5",
+    "istanbul": "^0.4.2",
     "jshint": "^2.5.10",
     "jsondown": "^0.1.1",
-    "locket": "0.0.2",
+    "locket": "1.0.0",
     "medeadown": "^1.1.1",
     "memdown": "^1.0.0",
     "mocha": "^2.0.1",
-    "pouchdb": "^3.2.0",
-    "sqldown": "^1.1.1",
+    "pouchdb": "^5.2.1",
+    "sqldown": "^2.1.0",
     "sqlite3": "^3.0.4"
   },
   "scripts": {
