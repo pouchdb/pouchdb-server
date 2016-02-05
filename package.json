@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-replicator",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "main": "index.js",
   "description": "A PouchDB plug-in that simulates CouchDB's replicator database daemon.",
   "repository": {
