@@ -112,7 +112,7 @@ describe('unauthorized validation tests', () => {
   });
 });
 
-describe('forbidden validation tests', async () => {
+describe('forbidden validation tests', () => {
   let rev;
   beforeEach(async () => {
     const data = await setupWithDoc();
@@ -231,7 +231,7 @@ describe('exception validation tests', () => {
   });
 });
 
-describe('attachment validation tests', async () => {
+describe('attachment validation tests', () => {
   let rev;
   const forbiddenDesignDoc = {
     _id: '_design/test',
