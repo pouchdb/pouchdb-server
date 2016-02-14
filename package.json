@@ -22,7 +22,7 @@
     "pouchdb-route": "^1.0.0"
   },
   "devDependencies": {
-    "pouchdb-plugin-helper": "^2.0.1",
+    "pouchdb-plugin-helper": "^3.0.0",
     "pouchdb-rewrite": "^1.0.6",
     "pouchdb-show": "^1.0.7"
   },
