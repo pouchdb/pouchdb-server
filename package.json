@@ -30,7 +30,7 @@
     "pouchdb-changeslike-wrapper": "^1.0.0"
   },
   "devDependencies": {
-    "pouchdb-plugin-helper": "^2.0.0",
+    "pouchdb-plugin-helper": "^3.0.0",
     "pouchdb-show": "^1.0.7"
   },
   "scripts": {
