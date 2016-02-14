@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "extend": "^3.0.0",
-    "pouchdb-plugin-helper": "^2.0.1"
+    "pouchdb-plugin-helper": "^3.0.0"
   },
   "scripts": {
     "helper": "./node_modules/.bin/pouchdb-plugin-helper",
