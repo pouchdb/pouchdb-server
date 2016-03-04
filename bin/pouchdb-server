@@ -11,7 +11,10 @@ var express  = require('express'),
     killable = require('killable'),
     tailLog  = require('../lib/logging'),
     cors     = require('../lib/cors'),
-    Promise  = require('bluebird');
+    Promise  = require('bluebird'),
+    PouchDB  = require('pouchdb');
+
+require('pouchdb/extras/websql');
 
 // parse command line arguments
 
@@ -48,6 +51,13 @@ var options = {
     info: "Use a pure in-memory database which will be deleted upon restart.",
     flag: true,
     couchName: ['pouchdb_server', 'in_memory'],
+    couchDefault: false,
+    onChange: updatePouchDB
+  },
+  'sqlite': {
+    info: "Use PouchDB over SQLite instead of LevelDOWN",
+    flag: true,
+    couchName: ['pouchdb_server', 'sqlite'],
     couchDefault: false,
     onChange: updatePouchDB
   },
@@ -130,10 +140,9 @@ var args = nomnom
       "  Requires: npm install redisdown"
     ].join('\n'),
     "",
-    "  pouchdb-server --level-backend sqldown --level-prefix /tmp/",
+    "  pouchdb-server --sqlite",
     [
-      "  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.",
-      "  Requires: npm install sqldown sqlite3"
+      "  Starts up a pouchdb-server using SQLite"
     ].join('\n')
   ].join('\n'))
   .nocolors()
@@ -211,15 +220,17 @@ function updatePouchDB() {
     opts.db = require('memdown');
   } else if (getArg('level-backend')) {
     opts.db = require(getArg('level-backend'));
+  } else if (getArg('sqlite')) {
+    opts.adapter = 'websql';
   }
 
-  var PouchDB;
+  var ThisPouchDB;
   if (getArg('proxy')) {
-    PouchDB = require('http-pouchdb')(require('pouchdb'), getArg('proxy'));
+    ThisPouchDB = require('http-pouchdb')(PouchDB, getArg('proxy'));
   } else {
-    PouchDB = require('pouchdb').defaults(opts);
+    ThisPouchDB = PouchDB.defaults(opts);
   }
-  pouchDBApp.setPouchDB(PouchDB);
+  pouchDBApp.setPouchDB(ThisPouchDB);
 }
 
 updatePouchDB();
@@ -248,7 +259,10 @@ function listenImpl() {
       logger.info('database is a proxy to ' + getArg('proxy'));
     } else if (getArg('in-memory')) {
       logger.info('database is in-memory; no changes will be saved.');
-    } else if (getArg('dir') !== options.dir.couchDefault) {
+    } else if (getArg('sqlite')) {
+      logger.info('database will use sqlite3.');
+    }
+    if (getArg('dir') !== options.dir.couchDefault) {
       logger.info('database files will be saved to ' + getArg('dir'));
     }
     if (getArg('level-backend')) {

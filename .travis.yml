@@ -27,6 +27,7 @@ env:
   - COMMAND=jshint
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
+  - CLIENT=node SERVER_ARGS=--sqlite COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
   - CLIENT=selenium:firefox COMMAND=test-pouchdb

@@ -36,6 +36,9 @@ Options:
                           upon restart. (Defaults to
                           /_config/pouchdb_server/in_memory which defaults to
                           false).
+   --sqlite               Use PouchDB over SQLite instead of LevelDOWN.
+                          (Defaults to /_config/pouchdb_server/sqlite which 
+                          defaults to false).
    -r, --proxy            Proxy requests to the specified host. Include a
                           trailing '/'. (Defaults to
                           /_config/pouchdb_server/proxy which defaults to
