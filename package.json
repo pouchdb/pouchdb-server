@@ -1,7 +1,7 @@
 {
   "name": "express-pouchdb",
   "description": "Express submodule with a CouchDB style REST interface to PouchDB.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "homepage": "https://github.com/pouchdb/express-pouchdb",
   "author": {
     "name": "Nick Thompson",
@@ -56,5 +56,8 @@
     "test-express-pouchdb": "./node_modules/.bin/mocha",
     "test": "npm run jshint && npm run test-express-pouchdb && npm run test-pouchdb && npm run test-pouchdb-minimum"
   },
-  "files": ["lib", "fauxton"]
+  "files": [
+    "lib",
+    "fauxton"
+  ]
 }
