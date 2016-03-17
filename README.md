@@ -122,6 +122,16 @@ To choose the file where logs are written, you can create a `config.json` file c
 
 By default, logs are written to `./log.txt`.
 
+## Automatic port configuration
+
+Due to conventions set by Heroku and others, if you have a `port` environment variable,
+`pouchdb-server` will pick up on that and use it instead of `5984` as the default.
+
+```bash
+export port=3000
+pouchdb-server # will run on port 3000
+```
+
 ## Testing
 
 One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself. To do that, you can simply,
