@@ -170,8 +170,16 @@ describe('SyncAuthTests', () => {
     err.message.should.contain('Malformed');
   });
 
-  afterEach(async () => {
-    should.not.exist(await db.stopUsingAsAuthenticationDB());
+  it('should hash plain-text passwords in bulkDocs', async () => {
+    // https://github.com/pouchdb/express-pouchdb/issues/297
+    const resp = await db.bulkDocs({docs: [{
+      _id: "org.couchdb.user:testuser",
+      name:"testuser",
+      password:"test",
+      type:"user",
+      roles:[]
+    }]});
+    should.not.exist((await db.get(resp[0].id)).password);
   });
 });
 
