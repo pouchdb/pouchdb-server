@@ -23,7 +23,7 @@ var options = {
     abbr: 'p',
     info: "Port on which to run the server.",
     couchName: ['httpd', 'port'],
-    couchDefault: process.env.port || 5984,
+    couchDefault: process.env.PORT || 5984,
     onChange: rebind
   },
   dir: {

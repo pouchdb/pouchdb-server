@@ -127,11 +127,11 @@ By default, logs are written to `./log.txt`.
 
 ## Automatic port configuration
 
-Due to conventions set by Heroku and others, if you have a `port` environment variable,
+Due to conventions set by Heroku and others, if you have a `PORT` environment variable,
 `pouchdb-server` will pick up on that and use it instead of `5984` as the default.
 
 ```bash
-export port=3000
+export PORT=3000
 pouchdb-server # will run on port 3000
 ```
 
