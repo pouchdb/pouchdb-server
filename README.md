@@ -19,7 +19,7 @@ which is primarily used as a quick-and-dirty drop-in replacement for CouchDB in 
 ## Installation
 
 ```bash
-$ npm install express-pouchdb
+$ npm install express-pouchdb pouchdb express
 ```
 
 ## Example Usage
