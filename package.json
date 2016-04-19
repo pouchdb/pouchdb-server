@@ -41,7 +41,7 @@
   "devDependencies": {
     "express": "4.10.5",
     "fs-extra": "0.28.0",
-    "jshint": "2.8.0",
+    "jshint": "2.9.2",
     "memdown": "1.1.2",
     "mocha": "2.4.5",
     "pouchdb": "5.3.1",
