@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "fs-extra": "^0.29.0",
+    "fs-extra": "^0.30.0",
     "istanbul": "^0.4.2",
     "jshint": "^2.5.10",
     "jsondown": "^0.1.1",
