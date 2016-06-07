@@ -25,7 +25,7 @@
     "pouchdb": "^5.1.0",
     "pouchdb-bulkdocs-wrapper": "^1.0.0",
     "pouchdb-plugin-error": "^1.0.0",
-    "pouchdb-promise": "^0.0.0",
+    "pouchdb-promise": "^5.4.0",
     "pouchdb-req-http-query": "^1.0.2",
     "pouchdb-system-db": "^1.0.0",
     "pouchdb-validation": "^1.1.0",
