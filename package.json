@@ -24,7 +24,7 @@
     "node-uuid": "1.4.1",
     "on-finished": "2.3.0",
     "pouchdb-all-dbs": "1.0.1",
-    "pouchdb-auth": "2.0.1",
+    "pouchdb-auth": "2.1.0",
     "pouchdb-find": "0.1.0",
     "pouchdb-list": "1.1.0",
     "pouchdb-replicator": "2.1.3",
