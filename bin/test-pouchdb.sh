@@ -16,7 +16,7 @@ POUCHDB_SERVER_PID=$!
 
 cd node_modules/pouchdb/
 
-COUCH_HOST=http://localhost:6984 npm test
+COUCH_HOST=http://localhost:6984 TIMEOUT=120000 npm run test-node
 
 EXIT_STATUS=$?
 if [[ ! -z $POUCHDB_SERVER_PID ]]; then
