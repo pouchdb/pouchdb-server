@@ -12,9 +12,9 @@ var express  = require('express'),
     tailLog  = require('../lib/logging'),
     cors     = require('../lib/cors'),
     Promise  = require('bluebird'),
-    PouchDB  = require('pouchdb');
+    PouchDB  = require('pouchdb-node');
 
-require('pouchdb/extras/websql');
+PouchDB.plugin(require('pouchdb-adapter-node-websql'));
 
 // parse command line arguments
 
