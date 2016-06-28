@@ -1,6 +1,6 @@
 'use strict';
 
-var PouchDB = require('../node_modules/pouchdb');
+var PouchDB = require('pouchdb-node');
 
 var app = require('../')(PouchDB, {
   mode: 'minimumForPouchDB'
