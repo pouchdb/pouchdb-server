@@ -1,0 +1,55 @@
+{
+  "name": "pouchdb-server-monorepo",
+  "description": "A standalone REST interface server for PouchDB.",
+  "version": "2.0.0-prerelease",
+  "homepage": "https://github.com/pouchdb/pouchdb-server",
+  "private": true,
+  "author": {
+    "name": "Nick Thompson",
+    "email": "ncthom91@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pouchdb/pouchdb-server.git"
+  },
+  "bin": {
+    "pouchdb-server": "./bin/pouchdb-server"
+  },
+  "scripts": {
+    "start": "node ./bin/pouchdb-server",
+    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-couchdb": "./bin/test-couchdb.sh",
+    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "bluebird": "^2.4.2",
+    "colors": "^1.0.3",
+    "corser": "~2.0.0",
+    "couchdb-harness": "*",
+    "couchdb-log-parse": "^0.0.3",
+    "express": "^4.10.4",
+    "express-pouchdb": "~1.0.4",
+    "http-pouchdb": "^1.1.0",
+    "killable": "^1.0.0",
+    "memdown": "^1.0.0",
+    "mkdirp": "^0.5.0",
+    "nomnom": "^1.8.1",
+    "pouchdb-adapter-node-websql": "^5.4.3",
+    "pouchdb-adapter-websql": "^5.4.0",
+    "pouchdb-node": "^5.4.0",
+    "serve-favicon": "~2.0.1",
+    "tail": "^0.4.0",
+    "wordwrap": "0.0.2"
+  },
+  "devDependencies": {
+    "jshint": "2.8.0"
+  },
+  "files": [
+    "lib",
+    "bin/pouchdb-server",
+    "favicon.ico"
+  ]
+}
