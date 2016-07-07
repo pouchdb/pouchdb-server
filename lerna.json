@@ -1,4 +1,5 @@
 {
   "lerna": "2.0.0-beta.23",
-  "version": "2.0.0"
+  "version": "2.0.0-prerelease",
+  "independent": false
 }
