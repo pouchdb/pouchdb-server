@@ -24,7 +24,7 @@ env:
   - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
 
   matrix:
-  - COMMAND=jshint
+  - COMMAND=eslint
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node COMMAND=test-pouchdb-minimum
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
@@ -40,7 +40,7 @@ env:
 matrix:
   allow_failures:
   - env: COMMAND=test-couchdb
-  - env: COMMAND=jshint
+  - env: COMMAND=eslint
   - env: CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
 branches:
