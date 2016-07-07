@@ -1,0 +1,37 @@
+{
+  "name": "pouchdb-show",
+  "version": "1.0.8",
+  "main": "index.js",
+  "description": "A PouchDB plug-in that allows you to re-use your CouchDB show functions on the client side.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-show.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "show",
+    "design"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "couchdb-objects": "^1.0.0",
+    "couchdb-render": "^1.0.0",
+    "pouchdb-req-http-query": "^1.0.0",
+    "promise-nodify": "^1.0.0",
+    "pouchdb-promise": "^0.0.0",
+    "pouchdb-plugin-error": "^1.0.0"
+  },
+  "devDependencies": {
+    "navigator": "^1.0.1",
+    "pouchdb-plugin-helper": "^3.0.0"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Show"
+  }
+}

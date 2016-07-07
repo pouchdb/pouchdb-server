@@ -1,0 +1,41 @@
+{
+  "name": "pouchdb-security",
+  "version": "1.2.6",
+  "main": "index.js",
+  "description": "PouchDB database access restrictions using a security document.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-security.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "security",
+    "access",
+    "online",
+    "offline"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "extend": "^3.0.0",
+    "pouchdb-promise": "^0.0.0",
+    "promise-nodify": "^1.0.0",
+    "pouchdb-req-http-query": "^1.0.0",
+    "pouchdb-bulkdocs-wrapper": "^1.0.0",
+    "pouchdb-wrappers": "^1.3.6",
+    "pouchdb-plugin-error": "^1.0.0",
+    "pouchdb-changeslike-wrapper": "^1.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-plugin-helper": "^3.0.0",
+    "pouchdb-show": "^1.0.7"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Security"
+  }
+}

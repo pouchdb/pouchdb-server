@@ -13,18 +13,20 @@
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
   "scripts": {
+    "build": "lerna bootstrap",
+    "setup-tests": "./bin/test-setup.sh",
     "start": "node ./bin/pouchdb-server",
-    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-pouchdb": "npm run setup-tests && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-couchdb.sh",
-    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
+    "eslint": "eslint bin/ packages/**/",
+    "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum",
+    "test": "npm run test-pouchdb-minimum && npm run test-pouchdb"
   },
-  "devDependencies": {
-    "jshint": "2.8.0",
+  "dependencies": {
+    "eslint": "^3.0.1",
     "lerna": "2.0.0-beta.23"
   },
-  "files": [
-    "lib",
-    "bin/pouchdb-server",
-    "favicon.ico"
-  ]
+  "devDependencies": {
+    "couchdb-harness": "^0.1.6"
+  }
 }

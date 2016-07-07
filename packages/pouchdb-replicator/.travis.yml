@@ -1,0 +1,30 @@
+sudo: false
+language: node_js
+
+cache:
+  directories:
+    - node_modules
+
+node_js:
+  - "0.10"
+
+services:
+  - couchdb
+
+before_install:
+  - npm i -g npm@^2.0.0
+
+before_script:
+  - npm prune
+
+script: npm run $COMMAND
+
+env:
+  matrix:
+  - COMMAND='helper -- lint'
+  - COMMAND='helper -- js-test'
+  - COMMAND='build'
+
+#after_success:
+#  - npm run helper -- semantic-release
+

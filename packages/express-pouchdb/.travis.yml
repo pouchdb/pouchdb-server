@@ -3,15 +3,15 @@ language: node_js
 node_js:
   - "stable"
 
-sudo: false
-
 git:
-  depth: 3
+  depth: 30
+
+sudo: false
 
 addons:
   firefox: "41.0.1"
 
-script: npm run $COMMAND
+script: "npm run $COMMAND"
 
 before_script:
   - "export DISPLAY=:99.0"
@@ -25,10 +25,9 @@ env:
 
   matrix:
   - COMMAND=jshint
+  - COMMAND=test-express-pouchdb
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node COMMAND=test-pouchdb-minimum
-  - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
-  - CLIENT=node SERVER_ARGS=--sqlite COMMAND=test-pouchdb
 
   # Test in firefox/phantomjs running on travis
   - CLIENT=selenium:firefox COMMAND=test-pouchdb
@@ -36,11 +35,10 @@ env:
 
   # Test against the couchdb harness
   - COMMAND=test-couchdb
-
+ 
 matrix:
   allow_failures:
   - env: COMMAND=test-couchdb
-  - env: COMMAND=jshint
   - env: CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
 branches:

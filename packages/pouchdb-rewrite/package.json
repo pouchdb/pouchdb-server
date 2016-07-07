@@ -1,0 +1,43 @@
+{
+  "name": "pouchdb-rewrite",
+  "version": "1.0.7",
+  "main": "index.js",
+  "description": "A PouchDB plug-in that allows you to re-use your CouchDB rewrites on the client side.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pouchdb/pouchdb-rewrite.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "rewrite",
+    "design"
+  ],
+  "license": "Apache-2.0",
+  "author": "Marten de Vries",
+  "dependencies": {
+    "couchdb-objects": "^1.0.0",
+    "pouchdb-req-http-query": "^1.0.3",
+    "promise-nodify": "^1.0.0",
+    "extend": "^3.0.0",
+    "pouchdb-plugin-error": "^1.0.0",
+    "pouchdb-route": "^1.0.0"
+  },
+  "devDependencies": {
+    "pouchdb-all-dbs": "^1.0.1",
+    "pouchdb-list": "^1.0.6",
+    "pouchdb-plugin-helper": "^3.0.0",
+    "pouchdb-seamless-auth": "^1.0.2",
+    "pouchdb-security": "^1.2.5",
+    "pouchdb-show": "^1.0.7",
+    "pouchdb-update": "^1.0.7",
+    "pouchdb-validation": "^1.2.1"
+  },
+  "scripts": {
+    "helper": "./node_modules/.bin/pouchdb-plugin-helper",
+    "test": "npm run helper -- test",
+    "build": "npm run helper -- build Rewrite"
+  }
+}

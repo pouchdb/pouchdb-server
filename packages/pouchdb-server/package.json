@@ -28,7 +28,6 @@
     "bluebird": "^2.4.2",
     "colors": "^1.0.3",
     "corser": "~2.0.0",
-    "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.3",
     "express": "^4.10.4",
     "express-pouchdb": "~1.0.4",
