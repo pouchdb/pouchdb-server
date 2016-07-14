@@ -1,0 +1,22 @@
+{
+	"name": "pouchdb-route",
+	"version": "1.0.3",
+	"main": "index.js",
+	"description": "Given a CouchDB request object, return the response of PouchDB's equivalent function.",
+	"repository": "pouchdb/pouchdb-route",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"request",
+		"route",
+		"routing"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-plugin-error": "^1.0.0",
+		"extend": "^1.2.1"
+	}
+}
