@@ -68,7 +68,7 @@ function cleanUp() {
   ]);
 }
 
-describe('config', function () {
+describe('Express-PouchDB: config', function () {
   it('should not create empty config file', function (done) {
     fse.exists('./config.json', function (exists) {
       if (exists) {
@@ -167,7 +167,7 @@ function testWelcome(app, done, path) {
     .end(done);
 }
 
-describe('modes', function () {
+describe('Express-PouchDB: modes', function () {
   it('should always return a 404 in our custom configuration', function (done) {
     request(customApp)
       .get('/')
@@ -199,7 +199,7 @@ describe('modes', function () {
   });
 });
 
-describe('redirects', function () {
+describe('Express-PouchDB: redirects', function () {
   it('GET /_utils should redirect to /_utils/', function (done) {
     request(coreApp)
       .get('/_utils')

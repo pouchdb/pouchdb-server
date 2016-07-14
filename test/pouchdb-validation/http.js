@@ -5,7 +5,7 @@ function before() {
   db = setupHTTP();
 }
 
-describe('signature http tests', () => {
+describe('PouchDB-Validations: signature http tests', () => {
   beforeEach(before);
   afterEach(teardown);
   it('should work with post', async () => {
@@ -14,7 +14,7 @@ describe('signature http tests', () => {
   });
 });
 
-describe('http tests', () => {
+describe('PouchDB-Validations: http tests', () => {
   beforeEach(before);
   afterEach(teardown);
   //FIXME: re-enable (related to bug report)

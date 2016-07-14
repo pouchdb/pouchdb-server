@@ -2,7 +2,7 @@ import {setup, setupWithDoc, teardown, updateDocument, should, shouldThrowError}
 
 let db;
 
-describe('Sync update tests', () => {
+describe('PouchDB-Update: Sync update tests', () => {
   beforeEach(async () => {
     db = (await setupWithDoc()).db;
     await db.put(updateDocument);
@@ -47,7 +47,7 @@ describe('Sync update tests', () => {
   });
 });
 
-describe('Async update tests', () => {
+describe('PouchDB-Update: Async update tests', () => {
   beforeEach(done => {
     db = setup();
     db.put(updateDocument, done);
@@ -65,7 +65,7 @@ describe('Async update tests', () => {
   });
 });
 
-describe('Async update with empty design doc', () => {
+describe('PouchDB-Update: Async update with empty design doc', () => {
   beforeEach(done => {
     db = setup();
     db.put({_id: '_design/test'}, done);

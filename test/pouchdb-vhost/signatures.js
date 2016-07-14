@@ -1,6 +1,6 @@
 import {PouchDB} from './utils';
 
-describe('signatures', () => {
+describe('PouchDB-Vhost: signatures', () => {
   it('vhost', () => {
     const promise = PouchDB.virtualHost({raw_path: '/'}, {}, () => {});
     promise.then.should.be.ok;

@@ -2,7 +2,7 @@ import {setupHTTP, teardown, updateDocument, should} from './utils';
 
 let db;
 
-describe('http tests', () => {
+describe('PouchDB-Update: http tests', () => {
   beforeEach(async () => {
     db = setupHTTP();
     await db.put(updateDocument);

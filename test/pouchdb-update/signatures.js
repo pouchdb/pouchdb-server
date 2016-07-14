@@ -1,6 +1,6 @@
 import {setup, teardown} from './utils';
 
-describe('signature tests', () => {
+describe('PouchDB-Update: signature tests', () => {
   let db;
   beforeEach(() => {
     db = setup();

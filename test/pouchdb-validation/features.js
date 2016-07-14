@@ -2,7 +2,7 @@ import {setup, setupWithDoc, setupWithDocAndAttachment, teardown, should, should
 
 let db;
 
-describe('basic validation tests', () => {
+describe('PouchDB-Validations: basic validation tests', () => {
   beforeEach(async () => {
     db = setup();
     await db.put(onlyTestValidationDoc);

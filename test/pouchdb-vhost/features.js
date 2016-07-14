@@ -19,7 +19,7 @@
 import {setup, teardown, PouchDB} from './utils';
 let db;
 
-describe('sync vhost tests', () => {
+describe('PouchDB-Vhost: sync vhost tests', () => {
   const vhosts = {
     'example.com': '/test',
     '*.example.com': '/test/_design/doc1/_rewrite',

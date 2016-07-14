@@ -8,6 +8,11 @@
     "name": "Nick Thompson",
     "email": "ncthom91@gmail.com"
   },
+  "contributors": [
+    "Marten de Vries",
+    "Nolan Lawson",
+    "Garren Smith <garren@redcometlabs.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/pouchdb/pouchdb-server.git"

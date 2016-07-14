@@ -2,7 +2,7 @@ import {setup, teardown} from './utils';
 
 let db;
 
-describe('signatures', () => {
+describe('PouchDB-Show: signatures', () => {
   beforeEach(() => {
     db = setup();
   });

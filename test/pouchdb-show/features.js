@@ -2,7 +2,7 @@ import {setup, teardown, showDocument, shouldThrowError, should, checkUserAgent,
 
 let db;
 
-describe('Sync show tests', () => {
+describe('PouchDB-Show: Sync show tests', () => {
   beforeEach(async () => {
     db = setup();
     await db.put(showDocument);
@@ -265,7 +265,7 @@ describe('Sync show tests', () => {
   });
 });
 
-describe('Sync show tests with empty design doc', () => {
+describe('PouchDB-Show: Sync show tests with empty design doc', () => {
   beforeEach(async () => {
     db = setup();
     await db.put({_id: '_design/test'});
@@ -279,7 +279,7 @@ describe('Sync show tests with empty design doc', () => {
   });
 });
 
-describe('async show tests', () => {
+describe('PouchDB-Show: async show tests', () => {
   beforeEach(done => {
     db = setup();
     db.put(showDocument, done);

@@ -2,7 +2,7 @@ import {setupHTTP, teardown, showDocument, should, BASE_URL, checkUserAgent, che
 
 let db;
 
-describe('PouchDB-Show http', () => {
+describe('PouchDB-Show: http', () => {
   beforeEach(async () => {
     db = setupHTTP();
     await db.put(showDocument);
