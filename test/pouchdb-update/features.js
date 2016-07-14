@@ -10,7 +10,7 @@ describe('PouchDB-Update: Sync update tests', () => {
   afterEach(teardown);
 
   it('args', async () => {
-    const resp = await db.update('test/args/mytest', {query: {'a': 3}})
+    const resp = await db.update('test/args/mytest', {query: {'a': 3}});
     const [doc, req] = JSON.parse(resp.body);
     doc.test.should.be.ok;
     req.id.should.equal('mytest');
@@ -31,7 +31,7 @@ describe('PouchDB-Update: Sync update tests', () => {
     });
     err.toString().should.be.ok;
     err.name.should.equal('not_found');
-    err.message.should.equal('missing update function unexisting on design doc _design/test')
+    err.message.should.equal('missing update function unexisting on design doc _design/test');
   });
 
   it('saving', async () => {

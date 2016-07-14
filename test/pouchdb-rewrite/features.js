@@ -65,7 +65,7 @@ describe('Pouchdb-Rewrite: sync rewrite tests', () => {
     path.should.eql(['test', '_design', 'test', '1234mytest']);
     const err = await shouldThrowError(async () => {
       await db.rewrite('test');
-    })
+    });
     err.status.should.equal(404);
   });
 
@@ -100,7 +100,7 @@ describe('Pouchdb-Rewrite: sync rewrite tests', () => {
       body: new Buffer('Hello World', 'ascii'),
       headers: {'Content-Type': 'text/plain'},
       query: {rev: ddocResp.rev}
-    })
+    });
     resp.ok.should.be.ok;
 
     // test if delete succeeds
@@ -118,7 +118,7 @@ describe('Pouchdb-Rewrite: sync rewrite tests', () => {
         // not sure if it would be required. Playing safe here.
         // Not that it should ever reach the rev check.
         query: {rev: resp2.rev}
-      })
+      });
     });
     err.status.should.equal(405);
     err.name.should.equal('method_not_allowed');
@@ -173,7 +173,7 @@ describe('Pouchdb-Rewrite: sync rewrite tests', () => {
   });
 
   it('session rewrite', async () => {
-    await putRewrites([{from: 'session', to: '../../../_session'}])
+    await putRewrites([{from: 'session', to: '../../../_session'}]);
 
     // POST (401)
     const err = await shouldThrowError(async () => {
@@ -469,7 +469,7 @@ describe('Pouchdb-Rewrite: sync CouchDB based rewrite tests', () => {
           }`
         }
       }
-    }
+    };
 
     function makeDocs(start, end) {
       const docs = [];
@@ -480,7 +480,7 @@ describe('Pouchdb-Rewrite: sync CouchDB based rewrite tests', () => {
           string: i.toString()
         });
       }
-      return docs
+      return docs;
     }
 
     const docs1 = makeDocs(0, 10);

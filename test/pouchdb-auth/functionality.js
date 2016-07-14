@@ -48,7 +48,7 @@ function shouldBeLoggedIn(session, roles) {
 
 describe('PouchDB-Auth: SyncAuthTests', () => {
   beforeEach(async () => {
-    db = setup()
+    db = setup();
     should.not.exist(await db.useAsAuthenticationDB({isOnlineAuthDB: false}));
   });
   afterEach(teardown);
@@ -199,7 +199,7 @@ describe('PouchDB-Auth: AsyncAuthTests', () => {
 
 describe('PouchDB-Auth: AsyncAuthTestsWithoutDaemon', () => {
   beforeEach(async () => {
-    db = setup()
+    db = setup();
   });
   afterEach(teardown);
 
@@ -293,7 +293,7 @@ describe('PouchDB-Auth: No automated test setup', () => {
         // password 'test'
         'jan': '-pbkdf2-2be978bc2be874f755d8899cfddad18ed78e3c09,d5513283df4f649c72757a91aa30bdde,10'
       }
-    })
+    });
 
     var sessionID = 'amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm';
     shouldNotBeLoggedIn(await db.multiUserSession(sessionID));

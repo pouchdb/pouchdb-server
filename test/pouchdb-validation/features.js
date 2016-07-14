@@ -41,7 +41,7 @@ describe('PouchDB-Validations: basic validation tests', () => {
     }
     function putCb(err, resp) {
       resp.ok.should.be.ok;
-      db.getAttachment('test', 'test').then(getCb)
+      db.getAttachment('test', 'test').then(getCb);
     }
     const blob = new Buffer('Hello world!', 'ascii');
     db.validatingPutAttachment('test', 'test', blob, "text/plain", putCb);
@@ -77,7 +77,7 @@ describe('unauthorized validation tests', () => {
 
   function checkError(err) {
     err.name.should.equal('unauthorized');
-    err.message.should.equal("only a document named 'test' is allowed.")
+    err.message.should.equal("only a document named 'test' is allowed.");
   }
 
   it('should fail an invalid put', async () => {
@@ -95,9 +95,9 @@ describe('unauthorized validation tests', () => {
       await db.validatingRemove({
         _id: 'mytest',
         _rev: rev
-      })
+      });
     }));
-  })
+  });
   it('should fail an invalid bulkDocs', async () => {
     // Also tests validatingBulkDocs with docs: [] property (which is
     // deprecated, but still supported).
@@ -143,7 +143,7 @@ describe('forbidden validation tests', () => {
       await db.validatingRemove({
         _id: 'mytest',
         _rev: rev
-      })
+      });
     }));
   });
   it('should fail an invalid bulk docs', async () => {
@@ -169,7 +169,7 @@ describe('forbidden validation tests', () => {
     await db.validatingPut({
       _id: '_local/mytest'
     });
-  })
+  });
 });
 
 describe('compilation error validation tests', () => {
@@ -179,7 +179,7 @@ describe('compilation error validation tests', () => {
   afterEach(teardown);
 
   function checkError(err) {
-    err.name.should.equal('compilation_error')
+    err.name.should.equal('compilation_error');
     err.message.should.contain('Expression does not eval to a function.');
   }
 
@@ -217,7 +217,7 @@ describe('exception validation tests', () => {
 				//reference error
 				test;
 			}`
-    })
+    });
   });
   afterEach(teardown);
 
@@ -227,7 +227,7 @@ describe('exception validation tests', () => {
     });
     err.name.should.equal('ReferenceError');
     //'test' is the name of the missing variable.
-    err.message.should.contain('test')
+    err.message.should.contain('test');
   });
 });
 
@@ -238,7 +238,7 @@ describe('attachment validation tests', () => {
     validate_doc_update: `function (newDoc, oldDoc, userCtx, secObj) {
       throw({forbidden: JSON.stringify(newDoc)});
     }`
-  }
+  };
   beforeEach(async () => {
     const info = await setupWithDocAndAttachment();
     db = info.db;
@@ -323,7 +323,7 @@ describe('validation args tests', () => {
       db: 'test',
       name: 'pypouchtest',
       roles: ['the_boss']
-    }
+    };
 
     const err = await shouldThrowError(async () => {
       await db.validatingPost({}, {userCtx: theUserCtx});

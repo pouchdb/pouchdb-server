@@ -65,7 +65,7 @@ describe('PouchDB-List: Sync list tests', () => {
 		req.requested_path.should.eql(['test', '_design', 'test', '_list', 'args', 'ids?a=b']);
 		req.path.should.eql(['test', '_design', 'test', '_list', 'args', 'ids']);
 		// and one at random, to check if the rest (shared with show) is still ok.
-		req.peer.should.equal('127.0.0.1')
+		req.peer.should.equal('127.0.0.1');
 	});
 
 	it('unexisting design doc', async () => {

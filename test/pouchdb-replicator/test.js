@@ -9,7 +9,7 @@ const replicationDocument = {
 	"source": "a",
 	"target": "b",
 	"continuous": true
-}
+};
 
 let db;
 
@@ -29,7 +29,7 @@ describe('PouchDB-Replicator: async replicator tests', () => {
 				done(err);
 			});
 		});
-	})
+	});
 });
 
 describe('PouchDB-Replicator: sync replicator tests', () => {

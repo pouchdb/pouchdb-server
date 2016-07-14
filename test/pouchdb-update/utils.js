@@ -18,6 +18,6 @@ stuff.updateDocument = {
 			return [doc, "Hello World!"];
 		}`
 	}
-}
+};
 
 module.exports = stuff;

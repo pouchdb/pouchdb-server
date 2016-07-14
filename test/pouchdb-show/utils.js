@@ -66,11 +66,11 @@ stuff.showDocument = {
 stuff.checkUserAgent = ua => {
 	ua.should.contain('Mozilla');
 	ua.should.contain('Gecko');
-}
+};
 
 stuff.checkUuid = uuid => {
 	uuid.should.be.a('string');
-	uuid.length.should.be.greaterThan(30)
-}
+	uuid.length.should.be.greaterThan(30);
+};
 
 module.exports = stuff;

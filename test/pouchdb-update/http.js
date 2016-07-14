@@ -6,7 +6,7 @@ describe('PouchDB-Update: http tests', () => {
   beforeEach(async () => {
     db = setupHTTP();
     await db.put(updateDocument);
-  })
+  });
   afterEach(teardown);
 
   it('update', async () => {

@@ -10,9 +10,9 @@ describe('PouchDB-Auth: SyncHTTPAuthTests', () => {
 
 			signUpData.rev.indexOf("1-").should.equal(0);
 			signUpData.ok.should.be.ok;
-			signUpData.id.should.equal("org.couchdb.user:username")
+			signUpData.id.should.equal("org.couchdb.user:username");
 
-			const doc = await db.get("org.couchdb.user:username")
+			const doc = await db.get("org.couchdb.user:username");
 			doc._rev.indexOf("1-").should.equal(0);
 			doc.should.have.property("derived_key");
 			doc.iterations.should.equal(10);
@@ -71,7 +71,7 @@ describe('PouchDB-Auth: SyncHTTPAuthTests', () => {
 
 	function shouldBeAdmin(session) {
 		session.info.authentication_handlers.should.contain("cookie");
-		session.info.authentication_db.should.equal("_users")
+		session.info.authentication_db.should.equal("_users");
 		session.userCtx.should.eql({
 			name: (HTTP_AUTH || {}).username || null,
 			roles: ["_admin"]

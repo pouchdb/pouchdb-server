@@ -31,17 +31,17 @@ describe('PouchDB-Security: Installed security tests', () => {
         names: ['member'],
         roles: ['member']
       }
-    })
+    });
   }
   beforeEach(before);
   afterEach(async () => {
-    db.uninstallSecurityMethods()
+    db.uninstallSecurityMethods();
     await teardown();
   });
 
   it('basic', () => {
     // lets setUp() and tearDown() do all the work...
-  })
+  });
   it('double install', () => {
     //1 install: setUp()
 		//2 install:
@@ -76,7 +76,7 @@ describe('PouchDB-Security: Installed security tests', () => {
     const userCtx = {
 			name: null,
 			roles: ['member']
-		}
+		};
     const err = await shouldThrowError(async () => {
       await db.query({map: null}, {userCtx: userCtx});
     });
@@ -174,7 +174,7 @@ describe('PouchDB-Security: Installed security tests', () => {
   it('get security', async () => {
     const resp = await db.getSecurity({userCtx: {name: 'member', roles: []}});
     resp.should.have.property('admins');
-  })
+  });
 
   it('replicate', async () => {
     const resp = await db.replicate.to('testb');
@@ -197,7 +197,7 @@ describe('PouchDB-Security: Installed security tests', () => {
         roles: []
       }});
     });
-    err.status.should.equal(404) // not 401!
+    err.status.should.equal(404); // not 401!
   });
 
   it('destroy', async () => {
@@ -238,7 +238,7 @@ describe('PouchDB-Security: Static security methdods installed', async () => {
     (() => {
       Security.installStaticSecurityMethods(PouchDB);
     }).should.throw(/already installed/);
-  })
+  });
 
   it('uninstalling twice', async () => {
     Security.uninstallStaticSecurityMethods(PouchDB);

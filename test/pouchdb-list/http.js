@@ -38,5 +38,5 @@ describe('PouchDB-list: http', () => {
     err.status.should.equal(400);
     err.name.should.equal('bad_request');
     err.message.should.equal('invalid_json');
-  })
+  });
 });

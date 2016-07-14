@@ -25,7 +25,7 @@ describe('PouchDB-Show: http', () => {
     req.form.should.eql({});
 
     BASE_URL.should.contain(req.headers.Host);
-    req.headers.Accept.should.equal('*/*, text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+    req.headers.Accept.should.equal('*/*, text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
     req.headers['Content-Type'].should.equal('text/plain');
     req.headers['Accept-Language'].should.contain('en');
     req.headers['Accept-Language'].should.contain('en-us');
@@ -35,11 +35,11 @@ describe('PouchDB-Show: http', () => {
     req.info.db_name.should.equal('pouchdb-plugin-helper-db');
     req.info.should.have.property('update_seq');
     req.method.should.equal('POST');
-    req.path.should.eql(['pouchdb-plugin-helper-db', '_design', 'test', '_show', 'args'])
+    req.path.should.eql(['pouchdb-plugin-helper-db', '_design', 'test', '_show', 'args']);
     req.peer.should.equal('127.0.0.1');
     req.query.should.eql({});
-    req.raw_path.should.equal('/pouchdb-plugin-helper-db/_design/test/_show/args')
-    req.requested_path.should.eql(['pouchdb-plugin-helper-db', '_design', 'test', '_show', 'args'])
+    req.raw_path.should.equal('/pouchdb-plugin-helper-db/_design/test/_show/args');
+    req.requested_path.should.eql(['pouchdb-plugin-helper-db', '_design', 'test', '_show', 'args']);
     req.secObj.should.eql({});
     req.userCtx.db.should.equal('pouchdb-plugin-helper-db');
     req.userCtx.should.have.property('name');
