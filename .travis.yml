@@ -26,6 +26,7 @@ env:
 
   matrix:
   - COMMAND=eslint
+  - COMMAND=unit-tests
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node COMMAND=test-pouchdb-minimum
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb

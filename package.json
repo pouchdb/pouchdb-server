@@ -21,13 +21,32 @@
     "eslint": "eslint bin/ packages/**/",
     "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
     "test": "npm run test-pouchdb-minimum && npm run test-pouchdb",
-    "unit-tests": "./bin/unit-tests.js"
+    "unit-tests": "./bin/unit-tests.sh"
   },
   "dependencies": {
+    "chai-as-promised": "^5.3.0",
     "eslint": "^3.0.1",
     "lerna": "2.0.0-beta.23"
   },
   "devDependencies": {
-    "couchdb-harness": "^0.1.6"
+    "bluebird": "^3.4.1",
+    "chai": "^3.5.0",
+    "couchdb-harness": "^0.1.6",
+    "express": "^4.14.0",
+    "extend": "^3.0.0",
+    "fs-extra": "^0.30.0",
+    "istanbul": "^0.4.2",
+    "jsondown": "^0.1.1",
+    "locket": "1.0.0",
+    "medeadown": "^1.1.1",
+    "memdown": "^1.0.0",
+    "mocha": "^2.0.1",
+    "navigator": "^1.0.1",
+    "pouchdb": "^5.2.1",
+    "pouchdb-plugin-helper": "^3.0.2",
+    "pouchdb-seamless-auth": "^1.0.4",
+    "sqldown": "^2.1.0",
+    "sqlite3": "^3.0.4",
+    "supertest": "^1.2.0"
   }
 }
