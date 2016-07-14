@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-auth",
   "main": "lib/index.js",
-  "version": "2.1.0",
+  "version": "3.0.0-prerelease",
   "description": "A PouchDB plug-in that simulates CouchDB's authentication daemon. Includes a users db that functions like CouchDB's.",
   "repository": {
     "type": "git",
@@ -28,8 +28,8 @@
     "pouchdb-promise": "^5.4.0",
     "pouchdb-req-http-query": "^1.0.2",
     "pouchdb-system-db": "^1.0.0",
-    "pouchdb-validation": "^1.1.0",
-    "pouchdb-wrappers": "^1.0.0",
+    "pouchdb-validation": "3.0.0-prerelease",
+    "pouchdb-wrappers": "3.0.0-prerelease",
     "promise-nodify": "^1.0.0",
     "secure-random": "^1.1.1"
   },

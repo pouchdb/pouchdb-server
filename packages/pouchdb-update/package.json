@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-update",
-  "version": "1.0.8",
+  "version": "3.0.0-prerelease",
   "main": "index.js",
   "description": "A PouchDB plug-in that allows you to re-use your CouchDB update functions on the client side.",
   "repository": {

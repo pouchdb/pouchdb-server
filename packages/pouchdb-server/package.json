@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server-monorepo",
   "description": "A standalone REST interface server for PouchDB.",
-  "version": "2.0.0-prerelease",
+  "version": "3.0.0-prerelease",
   "homepage": "https://github.com/pouchdb/pouchdb-server",
   "private": true,
   "author": {
@@ -30,7 +30,7 @@
     "corser": "~2.0.0",
     "couchdb-log-parse": "^0.0.3",
     "express": "^4.10.4",
-    "express-pouchdb": "~1.0.4",
+    "express-pouchdb": "3.0.0-prerelease",
     "http-pouchdb": "^1.1.0",
     "killable": "^1.0.0",
     "memdown": "^1.0.0",

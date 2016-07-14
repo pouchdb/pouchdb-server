@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-all-dbs",
-  "version": "1.0.2",
+  "version": "3.0.0-prerelease",
   "description": "PouchDB allDbs plugin",
   "main": "lib/index.js",
   "repository": {

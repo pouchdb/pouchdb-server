@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-vhost",
-  "version": "1.0.2",
+  "version": "3.0.0-prerelease",
   "main": "index.js",
   "description": "A PouchDB plug-in that allows you to re-use your CouchDB vhost config on the client side.",
   "repository": {
@@ -19,12 +19,12 @@
   "author": "Marten de Vries",
   "dependencies": {
     "promise-nodify": "^1.0.0",
-    "pouchdb-route": "^1.0.0"
+    "pouchdb-route": "3.0.0-prerelease"
   },
   "devDependencies": {
     "pouchdb-plugin-helper": "^3.0.0",
-    "pouchdb-rewrite": "^1.0.6",
-    "pouchdb-show": "^1.0.7"
+    "pouchdb-rewrite": "3.0.0-prerelease",
+    "pouchdb-show": "3.0.0-prerelease"
   },
   "scripts": {
     "helper": "./node_modules/.bin/pouchdb-plugin-helper",

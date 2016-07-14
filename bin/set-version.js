@@ -14,10 +14,7 @@ var packages = fs.readdirSync('packages');
 
 var jsonFiles = packages.map(function (pkg) {
   return path.resolve(__dirname, '../packages', pkg, 'package.json');
-}).concat([
-  path.resolve(__dirname, '../packages/pouchdb/component.json'),
-  path.resolve(__dirname, '../packages/pouchdb/bower.json')
-]);
+});
 
 jsonFiles.forEach(function (jsonFile) {
   var json = JSON.parse(fs.readFileSync(jsonFile), 'utf-8');
@@ -40,13 +37,6 @@ jsonFiles.forEach(function (jsonFile) {
   });
   fs.writeFileSync(jsonFile, JSON.stringify(json, null, '  ') + '\n', 'utf-8');
 });
-
-var versionFile = path.resolve(__dirname,
-  '../packages/pouchdb-core/src/version.js');
-var versionFileContents = '// managed automatically by set-version.js\n' +
-  'export default "' + version + '";\n';
-
-fs.writeFileSync(versionFile, versionFileContents, 'utf-8');
 
 var lernaFile = path.resolve(__dirname, '../lerna.json');
 var lernaJson = JSON.parse(fs.readFileSync(lernaFile, 'utf-8'));

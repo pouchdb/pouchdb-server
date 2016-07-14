@@ -26,7 +26,8 @@
     "eslint": "eslint bin/ packages/**/",
     "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
     "test": "npm run test-pouchdb-minimum && npm run test-pouchdb",
-    "unit-tests": "./bin/unit-tests.sh"
+    "unit-tests": "./bin/unit-tests.sh",
+    "set-version":"node ./bin/set-version.js"
   },
   "dependencies": {
     "chai-as-promised": "^5.3.0",
