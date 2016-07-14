@@ -133,7 +133,7 @@ describe('Express-PouchDB: config', function () {
       .put('/_config/test2/a')
       .send('"b"')
       .expect(200)
-      .expect(function (res) {
+      .expect(function () {
         if (!changed) {
           return "Didn't get notice of the setting change";
         }

@@ -21,7 +21,7 @@ describe('PouchDB-Replicator: async replicator tests', () => {
 
 	it('basic', done => {
 		db.startReplicator((err, res) => {
-			if (err) return done(err);
+			if (err) {return done(err);}
 
 			should.not.exist(res);
 			db.stopReplicator((err, res) => {

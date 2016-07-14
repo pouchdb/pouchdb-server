@@ -1,4 +1,4 @@
-import {BASE_URL, HTTP_AUTH, setup, PouchDB, should, shouldThrowError} from './utils';
+import { PouchDB } from './utils';
 
 var chai = require('chai');
 chai.use(require("chai-as-promised"));
