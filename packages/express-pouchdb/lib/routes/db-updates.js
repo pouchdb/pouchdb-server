@@ -23,7 +23,7 @@ module.exports = function (app) {
     }
   });
 
-  app.all('/_db_updates', function (req, res, next) {
+  app.all('/_db_updates', function (req, res) {
     // TODO: implement
     res.status(400).end();
     // app.couch_db_updates.on('update', function(update) {

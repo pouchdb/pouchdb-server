@@ -25,7 +25,7 @@ exports.installSizeWrapper = function () {
   var db = this;
 
   wrappers.installWrapperMethods(db, {
-    info: function (orig, args) {
+    info: function (orig) {
       var resp;
       return orig().then(function (info) {
         resp = info;

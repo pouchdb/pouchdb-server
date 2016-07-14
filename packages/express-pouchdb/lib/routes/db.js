@@ -6,7 +6,7 @@ var startTime = new Date().getTime(),
 
 module.exports = function (app) {
   // Create a database.
-  app.put('/:db', utils.jsonParser, function (req, res, next) {
+  app.put('/:db', utils.jsonParser, function (req, res) {
     var decodedName = req.params.db;
     var name = encodeURIComponent(decodedName);
 
@@ -25,7 +25,7 @@ module.exports = function (app) {
       // PouchDB.new() instead of new PouchDB() because that adds
       // authorisation logic
       var db = req.PouchDB.new(name, utils.makeOpts(req));
-      db.info(function (err, db) {
+      db.info(function (err) {
         if (err) {
           return utils.sendError(res, err, 412);
         }
@@ -36,7 +36,7 @@ module.exports = function (app) {
   });
 
   // Delete a database
-  app.delete('/:db', function (req, res, next) {
+  app.delete('/:db', function (req, res) {
     if (req.query.rev) {
       return utils.sendJSON(res, 400, {
         error: 'bad_request',
@@ -47,7 +47,7 @@ module.exports = function (app) {
       });
     }
     var name = encodeURIComponent(req.params.db);
-    req.PouchDB.destroy(name, utils.makeOpts(req), function (err, info) {
+    req.PouchDB.destroy(name, utils.makeOpts(req), function (err) {
       if (err) {
         return utils.sendError(res, err);
       }
@@ -65,7 +65,7 @@ module.exports = function (app) {
   });
 
   // Get database information
-  app.get('/:db', function (req, res, next) {
+  app.get('/:db', function (req, res) {
     req.db.info(utils.makeOpts(req), function (err, info) {
       if (err) {
         return utils.sendError(res, err);
@@ -77,7 +77,7 @@ module.exports = function (app) {
   });
 
   // Ensure all commits are written to disk
-  app.post('/:db/_ensure_full_commit', function (req, res, next) {
+  app.post('/:db/_ensure_full_commit', function (req, res) {
     // TODO: implement. Also check security then: who is allowed to
     // access this? (db & server admins?)
     utils.sendJSON(res, 201, {
@@ -89,7 +89,7 @@ module.exports = function (app) {
   app.dbWrapper.registerWrapper(function (name, db, next) {
     // db.info() should just return the non-uri encoded db name
     wrappers.installWrapperMethods(db, {
-      info: function (orig, args) {
+      info: function (orig) {
         return orig().then(function (info) {
           info.db_name = decodeURIComponent(info.db_name);
           return info;
@@ -104,7 +104,7 @@ module.exports = function (app) {
     start: function (PouchDB) {
       // PouchDB.allDbs() should return the non-uri encoded db name
       wrappers.installStaticWrapperMethods(PouchDB, {
-        allDbs: function (orig, args) {
+        allDbs: function (orig) {
           return orig().then(function (dbs) {
             return dbs.map(decodeURIComponent);
           });

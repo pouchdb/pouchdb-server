@@ -12,7 +12,7 @@ module.exports = function (app) {
   });
 
   // Query design document show handler
-  function handler(req, res, next) {
+  function handler(req, res) {
     var queryBase = [req.params.id, req.params.func].join("/");
     var query = queryBase + req.params[0];
     var cb = utils.sendCouchDBResp.bind(null, res);

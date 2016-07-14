@@ -105,6 +105,7 @@ wrapperBuilders.destroy = function (db, destroy, handlers) {
 };
 
 wrapperBuilders.put = function (db, put, handlers) {
+  /* eslint no-unused-vars: 0 */
   return function (doc, docId, docRev, options, callback) {
     var args = {};
     args.base = db || this;
@@ -113,6 +114,7 @@ wrapperBuilders.put = function (db, put, handlers) {
     //parsing code borrowed from PouchDB (adapted).
     args.doc = argsList.shift();
     var id = '_id' in args.doc;
+    /* eslint no-constant-condition: 0 */
     while (true) {
       var temp = argsList.shift();
       var temptype = typeof temp;

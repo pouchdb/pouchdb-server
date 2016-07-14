@@ -151,7 +151,7 @@ module.exports = function (startPouchDB, opts) {
   app.dbWrapper = new DatabaseWrapper();
   app.dbWrapper.registerWrapper(function (name, db, next) {
     //'fix' the PouchDB api (support opts arg everywhere)
-    function noop(orig, args) {
+    function noop(orig) {
       return orig();
     }
     var wrapperMethods = {};

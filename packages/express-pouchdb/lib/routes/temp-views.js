@@ -6,7 +6,7 @@ module.exports = function (app) {
   utils.requires(app, 'routes/db');
 
   // Temp Views
-  app.post('/:db/_temp_view', utils.jsonParser, function (req, res, next) {
+  app.post('/:db/_temp_view', utils.jsonParser, function (req, res) {
     /*jshint evil: true*/
     if (req.body.map) {
       req.body.map = (new Function('return ' + req.body.map))();

@@ -88,7 +88,7 @@ module.exports = function (app) {
     // TODO: TIMING ATTACK
     Promise.resolve().then(function () {
       return buildCookieSession(req, res);
-    }).catch(function (err) {
+    }).catch(function () {
       return buildBasicAuthSession(req);
     }).then(function (result) {
       req.couchSession = result;

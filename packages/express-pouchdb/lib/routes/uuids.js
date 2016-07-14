@@ -9,7 +9,7 @@ module.exports = function (app) {
   app.couchConfig.registerDefault('uuids', 'max_count', 1000);
 
   // Generate UUIDs
-  app.all('/_uuids', utils.restrictMethods(["GET"]), function (req, res, next) {
+  app.all('/_uuids', utils.restrictMethods(["GET"]), function (req, res) {
     res.set({
       "Cache-Control": "must-revalidate, no-cache",
       "Pragma": "no-cache"

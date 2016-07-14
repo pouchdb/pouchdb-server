@@ -4,7 +4,7 @@ var utils = require('../utils');
 
 module.exports = function (app) {
   // 404 handler
-  app.use(function (req, res, next) {
+  app.use(function (req, res) {
     utils.sendJSON(res, 404, {
       error: "not_found",
       reason: "missing"

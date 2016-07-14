@@ -9,7 +9,7 @@ module.exports = function (app) {
   app.use('/_utils/img', express.static(__dirname + '/../../fauxton/img'));
   app.use('/_utils/fonts', express.static(__dirname + '/../../fauxton/fonts'));
 
-  app.get('/_utils', function (req, res, next) {
+  app.get('/_utils', function (req, res) {
     // We want to force /_utils to /_utils/ as this is the CouchDB behavior
     // https://github.com/apache/couchdb-couch/blob/a431e65713095f1fa99101e14835e89f21b5d82b/src/couch_httpd_misc_handlers.erl#L78
     // https://github.com/apache/couchdb-couch/blob/a431e65713095f1fa99101e14835e89f21b5d82b/src/couch_httpd.erl#L974

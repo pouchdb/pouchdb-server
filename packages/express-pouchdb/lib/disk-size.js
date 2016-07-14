@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function enableDiskSize(app, PouchDB) {
+module.exports = function enableDiskSize(app) {
   app.daemonManager.registerDaemon({
     start: function (PouchDB) {
       PouchDB.plugin(require('pouchdb-size'));

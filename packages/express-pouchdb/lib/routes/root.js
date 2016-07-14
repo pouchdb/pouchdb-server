@@ -10,7 +10,7 @@ module.exports = function (app) {
     app.couchConfig.registerDefault('vendor', 'version', pkg.version);
   }
   // Root route, return welcome message
-  app.get('/', function (req, res, next) {
+  app.get('/', function (req, res) {
     var json = {
       'express-pouchdb': 'Welcome!',
       'version': pkg.version

@@ -13,15 +13,15 @@ module.exports = function (app) {
     }
   });
 
-  app.get('/:db/_index', function (req, res, next) {
+  app.get('/:db/_index', function (req, res) {
     req.db.getIndexes(utils.sendCallback(res));
   });
 
-  app.post('/:db/_index', utils.jsonParser, function (req, res, next) {
+  app.post('/:db/_index', utils.jsonParser, function (req, res) {
     req.db.createIndex(req.body, utils.sendCallback(res, 400));
   });
 
-  app.delete('/:db/_index/:ddoc/:type/:name', function (req, res, next) {
+  app.delete('/:db/_index/:ddoc/:type/:name', function (req, res) {
     req.db.deleteIndex({
       ddoc: req.params.ddoc,
       type: req.params.type,
@@ -29,7 +29,7 @@ module.exports = function (app) {
     }, utils.sendCallback(res));
   });
 
-  app.post('/:db/_find', utils.jsonParser, function (req, res, next) {
+  app.post('/:db/_find', utils.jsonParser, function (req, res) {
     req.db.find(req.body, utils.sendCallback(res, 400));
   });
 };

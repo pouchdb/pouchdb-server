@@ -53,7 +53,7 @@ module.exports = function (app) {
 
   // Slightly unusual endpoint where you can POST an attachment to a doc.
   // Used by the Fauxton UI for uploading attachments.
-  app.post('/:db/:id(*)', utils.jsonParser, function (req, res, next) {
+  app.post('/:db/:id(*)', utils.jsonParser, function (req, res) {
     if (!/^multipart\/form-data/.test(req.headers['content-type'])) {
       return utils.sendJSON(res, 400, {
         error: "bad_request",
@@ -111,7 +111,7 @@ module.exports = function (app) {
   });
 
   // Create or update document that has an ID
-  app.put('/:db/:id(*)', utils.jsonParser, function (req, res, next) {
+  app.put('/:db/:id(*)', utils.jsonParser, function (req, res) {
 
     var opts = utils.makeOpts(req, req.query);
 
@@ -169,7 +169,7 @@ module.exports = function (app) {
   }
 
   // Create a document
-  app.post('/:db', utils.jsonParser, function (req, res, next) {
+  app.post('/:db', utils.jsonParser, function (req, res) {
     var opts = utils.makeOpts(req, req.query);
 
     req.body._id = req.body._id || uuids(1)[0];
@@ -183,7 +183,7 @@ module.exports = function (app) {
   });
 
   // Retrieve a document
-  app.get('/:db/:id(*)', function (req, res, next) {
+  app.get('/:db/:id(*)', function (req, res) {
     var opts = utils.makeOpts(req, req.query);
 
     req.db.get(req.params.id, opts, function (err, doc) {
@@ -196,7 +196,7 @@ module.exports = function (app) {
   });
 
   // Delete a document
-  app.delete('/:db/:id(*)', function (req, res, next) {
+  app.delete('/:db/:id(*)', function (req, res) {
     var opts = utils.makeOpts(req, req.query);
     opts.rev = getRev(req, {});
 
@@ -214,7 +214,7 @@ module.exports = function (app) {
   });
 
   // Copy a document
-  app.copy('/:db/:id', function (req, res, next) {
+  app.copy('/:db/:id', function (req, res) {
     var dest = req.get('Destination');
     var rev, match;
 
@@ -245,7 +245,7 @@ module.exports = function (app) {
       }
       doc._id = dest;
       doc._rev = rev;
-      req.db.put(doc, opts, function (err, response) {
+      req.db.put(doc, opts, function (err) {
         if (err) {
           return utils.sendError(res, err, 409);
         }

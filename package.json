@@ -23,7 +23,7 @@
     "start": "node ./bin/pouchdb-server",
     "test-pouchdb": "npm run setup-tests && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-couchdb.sh",
-    "eslint": "eslint bin/ packages/**/",
+    "eslint": "eslint bin/ packages/ test",
     "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
     "test": "npm run test-pouchdb-minimum && npm run test-pouchdb",
     "unit-tests": "./bin/unit-tests.sh",
