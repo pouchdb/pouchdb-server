@@ -7,7 +7,7 @@
 module.exports = {
   _id: "_design/_auth",
   language: "javascript",
-  validate_doc_update: function(newDoc, oldDoc, userCtx, secObj) {
+  validate_doc_update: function (newDoc, oldDoc, userCtx, secObj) {
     if (newDoc._deleted === true) {
       // allow deletes by admins and matching users
       // without checking the other fields
@@ -60,7 +60,7 @@ module.exports = {
       });
     }
 
-    var is_server_or_database_admin = function(userCtx, secObj) {
+    var is_server_or_database_admin = function (userCtx, secObj) {
       // see if the user is a server admin
       if(userCtx.roles.indexOf('_admin') !== -1) {
         return true; // a server admin
@@ -85,7 +85,7 @@ module.exports = {
       }
 
       return false; // default to no admin
-    }
+    };
 
     if (!is_server_or_database_admin(userCtx, secObj)) {
       if (oldDoc) { // validate non-admin updates
@@ -136,4 +136,4 @@ module.exports = {
       }
     }
   }.toString()
-}
+};

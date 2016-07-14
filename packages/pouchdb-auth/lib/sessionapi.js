@@ -161,7 +161,7 @@ function getUserDoc(db, username) {
           "the document is used for authentication purposes."
       });
     }
-    return doc
+    return doc;
   });
 }
 

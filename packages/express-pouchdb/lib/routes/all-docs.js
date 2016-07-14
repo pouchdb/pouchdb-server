@@ -6,7 +6,7 @@ var utils  = require('../utils'),
 module.exports = function (app) {
   utils.requires(app, 'routes/db');
 
-  var isAllowedMethod = function(method, allowedMethods) {
+  var isAllowedMethod = function (method, allowedMethods) {
     return allowedMethods.indexOf(method) !== -1;
   };
 

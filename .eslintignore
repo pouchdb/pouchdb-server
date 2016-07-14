@@ -1,1 +1,4 @@
 node_modules
+fauxton
+examples
+*.min.js

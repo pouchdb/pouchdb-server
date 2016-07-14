@@ -3,7 +3,7 @@
 module.exports = {
   _id: "_design/_replicator",
   language: "javascript",
-  validate_doc_update: function(newDoc, oldDoc, userCtx) {
+  validate_doc_update: function (newDoc, oldDoc, userCtx) {
     function reportError(error_msg) {
       log('Error writing document `' + newDoc._id +
         '\' to the replicator database: ' + error_msg);
@@ -140,4 +140,4 @@ module.exports = {
       }
     }
   }.toString()
-}
+};

@@ -148,7 +148,7 @@ wrapperBuilders.post = function (db, post, handlers) {
 };
 
 wrapperBuilders.get = function (db, get, handlers) {
-  return function(docId, options, callback) {
+  return function (docId, options, callback) {
     var args = parseBaseArgs(db, this, options, callback);
     args.docId = docId;
     return callHandlers(handlers, args, function () {
