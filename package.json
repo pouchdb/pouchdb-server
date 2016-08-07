@@ -22,7 +22,6 @@
     "base64url": "^1.0.5",
     "couchdb-calculate-session-id": "^1.1.0",
     "crypto-lite": "^0.1.0",
-    "pouchdb": "^5.1.0",
     "pouchdb-bulkdocs-wrapper": "^1.0.0",
     "pouchdb-plugin-error": "^1.0.0",
     "pouchdb-promise": "^5.4.0",
