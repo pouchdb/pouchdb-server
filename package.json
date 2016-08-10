@@ -18,7 +18,8 @@
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
   "scripts": {
-    "build": "lerna bootstrap",
+    "bootstrap": "lerna boostrap",
+    "build": "npm run bootstrap && ./bin/build.sh",
     "setup-tests": "./bin/test-setup.sh",
     "start": "node ./bin/pouchdb-server",
     "test-pouchdb": "npm run setup-tests && ./bin/test-pouchdb.sh",
@@ -27,7 +28,17 @@
     "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
     "test": "npm run test-pouchdb-minimum && npm run test-pouchdb",
     "unit-tests": "./bin/unit-tests.sh",
-    "set-version":"node ./bin/set-version.js"
+    "set-version":"node ./bin/set-version.js",
+    "build:all-dbs": "cd packages/pouchdb-all-dbs && npm run build",
+    "build:auth": "cd packages/pouchdb-auth && npm run build",
+    "build:list": "cd packages/pouchdb-list && npm run build",
+    "build:replicator": "cd packages/pouchdb-replicator && npm run build",
+    "build:rewrite": "cd packages/pouchdb-rewrite && npm run build",
+    "build:security": "cd packages/pouchdb-security && npm run build",
+    "build:show": "cd packages/pouchdb-show && npm run build",
+    "build:update": "cd packages/pouchdb-update && npm run build",
+    "build:validation": "cd packages/pouchdb-validation && npm run build",
+    "build:vhost": "cd packages/pouchdb-vhost && npm run build"
   },
   "dependencies": {
     "chai-as-promised": "^5.3.0",

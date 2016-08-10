@@ -1,10 +1,6 @@
 pouchdb-update
 ==============
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-update.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-update)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-update.svg)](https://david-dm.org/pouchdb/pouchdb-update)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-update/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-update#info=devDependencies)
-
 A PouchDB plug-in that allows you to re-use your CouchDB update
 functions on the client side. A browser version is available.
 
@@ -41,3 +37,13 @@ good start is `the wiki entry on update handlers`_.
        :js:func:`Validation.validatingPut` function instead of using the
        :js:func:`PouchDB.prototype.put` function.
 ```
+
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

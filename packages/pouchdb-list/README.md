@@ -1,9 +1,11 @@
 pouchdb-list
 ============
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-list.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-list)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-list.svg)](https://david-dm.org/pouchdb/pouchdb-list)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-list/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-list#info=devDependencies)
+### Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
 
 A PouchDB plug-in that allows you to re-use your CouchDB list functions
 on the client side. A browser version is available.
@@ -43,3 +45,7 @@ good start is `the CouchDB guide entry on lists`_.
 .. _CouchDB request object: http://docs.couchdb.org/en/latest/json-structure.html#request-object
 .. _CouchDB response object: http://docs.couchdb.org/en/latest/json-structure.html#response-object
 ```
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

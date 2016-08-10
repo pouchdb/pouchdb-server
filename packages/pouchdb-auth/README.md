@@ -1,12 +1,14 @@
 # pouchdb-auth
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-auth.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-auth)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-auth.svg)](https://david-dm.org/pouchdb/pouchdb-auth)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-auth/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-auth#info=devDependencies)
-
 > A PouchDB plug-in that simulates CouchDB's authentication daemon.
 
 Includes a users db that functions like CouchDB's. Also works in the browser.
+
+### Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
 
 ## Usage
 
@@ -273,6 +275,10 @@ which can be set in the `_security` setting of each database. There are now defa
 so you are free to set your own (With the excepion of system roles starting with a `_`). The
 `roles` property can only be changed by CouchDB admin users. More on authorization in CouchDB:
 http://docs.couchdb.org/en/latest/intro/security.html#authorization
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.
 
 ### License
 

@@ -1,9 +1,13 @@
 pouchdb-rewrite
 ===============
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-rewrite.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-rewrite)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-rewrite.svg)](https://david-dm.org/pouchdb/pouchdb-rewrite)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-rewrite/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-rewrite#info=devDependencies)
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+## Usage
 
 A PouchDB plug-in that allows you to re-use your CouchDB rewrites on the
 client side. A browser version is available.
@@ -58,3 +62,6 @@ is `the rewrite documentation`_.
    :returns: A CouchDB request object that points to the resource
        obtained by following the redirect.
 ```
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

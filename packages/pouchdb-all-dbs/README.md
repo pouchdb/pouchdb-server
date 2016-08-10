@@ -1,8 +1,6 @@
 PouchDB allDbs() plugin
 =====
 
-[![Build Status](https://travis-ci.org/nolanlawson/pouchdb-all-dbs.svg)](https://travis-ci.org/nolanlawson/pouchdb-all-dbs)
-
 This plugin exposes the `PouchDB.allDbs()` function, which you can use to list all local databases. It works by listening for `PouchDB.on('created')` and `PouchDB.on('destroyed')` events, and maintaining a separate database to store the names of those databases.
 
 **Note**: `allDbs()` used to be part of PouchDB core (enabled using `PouchDB.enableAllDbs = true`). It was deprecated in PouchDB 2.0.0, and now lives on as a plugin.
@@ -84,8 +82,9 @@ PouchDB.resetAllDbs().then(function () {
 
 Building
 ----
-    npm install
-    npm run build
+
+Please see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for building.
+
 
 Testing
 ----
@@ -95,7 +94,7 @@ Testing
 This will run the tests in Node using LevelDB:
 
     npm test
-    
+
 You can also check for 100% code coverage using:
 
     npm run coverage

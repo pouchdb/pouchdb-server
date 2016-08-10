@@ -1,10 +1,6 @@
 pouchdb-security
 ================
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-security.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-security)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-security.svg)](https://david-dm.org/pouchdb/pouchdb-security)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-security/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-security#info=devDependencies)
-
 PouchDB database access restrictions using a security document. Like
 _security in CouchDB (and when used on an http database, that url is
 checked.)
@@ -62,6 +58,15 @@ A good start is `their HTTP documentation`_.
    :returns: the security object for the current database. ({} when none
              has been set, like in CouchDB.)
 ```
+
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.
 
 # License
 Apache-2.0

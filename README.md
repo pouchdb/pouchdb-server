@@ -1,182 +1,23 @@
-# pouchdb-server
+# PouchDB-Server monorepo
+
 [![Build Status](https://travis-ci.org/pouchdb/pouchdb-server.svg)](https://travis-ci.org/pouchdb/pouchdb-server)
 
-> A standalone REST interface server for PouchDB.
+This is the monorepo for the majority of packages that are used by PouchDB-Server and Express-PouchDB.
 
-## Introduction
+## Building
 
-**pouchdb-server** is a simple Node.js server that presents a simple REST API, which mimics that of [CouchDB](http://couchdb.apache.org),
-on top of [PouchDB](http://pouchdb.com). Among other things, this allows users to replicate IndexedDB stores to LevelDB, or to
-spin up a quick and dirty drop-in replacement for CouchDB to get things moving quickly.
-
-## Installation
-
-```bash
-$ npm install -g pouchdb-server
-```
-
-## Usage
-
-```
-
-Usage: pouchdb-server [options]
-
-Options:
-   -p, --port             Port on which to run the server. (Defaults to
-                          /_config/httpd/port which defaults to 5984).
-   -d, --dir              Where to store database files. (Defaults to
-                          /_config/couchdb/database_dir which defaults to the
-                          current directory).
-   -c, --config           The location of the configuration file that backs
-                          /_config. (Defaults to ./config.json).
-   -o, --host             The address to bind the server to. (Defaults to
-                          /_config/httpd/bind_address which defaults to
-                          127.0.0.1).
-   -m, --in-memory        Use a pure in-memory database which will be deleted
-                          upon restart. (Defaults to
-                          /_config/pouchdb_server/in_memory which defaults to
-                          false).
-   --sqlite               Use PouchDB over SQLite instead of LevelDOWN.
-                          (Defaults to /_config/pouchdb_server/sqlite which
-                          defaults to false).
-   -r, --proxy            Proxy requests to the specified host. Include a
-                          trailing '/'. (Defaults to
-                          /_config/pouchdb_server/proxy which defaults to
-                          undefined).
-   -n, --no-stdout-logs   Stops the log file from also being written to stdout.
-                          (Defaults to /_config/pouchdb_server/no-stdout-logs
-                          which defaults to false).
-   --no-color             Disable coloring of logging output.
-   --level-backend        Advanced - Alternate LevelDOWN backend (e.g. memdown,
-                          riakdown, redisdown). Note that you'll need to
-                          manually npm install it first. (Defaults to
-                          /_config/pouchdb_server/level_backend which defaults
-                          to undefined).
-   --level-prefix         Advanced - Prefix to use for all database names,
-                          useful for URLs in alternate backends, e.g.
-                          riak://localhost:8087/ for riakdown. (Defaults to
-                          /_config/pouchdb_server/level_prefix which defaults
-                          to undefined).
-
-Examples:
-
-  pouchdb-server --level-backend riakdown --level-prefix riak://localhost:8087
-  Starts up a pouchdb-server that talks to Riak.
-  Requires: npm install riakdown
-
-  pouchdb-server --level-backend redisdown
-  Starts up a pouchdb-server that talks to Redis, on localhost:6379.
-  Requires: npm install redisdown
-
-  pouchdb-server --level-backend sqldown --level-prefix /tmp/
-  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.
-  Requires: npm install sqldown sqlite3
-```
-
-A simple example might be,
-
-```bash
-$ pouchdb-server -p 15984
-pouchdb-server listening on port 15984.
-```
-
-Alternatively, **pouchdb-server**'s functionality can be mounted into other Express web apps. For more information
-on that, check out [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
-
-## Fauxton
-
-**pouchdb-server** currently supports an experimental version of CouchDB's [Fauxton](http://docs.couchdb.org/en/latest/fauxton/index.html). Fauxton, the successor to CouchDB's original Futon, is a simple web UI for interacting with your databases. With your server running, navigate to `/_utils` to check it out!
-
-## Configuration
-
-By default, you can configure pouchdb-server using a `config.json` file, which is
-typically expected at the root of wherever you run pouchdb-server, but may be specified with the `--config` option.
-
-Below are some examples of `config.json` options:
-
-### log.level
-
-To change the log output level, you can create a `config.json` file containing e.g.:
-
-```js
-{
-  "log": {
-    "level": "none"
-  }
-}
-
-```
-
-The available values are `debug`, `info`, `warning`, `error`, and `none`. The default
-is `info`.
-
-### log.file
-
-To choose the file where logs are written, you can create a `config.json` file containing e.g.:
-
-```js
-{
-  "log": {
-    "file": "/path/to/log.txt"
-  }
-}
-
-```
-
-By default, logs are written to `./log.txt`.
-
-## Automatic port configuration
-
-Due to conventions set by Heroku and others, if you have a `PORT` environment variable,
-`pouchdb-server` will pick up on that and use it instead of `5984` as the default.
-
-```bash
-export PORT=3000
-pouchdb-server # will run on port 3000
-```
-
-## Testing
-
-One of the primary benefits of **pouchdb-server** is the ability to run PouchDB's Node test suite against itself. To do that, you can simply,
-
-```bash
-$ npm run test-pouchdb
-```
-
-Whatever args you provide as `SERVER_ARGS` will be passed to `pouchdb-server` itself:
-
-```bash
-$ SERVER_ARGS='--in-memory' npm run test-pouchdb
-```
-
-Or to test in Firefox (IndexedDB):
-
-```bash
-$ CLIENT=selenium:firefox npm run test-pouchdb
-```
-
-Or to test in PhantomJS (WebSQL):
-
-```bash
-$ CLIENT=selenium:phantomjs ES5_SHIM=true npm run test-pouchdb
-```
-
-Additionally, we've started porting CouchDB's JavaScript test harness to
-[a simple Node module](https://github.com/nick-thompson/couchdb-harness), which can be run against PouchDB via **pouchdb-server**.
-
-```bash
-$ npm run test-couchdb
-```
+  1. Run `npm install` and then `npm run build` to build all dependancies
 
 ## Contributing
 
 Want to help me make this thing awesome? Great! Here's how you should get started.
+We use [Lerna](https://lernajs.io/) to manage this git repo. After you have cloned the repo do the following:
 
-1. First, make sure that the bugfix or feature you're looking to implement isn't better fit for [express-pouchdb](https://github.com/nick-thompson/express-pouchdb).
-2. PouchDB is still developing rapidly. If you need bleeding egde versions, you should first read how to [set up express-pouchdb for local development](https://github.com/nick-thompson/express-pouchdb#contributing). (Make sure that, afterwards, you `npm link` express-pouchdb).
-3. Go ahead and fork **pouchdb-server**, clone it to your machine.
-4. Now you'll want to, from the root of **pouchdb-server**, `npm link express-pouchdb`.
-5. `npm install` the rest of the dependencies.
+1. `npm install` to install base dependancies
+2. `npm bootstrap` to install all dependancies and link all the packages in the repo.
+3. First make sure the feature should be in either PouchDB-Server or Express-PouchDB
+3. To run the unit tests `npm run unit-tests`
+4. To fo a full test run `npm run test`
 
 Please make your changes on a separate branch whose name reflects your changes, push them to your fork, and open a pull request!
 
@@ -189,3 +30,19 @@ For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](h
 ## License
 
 The MIT License. See [the LICENSE file](https://github.com/pouchdb/pouchdb-server/blob/master/LICENSE) for more information.
+
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+
+
+
+
+Please see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for building.
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

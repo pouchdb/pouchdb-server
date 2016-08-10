@@ -1,10 +1,6 @@
 pouchdb-show
 ============
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-show.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-show)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-show.svg)](https://david-dm.org/pouchdb/pouchdb-show)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-show/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-show#info=devDependencies)
-
 A PouchDB plug-in that allows you to re-use your CouchDB show functions
 on the client side. A browser version is available.
 
@@ -36,3 +32,13 @@ good start is `the CouchDB guide entry on shows`_.
        ``designDocName/showName[/docId]``
 
 ```
+
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

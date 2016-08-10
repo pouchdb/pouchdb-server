@@ -1,10 +1,6 @@
 pouchdb-vhost
 =============
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-vhost.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-vhost)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-vhost.svg)](https://david-dm.org/pouchdb/pouchdb-vhost)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-vhost/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-vhost#info=devDependencies)
-
 A PouchDB plug-in that allows you to re-use your CouchDB vhost config on
 the client side. A browser version is available.
 
@@ -30,3 +26,13 @@ available.
 
 .. js:function:: PouchDB.resolveVirtualHost(req, vhosts)
 ```
+
+## Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

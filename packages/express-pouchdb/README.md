@@ -1,7 +1,5 @@
 # express-pouchdb
 
-[![Build Status](https://travis-ci.org/pouchdb/express-pouchdb.svg)](https://travis-ci.org/pouchdb/express-pouchdb)
-
 > An Express submodule with a CouchDB style REST interface to PouchDB.
 
 ## Introduction
@@ -203,8 +201,7 @@ on the mode used, of course):
 
 ## Contributors
 
-If you want to become one of our [wonderful contributors](https://github.com/pouchdb/express-pouchdb/graphs/contributors)
-then check out the [contributing guide](https://github.com/pouchdb/express-pouchdb/blob/master/CONTRIBUTING.md)!
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.
 
 ## License
 

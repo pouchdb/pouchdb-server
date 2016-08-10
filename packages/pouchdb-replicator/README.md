@@ -1,9 +1,12 @@
 pouchdb-replicator
 ==================
 
-[![Build Status](https://travis-ci.org/pouchdb/pouchdb-replicator.svg?branch=master)](https://travis-ci.org/pouchdb/pouchdb-replicator)
-[![Dependency Status](https://david-dm.org/pouchdb/pouchdb-replicator.svg)](https://david-dm.org/pouchdb/pouchdb-replicator)
-[![devDependency Status](https://david-dm.org/pouchdb/pouchdb-replicator/dev-status.svg)](https://david-dm.org/pouchdb/pouchdb-replicator#info=devDependencies)
+### Source
+
+PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
+
+For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
+
 
 A PouchDB plug-in that simulates CouchDB's replicator database daemon. A
 browser version is available.
@@ -44,3 +47,7 @@ starting point is `its documentation`_.
    Stops the 'daemon' that :js:func:`Replicator.startReplicator`
    started.
 ```
+
+## Contributing
+
+If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.
