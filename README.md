@@ -30,19 +30,3 @@ For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](h
 ## License
 
 The MIT License. See [the LICENSE file](https://github.com/pouchdb/pouchdb-server/blob/master/LICENSE) for more information.
-
-## Source
-
-PouchDB-Server and its sub-packages are distributed as a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md).
-
-For a full list of packages, see [the GitHub source](https://github.com/pouchdb/pouchdb-server/tree/master/packages).
-
-
-
-
-
-Please see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for building.
-
-## Contributing
-
-If you want to become one of our [wonderful contributors](https://github.com/pouchdb/pouchdb-server/graphs/contributors), see the main [Readme](https://github.com/pouchdb/pouchdb-server/tree/master/README.md) for contributing.

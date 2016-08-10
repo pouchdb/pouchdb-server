@@ -1,22 +1,24 @@
 import {BASE_URL, HTTP_AUTH, PouchDB, should, shouldThrowError} from './utils';
 
 describe('PouchDB-Auth: SyncHTTPAuthTests', () => {
+	const db = new PouchDB(BASE_URL + "/_users", {auth: HTTP_AUTH});
+
 	it('should work with http dbs', async () => {
-		const db = new PouchDB(BASE_URL + "/_users", {auth: HTTP_AUTH});
+		const username = 'username-auth-test';
+		const userId = 'org.couchdb.user:username-auth-test';
 		should.not.exist(await db.useAsAuthenticationDB());
 
 		try {
-			const signUpData = await db.signUp("username", "password", {roles: ["test"]});
+			const signUpData = await db.signUp(username, "password", {roles: ["test"]});
 
-			signUpData.rev.indexOf("1-").should.equal(0);
 			signUpData.ok.should.be.ok;
-			signUpData.id.should.equal("org.couchdb.user:username");
+			signUpData.id.should.equal(userId);
 
-			const doc = await db.get("org.couchdb.user:username");
-			doc._rev.indexOf("1-").should.equal(0);
+			const doc = await db.get(userId);
+			doc._rev.should.equal(signUpData.rev);
 			doc.should.have.property("derived_key");
 			doc.iterations.should.equal(10);
-			doc.name.should.equal("username");
+			doc.name.should.equal(username);
 			doc.password_scheme.should.equal("pbkdf2");
 			doc.roles.should.eql(["test"]);
 			doc.should.have.property("salt");
@@ -28,16 +30,16 @@ describe('PouchDB-Auth: SyncHTTPAuthTests', () => {
 			//basic auth active
 			shouldBeAdmin(session);
 
-			const logInData = await db.logIn("username", "password");
+			const logInData = await db.logIn(username, "password");
 			logInData.should.eql({
 				ok: true,
-				name: "username",
+				name: username,
 				roles: ["test"]
 			});
 
 			const session2 = await db.session();
 			session2.userCtx.should.eql({
-				name: "username",
+				name: username,
 				roles: ["test"]
 			});
 			session2.info.authenticated.should.equal("cookie");
@@ -53,14 +55,14 @@ describe('PouchDB-Auth: SyncHTTPAuthTests', () => {
 			logOutData2.ok.should.be.ok;
 
 			const error = await shouldThrowError(async () =>
-				await db.logIn("username", "wrongPassword")
+				await db.logIn(username, "wrongPassword")
 			);
 			error.status.should.equal(401);
 			error.name.should.equal("unauthorized");
 			error.message.should.equal("Name or password is incorrect.");
 		} finally {
 			try {
-				const doc = await db.get("org.couchdb.user:username");
+				const doc = await db.get(userId);
 				const removeResp = await db.remove(doc);
 				removeResp.ok.should.be.ok;
 			} finally {
