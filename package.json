@@ -18,7 +18,7 @@
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
   "scripts": {
-    "bootstrap": "lerna boostrap",
+    "bootstrap": "lerna bootstrap",
     "build": "npm run bootstrap && ./bin/build.sh",
     "setup-tests": "./bin/test-setup.sh",
     "start": "node ./bin/pouchdb-server",
