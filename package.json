@@ -1,54 +1,69 @@
 {
-  "name": "pouchdb-server",
+  "name": "pouchdb-server-monorepo",
   "description": "A standalone REST interface server for PouchDB.",
-  "version": "1.2.0",
+  "version": "0.0.0",
   "homepage": "https://github.com/pouchdb/pouchdb-server",
+  "private": true,
   "author": {
     "name": "Nick Thompson",
     "email": "ncthom91@gmail.com"
   },
+  "contributors": [
+    "Marten de Vries",
+    "Nolan Lawson",
+    "Garren Smith <garren@redcometlabs.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
-  "bin": {
-    "pouchdb-server": "./bin/pouchdb-server"
-  },
   "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "build": "npm run bootstrap && ./bin/build.sh",
+    "setup-tests": "./bin/test-setup.sh",
     "start": "node ./bin/pouchdb-server",
-    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-pouchdb": "npm run setup-tests && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-couchdb.sh",
-    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
-  },
-  "engines": {
-    "node": ">= 0.8.0"
+    "eslint": "eslint bin/ packages/ test",
+    "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
+    "test": "npm run test-pouchdb-minimum && npm run test-pouchdb",
+    "unit-tests": "./bin/unit-tests.sh",
+    "set-version":"node ./bin/set-version.js",
+    "build:all-dbs": "cd packages/pouchdb-all-dbs && npm run build",
+    "build:auth": "cd packages/pouchdb-auth && npm run build",
+    "build:list": "cd packages/pouchdb-list && npm run build",
+    "build:replicator": "cd packages/pouchdb-replicator && npm run build",
+    "build:rewrite": "cd packages/pouchdb-rewrite && npm run build",
+    "build:security": "cd packages/pouchdb-security && npm run build",
+    "build:show": "cd packages/pouchdb-show && npm run build",
+    "build:update": "cd packages/pouchdb-update && npm run build",
+    "build:validation": "cd packages/pouchdb-validation && npm run build",
+    "build:vhost": "cd packages/pouchdb-vhost && npm run build"
   },
   "dependencies": {
-    "bluebird": "^2.4.2",
-    "colors": "^1.0.3",
-    "corser": "~2.0.0",
-    "couchdb-harness": "*",
-    "couchdb-log-parse": "^0.0.3",
-    "express": "^4.10.4",
-    "express-pouchdb": "~1.0.4",
-    "http-pouchdb": "^1.1.0",
-    "killable": "^1.0.0",
-    "memdown": "^1.0.0",
-    "mkdirp": "^0.5.0",
-    "nomnom": "^1.8.1",
-    "pouchdb-adapter-node-websql": "^5.4.3",
-    "pouchdb-adapter-websql": "^5.4.0",
-    "pouchdb-node": "^5.4.0",
-    "serve-favicon": "~2.0.1",
-    "tail": "^0.4.0",
-    "wordwrap": "0.0.2"
+    "chai-as-promised": "^5.3.0",
+    "eslint": "^3.0.1",
+    "lerna": "2.0.0-beta.24"
   },
   "devDependencies": {
-    "jshint": "2.8.0"
-  },
-  "files": [
-    "lib",
-    "bin/pouchdb-server",
-    "favicon.ico"
-  ]
+    "bluebird": "^3.4.1",
+    "chai": "^3.5.0",
+    "couchdb-harness": "^0.1.6",
+    "express": "^4.14.0",
+    "extend": "^3.0.0",
+    "fs-extra": "^0.30.0",
+    "istanbul": "^0.4.2",
+    "jsondown": "^0.1.1",
+    "locket": "1.0.0",
+    "medeadown": "^1.1.1",
+    "memdown": "^1.0.0",
+    "mocha": "^2.0.1",
+    "navigator": "^1.0.1",
+    "pouchdb": "^5.2.1",
+    "pouchdb-plugin-helper": "^3.0.2",
+    "pouchdb-seamless-auth": "^1.0.4",
+    "sqldown": "^2.1.0",
+    "sqlite3": "^3.0.4",
+    "supertest": "^1.2.0"
+  }
 }

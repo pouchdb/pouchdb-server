@@ -1,0 +1,44 @@
+{
+  "name": "pouchdb-server",
+  "description": "A standalone REST interface server for PouchDB.",
+  "version": "3.0.0-prerelease",
+  "homepage": "https://github.com/pouchdb/pouchdb-server",
+  "author": {
+    "name": "Nick Thompson",
+    "email": "ncthom91@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pouchdb/pouchdb-server.git"
+  },
+  "bin": {
+    "pouchdb-server": "./bin/pouchdb-server"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "bluebird": "^2.4.2",
+    "colors": "^1.0.3",
+    "corser": "~2.0.0",
+    "couchdb-log-parse": "^0.0.3",
+    "express": "^4.10.4",
+    "express-pouchdb": "3.0.0-prerelease",
+    "http-pouchdb": "^1.1.0",
+    "killable": "^1.0.0",
+    "memdown": "^1.0.0",
+    "mkdirp": "^0.5.0",
+    "nomnom": "^1.8.1",
+    "pouchdb-adapter-node-websql": "^5.4.3",
+    "pouchdb-adapter-websql": "^5.4.0",
+    "pouchdb-node": "^5.4.0",
+    "serve-favicon": "~2.0.1",
+    "tail": "^0.4.0",
+    "wordwrap": "0.0.2"
+  },
+  "files": [
+    "lib",
+    "bin/pouchdb-server",
+    "favicon.ico"
+  ]
+}

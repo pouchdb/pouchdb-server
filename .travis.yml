@@ -4,9 +4,9 @@ node_js:
   - "stable"
 
 sudo: false
-  
+
 git:
-  depth: 30
+  depth: 3
 
 addons:
   firefox: "41.0.1"
@@ -16,6 +16,7 @@ script: npm run $COMMAND
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
+  - npm run build
 
 env:
   global:
@@ -24,8 +25,10 @@ env:
   - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
 
   matrix:
-  - COMMAND=jshint
+  - COMMAND=eslint
+  - COMMAND=unit-tests
   - CLIENT=node COMMAND=test-pouchdb
+  - CLIENT=node COMMAND=test-pouchdb-minimum
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
   - CLIENT=node SERVER_ARGS=--sqlite COMMAND=test-pouchdb
 
@@ -35,7 +38,7 @@ env:
 
   # Test against the couchdb harness
   - COMMAND=test-couchdb
- 
+
 matrix:
   allow_failures:
   - env: COMMAND=test-couchdb
