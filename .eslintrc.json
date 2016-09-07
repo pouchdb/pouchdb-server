@@ -1,0 +1,41 @@
+{
+
+  "extends": "eslint:recommended",
+  "parser": "babel-eslint",
+
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module"
+  },
+
+  "env": {
+    "browser": true,
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+
+  "globals": {
+    "chrome": true,
+    "Promise": true,
+    "Uint8Array": true,
+    "ArrayBuffer": true,
+    "FileReaderSync": true,
+    "sqlitePlugin": true,
+
+    "emit": true,
+    "PouchDB": true,
+    "should": true,
+    "testUtils": true,
+    "importScripts": true
+  },
+
+  "rules": {
+    "no-empty": 0,
+    "no-console": 0,
+    "semi": ["error", "always"],
+    "curly": ["error", "all"],
+    "space-unary-ops": ["error", {"words": true}],
+    "space-before-function-paren": ["error", {"anonymous": "always", "named": "never"}]
+  }
+}

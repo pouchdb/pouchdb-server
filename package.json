@@ -7,6 +7,11 @@
     "name": "Nick Thompson",
     "email": "ncthom91@gmail.com"
   },
+  "contributors": [
+    "Marten de Vries",
+    "Nolan Lawson",
+    "Garren Smith <garren@redcometlabs.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/pouchdb/pouchdb-server.git"
@@ -15,10 +20,11 @@
     "pouchdb-server": "./bin/pouchdb-server"
   },
   "scripts": {
-    "start": "node ./bin/pouchdb-server",
-    "test-pouchdb": "./bin/test-pouchdb.sh",
+    "test-pouchdb": "npm run setup-tests && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-couchdb.sh",
-    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
+    "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
+    "setup-tests": "./bin/test-setup.sh",
+    "eslint": "eslint bin/ packages/node_modules test"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -27,7 +33,6 @@
     "bluebird": "^2.4.2",
     "colors": "^1.0.3",
     "corser": "~2.0.0",
-    "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.3",
     "express": "^4.10.4",
     "express-pouchdb": "~1.0.4",
@@ -36,15 +41,16 @@
     "memdown": "^1.0.0",
     "mkdirp": "^0.5.0",
     "nomnom": "^1.8.1",
-    "pouchdb-adapter-node-websql": "^5.4.3",
-    "pouchdb-adapter-websql": "^5.4.0",
-    "pouchdb-node": "^5.4.0",
+    "pouchdb-adapter-node-websql": "~6.0.4",
+    "pouchdb-adapter-websql": "~6.0.4",
+    "pouchdb-node": "~6.0.4",
     "serve-favicon": "~2.0.1",
     "tail": "^0.4.0",
     "wordwrap": "0.0.2"
   },
   "devDependencies": {
-    "jshint": "2.8.0"
+    "couchdb-harness": "^0.1.6",
+    "eslint": "^3.0.1"
   },
   "files": [
     "lib",
