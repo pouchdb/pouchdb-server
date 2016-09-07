@@ -10,10 +10,10 @@ var version = process.argv[process.argv.length - 1];
 var fs = require('fs');
 var path = require('path');
 
-var packages = fs.readdirSync('packages');
+var packages = fs.readdirSync('packages/node_modules');
 
 var jsonFiles = packages.map(function (pkg) {
-  return path.resolve(__dirname, '../packages', pkg, 'package.json');
+  return path.resolve(__dirname, '../packages/node_modules', pkg, 'package.json');
 });
 
 jsonFiles.forEach(function (jsonFile) {
@@ -37,11 +37,5 @@ jsonFiles.forEach(function (jsonFile) {
   });
   fs.writeFileSync(jsonFile, JSON.stringify(json, null, '  ') + '\n', 'utf-8');
 });
-
-var lernaFile = path.resolve(__dirname, '../lerna.json');
-var lernaJson = JSON.parse(fs.readFileSync(lernaFile, 'utf-8'));
-lernaJson.version = version;
-fs.writeFileSync(lernaFile,
-  JSON.stringify(lernaJson, null, '  ') + '\n', 'utf-8');
 
 console.log('done');

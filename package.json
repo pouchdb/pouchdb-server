@@ -25,7 +25,8 @@
     "test-pouchdb-minimum": "npm run setup-tests && ./bin/test-pouchdb-minimum.sh",
     "setup-tests": "./bin/test-setup.sh",
     "unit-tests": "mocha test/**/*",
-    "eslint": "eslint bin/ packages/node_modules test"
+    "eslint": "eslint bin/ packages/node_modules test",
+    "set-version": "bin/set-version.js"
   },
   "engines": {
     "node": ">= 0.8.0"
