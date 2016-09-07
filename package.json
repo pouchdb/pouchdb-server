@@ -73,6 +73,7 @@
     "wordwrap": "~0.0.2"
   },
   "devDependencies": {
+    "babel-eslint": "^6.1.2",
     "couchdb-harness": "^0.1.6",
     "eslint": "^3.0.1",
     "fs-extra": "^0.30.0",
