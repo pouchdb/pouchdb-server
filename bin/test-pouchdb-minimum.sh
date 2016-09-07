@@ -1,6 +1,6 @@
 #!/bin/bash
 
-node ./packages/express-pouchdb/bin/express-pouchdb-minimum-for-pouchdb.js &
+node ./packages/node_modules/express-pouchdb/bin/express-pouchdb-minimum-for-pouchdb.js &
 POUCHDB_SERVER_PID=$!
 
 cd ./pouchdb-tests
