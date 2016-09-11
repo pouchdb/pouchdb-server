@@ -44,8 +44,8 @@
     "jshint": "~2.8.0",
     "memdown": "1.1.2",
     "mocha": "2.5.3",
-    "pouchdb": "~5.4.1",
-    "pouchdb-node": "^5.4.4",
+    "pouchdb": "^6.0.4",
+    "pouchdb-node": "^6.0.4",
     "pouchdb-server": "~1.2.0",
     "supertest": "2.0.0"
   },

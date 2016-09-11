@@ -7,7 +7,7 @@ git clone --single-branch --branch master \
   https://github.com/pouchdb/pouchdb.git node_modules/pouchdb
 
 cd node_modules/pouchdb/
-git reset --hard 6a8ac8785
+git reset --hard c3b79b9
 npm install
 cd node_modules/pouchdb-server/node_modules
 rm -fr express-pouchdb
