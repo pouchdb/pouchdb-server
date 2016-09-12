@@ -206,6 +206,10 @@ on the mode used, of course):
 If you want to become one of our [wonderful contributors](https://github.com/pouchdb/express-pouchdb/graphs/contributors)
 then check out the [contributing guide](https://github.com/pouchdb/express-pouchdb/blob/master/CONTRIBUTING.md)!
 
+## Changelog
+
+`express-pouchdb` follows [semantic versioning](http://semver.org/). To see a changelog with all releases since v2.0.0, check out the [Github releases page](https://github.com/pouchdb/express-pouchdb/releases).
+
 ## License
 
 The MIT License. See [the LICENSE file](https://github.com/pouchdb/express-pouchdb/blob/master/LICENSE) for more information.
