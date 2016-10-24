@@ -188,4 +188,4 @@ For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](h
 
 ## License
 
-The MIT License. See [the LICENSE file](https://github.com/pouchdb/pouchdb-server/blob/master/LICENSE) for more information.
+Apache License Version 2.0. See [the LICENSE file](https://github.com/pouchdb/pouchdb-server/blob/master/LICENSE) for more information.
