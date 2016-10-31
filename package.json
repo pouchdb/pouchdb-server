@@ -44,7 +44,7 @@
     "fs-extra": "0.30.0",
     "jshint": "~2.8.0",
     "memdown": "1.2.1",
-    "mocha": "2.5.3",
+    "mocha": "3.1.2",
     "pouchdb": "^6.0.4",
     "pouchdb-node": "^6.0.4",
     "pouchdb-server": "~1.2.0",
