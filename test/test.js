@@ -35,6 +35,13 @@ var coreApp = buildApp(PouchDB.defaults({
   }
 });
 
+var inMemoryConfigApp = buildApp(PouchDB.defaults({
+  db: memdown,
+  prefix: 'e'
+}), {
+  inMemoryConfig: true
+});
+
 before(function (done) {
   this.timeout(LARGE_TIMEOUT);
   cleanUp().then(function () {
@@ -77,7 +84,17 @@ describe('config', function () {
       done();
     });
   });
-
+  it('should support in memory config', function (done) {
+    // make sure the file is written to disk.
+    inMemoryConfigApp.couchConfig.set('demo', 'demo', true, function () {
+      fse.exists('./config.json', function (exists) {
+        if (exists) {
+          return done(new Error("config.json exists!"));
+        }
+        done();
+      });
+    });
+  });
   it('should have ./config.json as default config path', function (done) {
     expressApp.couchConfig.set('demo', 'demo', true, function () {
       fse.exists('./config.json', function (exists) {
