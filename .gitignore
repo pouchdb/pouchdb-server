@@ -10,3 +10,10 @@ _users
 _replicator
 config.json
 log.txt
+.idea
+*.log
+MANIFEST*
+CURRENT
+LOCK
+LOG
+.DS_Store

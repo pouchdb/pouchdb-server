@@ -47,7 +47,7 @@
   },
   "files": [
     "lib",
-    "bin/pouchdb-server",
+    "bin",
     "favicon.ico"
   ]
 }
