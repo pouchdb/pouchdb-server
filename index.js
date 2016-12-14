@@ -9,7 +9,6 @@ if (typeof XHR === "undefined") {
 var Promise = require('pouchdb/extras/promise');
 var extend = require('extend');
 var wrappers = require('pouchdb-wrappers');
-var getHost = require('./gethost');
 
 module.exports = function (PouchDB, url, opts) {
   var api = {};
@@ -34,17 +33,11 @@ module.exports = function (PouchDB, url, opts) {
   };
 
   function getName(name) {
-    if (!/https?:/.test(name)) {
-      name = url + name;
-    }
-    return name;
+    return url + name;
   }
 
   var HTTPPouchDB = PouchDB.defaults(extend({}, opts, {
-    adapter: 'http',
-    getHost: function (name) {
-      return getHost(getName(name));
-    }
+    prefix: url,
   }));
 
   // https://github.com/marten-de-vries/http-pouchdb/issues/1

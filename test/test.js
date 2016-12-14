@@ -30,14 +30,10 @@ describe('constructor', function () {
     });
   });
 
-  it('should still accept http urls', function (done) {
+  it('should not accept http urls', function (done) {
     var replicator = new HTTPPouchDB('http://localhost:5984/_replicator');
     replicator.allDocs(function (err, resp) {
-      should.not.exist(err);
-      resp.should.have.property('rows');
-      // there's always the design doc
-      resp.total_rows.should.be.greaterThan(0);
-
+      should.exist(err);
       done();
     });
   });
