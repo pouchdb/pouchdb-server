@@ -26,16 +26,6 @@ module.exports = function (PouchDB, url, opts) {
     });
   };
 
-  api.destroy = function (orig, args) {
-    args.options.name = getName(args.options.name);
-
-    return orig();
-  };
-
-  function getName(name) {
-    return url + name;
-  }
-
   var HTTPPouchDB = PouchDB.defaults(extend({}, opts, {
     prefix: url,
   }));
