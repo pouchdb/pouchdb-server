@@ -9,13 +9,20 @@ git:
 sudo: false
 
 addons:
-  firefox: "41.0.1"
+  firefox: "47.0.2"
 
 script: "npm run $COMMAND"
 
 before_script:
+  # Our test-browser.js script uses FIREFOX_BIN to find the Firefox binary
+  # See https://github.com/travis-ci/travis-ci/issues/4649
+  - echo "using firefox $(firefox --version)"
+  - export FIREFOX_BIN=$(which firefox)
+  # The next two lines are required for Firefox to run on Travis
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
+  # Fail early if there's a jshint problem
+  - npm run jshint
 
 env:
   global:
@@ -24,7 +31,6 @@ env:
   - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
 
   matrix:
-  - COMMAND=jshint
   - COMMAND=test-express-pouchdb
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node COMMAND=test-pouchdb-minimum
