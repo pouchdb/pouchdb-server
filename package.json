@@ -22,7 +22,6 @@
     "header-case-normalizer": "^1.0.3",
     "mkdirp": "^0.5.1",
     "multiparty": "^3.3.2",
-    "node-uuid": "^1.4.7",
     "on-finished": "^2.3.0",
     "pouchdb-all-dbs": "^1.0.2",
     "pouchdb-auth": "^2.1.1",
@@ -37,7 +36,8 @@
     "pouchdb-validation": "^1.2.1",
     "pouchdb-vhost": "^1.0.2",
     "pouchdb-wrappers": "^1.3.6",
-    "raw-body": "^2.1.7"
+    "raw-body": "^2.1.7",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "express": "^4.14.0",
