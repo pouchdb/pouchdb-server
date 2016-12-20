@@ -28,16 +28,6 @@ module.exports = function (PouchDB, url, opts) {
     });
   };
 
-  api.destroy = function (orig, args) {
-    args.options.name = getName(args.options.name);
-
-    return orig();
-  };
-
-  function getName(name) {
-    return url + name;
-  }
-
   var HTTPPouchDB = PouchDB.defaults(extend({}, opts, {
     prefix: url
   }));
@@ -55,36 +45,95 @@ module.exports = function (PouchDB, url, opts) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"extend":5,"pouchdb-wrappers":4,"pouchdb/extras/promise":8,"xhr2":3}],2:[function(require,module,exports){
-/*
-  Copyright 2013-2014, Marten de Vries
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-"use strict";
-
-module.exports = function nodify(promise, callback) {
-  if (typeof callback === "function") {
-    promise.then(function (resp) {
-      callback(null, resp);
-    }, function (err) {
-      callback(err, null);
-    });
-  }
-};
+},{"extend":3,"pouchdb-wrappers":4,"pouchdb/extras/promise":6,"xhr2":2}],2:[function(require,module,exports){
 
 },{}],3:[function(require,module,exports){
+'use strict';
+
+var hasOwn = Object.prototype.hasOwnProperty;
+var toStr = Object.prototype.toString;
+
+var isArray = function isArray(arr) {
+	if (typeof Array.isArray === 'function') {
+		return Array.isArray(arr);
+	}
+
+	return toStr.call(arr) === '[object Array]';
+};
+
+var isPlainObject = function isPlainObject(obj) {
+	if (!obj || toStr.call(obj) !== '[object Object]') {
+		return false;
+	}
+
+	var hasOwnConstructor = hasOwn.call(obj, 'constructor');
+	var hasIsPrototypeOf = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
+	// Not own constructor property must be Object
+	if (obj.constructor && !hasOwnConstructor && !hasIsPrototypeOf) {
+		return false;
+	}
+
+	// Own properties are enumerated firstly, so to speed up,
+	// if last one is own, then all properties are own.
+	var key;
+	for (key in obj) {/**/}
+
+	return typeof key === 'undefined' || hasOwn.call(obj, key);
+};
+
+module.exports = function extend() {
+	var options, name, src, copy, copyIsArray, clone,
+		target = arguments[0],
+		i = 1,
+		length = arguments.length,
+		deep = false;
+
+	// Handle a deep copy situation
+	if (typeof target === 'boolean') {
+		deep = target;
+		target = arguments[1] || {};
+		// skip the boolean and the target
+		i = 2;
+	} else if ((typeof target !== 'object' && typeof target !== 'function') || target == null) {
+		target = {};
+	}
+
+	for (; i < length; ++i) {
+		options = arguments[i];
+		// Only deal with non-null/undefined values
+		if (options != null) {
+			// Extend the base object
+			for (name in options) {
+				src = target[name];
+				copy = options[name];
+
+				// Prevent never-ending loop
+				if (target !== copy) {
+					// Recurse if we're merging plain objects or arrays
+					if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
+						if (copyIsArray) {
+							copyIsArray = false;
+							clone = src && isArray(src) ? src : [];
+						} else {
+							clone = src && isPlainObject(src) ? src : {};
+						}
+
+						// Never move original objects, clone them
+						target[name] = extend(deep, clone, copy);
+
+					// Don't bring in undefined values
+					} else if (typeof copy !== 'undefined') {
+						target[name] = copy;
+					}
+				}
+			}
+		}
+	}
+
+	// Return the modified object
+	return target;
+};
+
 
 },{}],4:[function(require,module,exports){
 /*
@@ -592,95 +641,46 @@ function uninstallWrappers(base, handlers) {
   }
 }
 
-},{"promise-nodify":2}],5:[function(require,module,exports){
-'use strict';
+},{"promise-nodify":5}],5:[function(require,module,exports){
+/*
+  Copyright 2013-2014, Marten de Vries
 
-var hasOwn = Object.prototype.hasOwnProperty;
-var toStr = Object.prototype.toString;
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-var isArray = function isArray(arr) {
-	if (typeof Array.isArray === 'function') {
-		return Array.isArray(arr);
-	}
+  http://www.apache.org/licenses/LICENSE-2.0
 
-	return toStr.call(arr) === '[object Array]';
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+"use strict";
+
+module.exports = function nodify(promise, callback) {
+  if (typeof callback === "function") {
+    promise.then(function (resp) {
+      callback(null, resp);
+    }, function (err) {
+      callback(err, null);
+    });
+  }
 };
-
-var isPlainObject = function isPlainObject(obj) {
-	if (!obj || toStr.call(obj) !== '[object Object]') {
-		return false;
-	}
-
-	var hasOwnConstructor = hasOwn.call(obj, 'constructor');
-	var hasIsPrototypeOf = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
-	// Not own constructor property must be Object
-	if (obj.constructor && !hasOwnConstructor && !hasIsPrototypeOf) {
-		return false;
-	}
-
-	// Own properties are enumerated firstly, so to speed up,
-	// if last one is own, then all properties are own.
-	var key;
-	for (key in obj) {/**/}
-
-	return typeof key === 'undefined' || hasOwn.call(obj, key);
-};
-
-module.exports = function extend() {
-	var options, name, src, copy, copyIsArray, clone,
-		target = arguments[0],
-		i = 1,
-		length = arguments.length,
-		deep = false;
-
-	// Handle a deep copy situation
-	if (typeof target === 'boolean') {
-		deep = target;
-		target = arguments[1] || {};
-		// skip the boolean and the target
-		i = 2;
-	} else if ((typeof target !== 'object' && typeof target !== 'function') || target == null) {
-		target = {};
-	}
-
-	for (; i < length; ++i) {
-		options = arguments[i];
-		// Only deal with non-null/undefined values
-		if (options != null) {
-			// Extend the base object
-			for (name in options) {
-				src = target[name];
-				copy = options[name];
-
-				// Prevent never-ending loop
-				if (target !== copy) {
-					// Recurse if we're merging plain objects or arrays
-					if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
-						if (copyIsArray) {
-							copyIsArray = false;
-							clone = src && isArray(src) ? src : [];
-						} else {
-							clone = src && isPlainObject(src) ? src : {};
-						}
-
-						// Never move original objects, clone them
-						target[name] = extend(deep, clone, copy);
-
-					// Don't bring in undefined values
-					} else if (typeof copy !== 'undefined') {
-						target[name] = copy;
-					}
-				}
-			}
-		}
-	}
-
-	// Return the modified object
-	return target;
-};
-
 
 },{}],6:[function(require,module,exports){
+'use strict';
+
+// allow external plugins to require('pouchdb/extras/promise')
+module.exports = require('../lib/deps/promise');
+},{"../lib/deps/promise":7}],7:[function(require,module,exports){
+'use strict';
+/* istanbul ignore next */
+module.exports = typeof Promise === 'function' ? Promise : require('lie');
+
+},{"lie":8}],8:[function(require,module,exports){
 'use strict';
 var immediate = require('immediate');
 
@@ -692,8 +692,9 @@ var handlers = {};
 var REJECTED = ['REJECTED'];
 var FULFILLED = ['FULFILLED'];
 var PENDING = ['PENDING'];
+var UNHANDLED;
 
-module.exports = Promise;
+module.exports = exports = Promise;
 
 function Promise(resolver) {
   if (typeof resolver !== 'function') {
@@ -847,7 +848,7 @@ function tryCatch(func, value) {
   return out;
 }
 
-Promise.resolve = resolve;
+exports.resolve = resolve;
 function resolve(value) {
   if (value instanceof this) {
     return value;
@@ -855,13 +856,13 @@ function resolve(value) {
   return handlers.resolve(new this(INTERNAL), value);
 }
 
-Promise.reject = reject;
+exports.reject = reject;
 function reject(reason) {
   var promise = new this(INTERNAL);
   return handlers.reject(promise, reason);
 }
 
-Promise.all = all;
+exports.all = all;
 function all(iterable) {
   var self = this;
   if (Object.prototype.toString.call(iterable) !== '[object Array]') {
@@ -900,7 +901,7 @@ function all(iterable) {
   }
 }
 
-Promise.race = race;
+exports.race = race;
 function race(iterable) {
   var self = this;
   if (Object.prototype.toString.call(iterable) !== '[object Array]') {
@@ -935,7 +936,7 @@ function race(iterable) {
   }
 }
 
-},{"immediate":7}],7:[function(require,module,exports){
+},{"immediate":9}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 var Mutation = global.MutationObserver || global.WebKitMutationObserver;
@@ -1008,18 +1009,5 @@ function immediate(task) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],8:[function(require,module,exports){
-module.exports = require('../lib/extras/promise');
-},{"../lib/extras/promise":9}],9:[function(require,module,exports){
-'use strict';
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var lie = _interopDefault(require('lie'));
-
-/* istanbul ignore next */
-var PouchPromise = typeof Promise === 'function' ? Promise : lie;
-
-module.exports = PouchPromise;
-},{"lie":6}]},{},[1])(1)
+},{}]},{},[1])(1)
 });
