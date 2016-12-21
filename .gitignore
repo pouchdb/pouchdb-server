@@ -11,3 +11,4 @@ _users
 _replicator
 config.json
 log.txt
+/pouchdb
