@@ -38,6 +38,7 @@
     "pouchdb-vhost": "^1.0.2",
     "pouchdb-wrappers": "^1.3.6",
     "raw-body": "^2.1.7",
+    "sanitize-filename": "^1.6.1",
     "uuid": "^3.0.1"
   },
   "devDependencies": {
