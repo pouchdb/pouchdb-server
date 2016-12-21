@@ -1,22 +1,15 @@
 #!/bin/bash
 
-# install pouchdb from git master rather than npm,
-# so we can run its own tests
-rm -fr node_modules/pouchdb
-git clone --depth 1 --single-branch --branch master \
-  https://github.com/pouchdb/pouchdb.git node_modules/pouchdb
+rm -fr tmp
+mkdir -p tmp
+cd tmp
 
-cd node_modules/pouchdb/
-npm install
-
-cd ../..
-
-./bin/pouchdb-server -n -p 6984 $SERVER_ARGS &
+../bin/pouchdb-server -n -p 6984 $SERVER_ARGS &
 POUCHDB_SERVER_PID=$!
 
-cd node_modules/pouchdb/
+cd ../pouchdb
 
-COUCH_HOST=http://localhost:6984 TIMEOUT=120000 npm run test-node
+COUCH_HOST=http://127.0.0.1:6984 TIMEOUT=120000 npm run test-node
 
 EXIT_STATUS=$?
 if [[ ! -z $POUCHDB_SERVER_PID ]]; then
