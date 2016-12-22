@@ -186,6 +186,10 @@ For commit message style guidelines, please refer to [PouchDB CONTRIBUTING.md](h
 
 [These people](https://github.com/pouchdb/express-pouchdb/graphs/contributors) made **pouchdb-server** into what it is today!
 
+## Changelog
+
+`pouchdb-server` follows [semantic versioning](http://semver.org/). To see a changelog with all releases since v2.0.0, check out the [Github releases page](https://github.com/pouchdb/pouchdb-server/releases).
+
 ## License
 
 Apache License Version 2.0. See [the LICENSE file](https://github.com/pouchdb/pouchdb-server/blob/master/LICENSE) for more information.
