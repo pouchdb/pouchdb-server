@@ -6,7 +6,7 @@ var XHR = global.XMLHttpRequest;
 if (typeof XHR === "undefined") {
   XHR = require('xhr2');
 }
-var Promise = require('pouchdb/extras/promise');
+var Promise = require('bluebird');
 var extend = require('extend');
 var wrappers = require('pouchdb-wrappers');
 

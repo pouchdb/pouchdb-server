@@ -44,8 +44,9 @@
     "uglify-js": "^2.5.0"
   },
   "dependencies": {
-    "pouchdb": "^6.1.1",
+    "bluebird": "^3.4.7",
     "extend": "^3.0.0",
+    "pouchdb": "^6.1.1",
     "pouchdb-wrappers": "^1.3.6",
     "xhr2": "^0.1.3"
   }
