@@ -1,6 +1,6 @@
 {
   "name": "http-pouchdb",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Access remote CouchDB databases like you would access your local PouchDB ones.",
   "main": "index.js",
   "scripts": {
