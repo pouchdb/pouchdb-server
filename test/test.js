@@ -10,7 +10,7 @@ var should = require('chai').should();
 
 var HTTPPouchDB = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/');
 var XMLHttpRequest = require('xhr2');
-var Promise = require('pouchdb/extras/promise');
+var Promise = require('bluebird');
 
 describe('isHTTPPouchDB', function () {
   it('should be set on the HTTPPouchDB object', function () {
