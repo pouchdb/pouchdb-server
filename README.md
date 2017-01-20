@@ -61,6 +61,7 @@ is the most important middleware known to be problematic.
 - ``PouchDB``: the PouchDB object used to access databases. Optional.
 - ``options``: Optional. These options are supported:
  - ``configPath``: a path to the configuration file to use. Defaults to './config.json'.
+ - ``logPath``: a path to the log file to use. Defaults to './log.txt'.
  - ``inMemoryConfig``: `true` if all configuration should be in-memory. Defaults to `false`.
  - ``mode``: determines which parts of the HTTP API express-pouchdb offers are enabled. There are three values:
    - ``'fullCouchDB'``: enables every part of the HTTP API, which makes express-pouchdb very close to a full CouchDB replacement. This is the default.

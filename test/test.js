@@ -55,7 +55,8 @@ before(function (done) {
     expressApp2 = buildApp(PouchDB.defaults({
       prefix: TEST_DATA + 'b/',
     }), {
-      configPath: TEST_DATA + 'b-config.json'
+      configPath: TEST_DATA + 'b-config.json',
+      logPath: TEST_DATA + 'b-log.txt'
     });
     done();
   }).catch(done);
@@ -111,6 +112,17 @@ describe('config', function () {
       fse.exists(TEST_DATA + 'b-config.json', function (exists) {
         if (!exists) {
           return done(new Error("b-config.json doesn't exist!"));
+        }
+        done();
+      });
+    });
+  });
+  it('should support setting a different log path', function (done) {
+    // make sure the file is written to disk.
+    expressApp2.couchConfig.set('demo', 'demo', true, function () {
+      fse.exists(TEST_DATA + 'b-log.txt', function (exists) {
+        if (!exists) {
+          return done(new Error("b-log.txt doesn't exist!"));
         }
         done();
       });
