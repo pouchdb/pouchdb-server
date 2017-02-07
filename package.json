@@ -21,7 +21,7 @@
     "extend": "^1.3.0",
     "header-case-normalizer": "^1.0.3",
     "mkdirp": "^0.5.1",
-    "multiparty": "^3.3.2",
+    "multiparty": "^4.1.3",
     "on-finished": "^2.3.0",
     "pouchdb-all-dbs": "^1.0.2",
     "pouchdb-auth": "^2.1.1",
