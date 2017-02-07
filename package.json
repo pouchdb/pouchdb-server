@@ -49,7 +49,7 @@
     "mocha": "^3.1.2",
     "pouchdb": "^6.1.1",
     "pouchdb-server": "^2.0.1",
-    "supertest": "^2.0.0"
+    "supertest": "^3.0.0"
   },
   "scripts": {
     "jshint": "jshint -c .jshintrc lib test",
