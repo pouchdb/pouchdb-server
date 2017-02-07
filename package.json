@@ -48,7 +48,7 @@
     "wordwrap": "1.0.0"
   },
   "devDependencies": {
-    "jshint": "2.9.4",
+    "jshint": "2.8.0",
     "memdown": "^1.2.4"
   },
   "optionalDependencies": {
