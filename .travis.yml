@@ -39,6 +39,10 @@ env:
   - CLIENT=selenium:firefox COMMAND=test-pouchdb
   - CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
+  # Run the mapreduce tests
+  - COMMAND=test-pouchdb TYPE=mapreduce CLIENT=node
+  - COMMAND=test-pouchdb TYPE=mapreduce CLIENT=selenium:firefox
+
   # Test against the couchdb harness
   - COMMAND=test-couchdb
  

@@ -9,11 +9,9 @@
 rm -rf pouchdb
 git clone --single-branch \
   --branch master \
-  --depth 300 \
+  --depth 1 \
   https://github.com/pouchdb/pouchdb.git pouchdb
 cd pouchdb
-# using a specific commit for now rather than master
-git reset --hard 587ba8f4df4b6fcf32a8fd015f8c7ebadd8f280d
 npm install
 cd -
 
