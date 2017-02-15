@@ -19,7 +19,7 @@
     "start": "node ./bin/pouchdb-server",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-setup.sh && ./bin/test-couchdb.sh",
-    "jshint": "./node_modules/.bin/jshint bin/pouchdb-server lib"
+    "eslint": "eslint bin/ lib/"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -48,7 +48,7 @@
     "wordwrap": "0.0.2"
   },
   "devDependencies": {
-    "jshint": "2.8.0",
+    "eslint": "3.15.0",
     "memdown": "^1.2.4"
   },
   "optionalDependencies": {

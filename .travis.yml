@@ -21,8 +21,8 @@ before_script:
   # The next two lines are required for Firefox to run on Travis
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
-  # Fail early if there's a jshint problem
-  - npm run jshint
+  # Fail early if there's a eslint problem
+  - npm run eslint
 
 env:
   global:
