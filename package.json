@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server",
   "description": "A standalone REST interface server for PouchDB.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "homepage": "https://github.com/pouchdb/pouchdb-server",
   "license": "Apache-2.0",
   "author": {
