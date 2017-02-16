@@ -31,6 +31,8 @@ env:
   - secure: "MiufQQKR/EBoS7kcau/I7oYenVilysEqwx37zdgLEKlEUe3SxVOe31uLZv/bhfLNZiRuLAfmIOZmhLGnhMf0LaBzR2yC5qhBxrVHcAiTuS3q6zxpzEf02jnu+hACvj1kJJEPjpOLpEVx7ghWL4McEO0qLbdtSbQlm2IkOX1ONg0="
 
   matrix:
+  - COMMAND=unit-tests
+  - COMMAND=test-express-minimum
   - CLIENT=node COMMAND=test-pouchdb
   - CLIENT=node SERVER_ARGS=--in-memory COMMAND=test-pouchdb
   - CLIENT=node SERVER_ARGS=--sqlite COMMAND=test-pouchdb

@@ -13,10 +13,12 @@
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
   "scripts": {
-    "unit-tests": "",
+    "unit-tests": "mocha tests/**/*",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-setup.sh && ./bin/test-couchdb.sh",
-    "eslint": "eslint bin/ packages/node_modules/**/src tests/"
+    "eslint": "eslint bin/ packages/node_modules/**/src tests/",
+    "test-express": "",
+    "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh" 
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -36,6 +38,7 @@
     "pouchdb-adapter-leveldb-core": "^6.1.0",
     "pouchdb-adapter-memory": "^6.1.0",
     "pouchdb-core": "^6.1.0",
+    "pouchdb-fauxton": "0.0.2",
     "pouchdb-find": "^0.10.4",
     "pouchdb-mapreduce": "^6.1.0",
     "pouchdb-promise": "6.1.2",
@@ -45,12 +48,16 @@
     "wordwrap": "1.0.0"
   },
   "devDependencies": {
+    "bluebird": "^3.4.7",
     "builtin-modules": "1.1.1",
     "eslint": "3.15.0",
+    "express": "^4.14.1",
     "find-requires": "^0.2.2",
+    "fs-extra": "^2.0.0",
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
-    "memdown": "^1.2.4"
+    "memdown": "^1.2.4",
+    "supertest": "^3.0.0"
   },
   "optionalDependencies": {
     "pouchdb-adapter-node-websql": "^6.1.0",

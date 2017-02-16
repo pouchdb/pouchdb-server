@@ -2,7 +2,7 @@
 
 /*globals before */
 
-var buildApp = require('..'),
+var buildApp = require('../../packages/node_modules/express-pouchdb'),
     PouchDB  = require('pouchdb'),
     express  = require('express'),
     request  = require('supertest'),
