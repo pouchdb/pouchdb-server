@@ -12,14 +12,11 @@
     "type": "git",
     "url": "git://github.com/pouchdb/pouchdb-server.git"
   },
-  "bin": {
-    "pouchdb-server": "./bin/pouchdb-server"
-  },
   "scripts": {
-    "start": "node ./bin/pouchdb-server",
+    "unit-tests": "",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-setup.sh && ./bin/test-couchdb.sh",
-    "eslint": "eslint bin/ lib/"
+    "eslint": "eslint bin/ packages/node_modules/**/src tests/"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -48,16 +45,15 @@
     "wordwrap": "1.0.0"
   },
   "devDependencies": {
+    "builtin-modules": "1.1.1",
     "eslint": "3.15.0",
+    "find-requires": "^0.2.2",
+    "lodash.flatten": "4.4.0",
+    "lodash.uniq": "4.5.0",
     "memdown": "^1.2.4"
   },
   "optionalDependencies": {
     "pouchdb-adapter-node-websql": "^6.1.0",
     "pouchdb-adapter-leveldb": "^6.1.0"
-  },
-  "files": [
-    "lib",
-    "bin/pouchdb-server",
-    "favicon.ico"
-  ]
+  }
 }

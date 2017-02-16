@@ -1,18 +1,16 @@
 #!/bin/bash
 
-# install pouchdb from git rather than npm,
-# so we can run its own tests
-# also this branch may change as we update pouchdb
-# versions because we can't necessarily test against
-# the master tests since we use the version of pouchdb
-# from npm
-rm -rf pouchdb
-git clone --single-branch \
-  --branch master \
-  --depth 300 \
-  https://github.com/pouchdb/pouchdb.git pouchdb
-cd pouchdb
-# using a specific commit for now rather than master
-git reset --hard 587ba8f4df4b6fcf32a8fd015f8c7ebadd8f280d
+POUCHDB_SHA=c93fe274492fb660ea5228d68577cc9e77fe4337
+DIRECTORY='pouchdb-tests'
+
+if [ ! -d "$DIRECTORY" ]; then
+  # Control will enter here if $DIRECTORY exists.
+  git clone --single-branch --branch master \
+    https://github.com/pouchdb/pouchdb.git ${DIRECTORY}
+fi
+
+cd pouchdb-tests
+git reset --hard ${POUCHDB_SHA}
 npm install
-cd -
+
+cd ..
