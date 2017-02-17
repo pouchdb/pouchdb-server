@@ -1,6 +1,5 @@
 #!/bin/bash
 
-POUCHDB_SHA=c93fe274
 DIRECTORY='pouchdb-tests'
 
 if [ ! -d "$DIRECTORY" ]; then
@@ -10,7 +9,6 @@ if [ ! -d "$DIRECTORY" ]; then
 fi
 
 cd pouchdb-tests
-git reset --hard ${POUCHDB_SHA}
 npm install
 
 cd ..
