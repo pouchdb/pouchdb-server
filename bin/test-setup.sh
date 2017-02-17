@@ -13,5 +13,6 @@ fi
 cd pouchdb-tests
 npm install
 echo "done"
+ls -a
 
 cd ..
