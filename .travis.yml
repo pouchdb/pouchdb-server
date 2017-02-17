@@ -11,7 +11,7 @@ git:
 addons:
   firefox: "47.0.2"
 
-script: npm run $COMMAND
+script: travis_retry npm run $COMMAND
 
 before_script:
   # Our test-browser.js script uses FIREFOX_BIN to find the Firefox binary

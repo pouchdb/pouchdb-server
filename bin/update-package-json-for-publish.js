@@ -39,7 +39,7 @@ modules.forEach(function (mod) {
 
   //find dependencies and igonore if we referencing a local file
   const dependencies = uniqDeps.reduce((deps, dep) => {
-    if (/^\.\//.test(dep)) {
+    if (/^\.\//.test(dep) || /^\.\.\//.test(dep)) {
       return deps; // do nothing its a local file
     }
 
