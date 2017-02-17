@@ -12,25 +12,14 @@ var path = require('path');
 
 var packages = fs.readdirSync('packages/node_modules');
 
-var jsonFiles = packages.map(function (pkg) {
+packages.map(function (pkg) {
   return path.resolve(__dirname, '../packages/node_modules', pkg, 'package.json');
 }).concat([
-  path.resolve(__dirname, '../packages/node_modules/pouchdb/component.json'),
-  path.resolve(__dirname, '../packages/node_modules/pouchdb/bower.json'),
   path.resolve(__dirname, '../package.json')
-]);
-
-jsonFiles.forEach(function (jsonFile) {
+]).forEach(function (jsonFile) {
   var json = JSON.parse(fs.readFileSync(jsonFile), 'utf-8');
   json.version = version;
   fs.writeFileSync(jsonFile, JSON.stringify(json, null, '  ') + '\n', 'utf-8');
 });
-
-var versionFile = path.resolve(__dirname,
-  '../packages/node_modules/pouchdb-core/src/version.js');
-var versionFileContents = '// managed automatically by set-version.js\n' +
-  'export default "' + version + '";\n';
-
-fs.writeFileSync(versionFile, versionFileContents, 'utf-8');
 
 console.log('done');
