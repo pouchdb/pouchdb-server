@@ -11,7 +11,7 @@ git:
 addons:
   firefox: "47.0.2"
 
-script: travis_retry npm run $COMMAND
+script: npm run $COMMAND
 
 before_script:
   # Our test-browser.js script uses FIREFOX_BIN to find the Firefox binary
@@ -23,6 +23,8 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   # Fail early if there's a eslint problem
   - npm run eslint
+  - sh ./bin/test-setup.sh
+  - ls -a pouchdb-tests
 
 env:
   global:
