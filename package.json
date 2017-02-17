@@ -17,7 +17,7 @@
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-setup.sh && ./bin/test-couchdb.sh",
     "eslint": "eslint bin/ packages/node_modules/**/src tests/",
-    "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh" 
+    "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh"
   },
   "engines": {
     "node": ">= 0.8.0"
@@ -56,6 +56,7 @@
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
     "memdown": "^1.2.4",
+    "mocha": "^3.2.0",
     "supertest": "^3.0.0"
   },
   "optionalDependencies": {

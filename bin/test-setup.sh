@@ -1,6 +1,6 @@
 #!/bin/bash
 
-POUCHDB_SHA=c93fe274492fb660ea5228d68577cc9e77fe4337
+POUCHDB_SHA=c93fe274
 DIRECTORY='pouchdb-tests'
 
 if [ ! -d "$DIRECTORY" ]; then
