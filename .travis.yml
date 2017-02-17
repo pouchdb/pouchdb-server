@@ -23,8 +23,6 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   # Fail early if there's a eslint problem
   - npm run eslint
-  - sh ./bin/test-setup.sh
-  - ls -a pouchdb-tests
 
 env:
   global:
