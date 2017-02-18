@@ -52,7 +52,6 @@ env:
 matrix:
   allow_failures:
   - env: COMMAND=test-couchdb
-  - env: CLIENT=selenium:phantomjs COMMAND=test-pouchdb
 
 branches:
   only:
