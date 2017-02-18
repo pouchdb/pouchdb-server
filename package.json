@@ -42,7 +42,7 @@
     "pouchdb-auth": "^2.1.1",
     "pouchdb-collections": "^6.1.2",
     "pouchdb-core": "^6.1.0",
-    "pouchdb-fauxton": "0.0.2",
+    "pouchdb-fauxton": "^0.0.5",
     "pouchdb-find": "^0.10.4",
     "pouchdb-list": "^1.1.0",
     "pouchdb-mapreduce": "^6.1.0",
