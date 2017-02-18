@@ -35,6 +35,7 @@
     "nomnom": "^1.8.1",
     "object-assign": "^4.1.0",
     "on-finished": "^2.3.0",
+    "pouchdb-adapter-http": "^6.1.0",
     "pouchdb-adapter-leveldb-core": "^6.1.0",
     "pouchdb-adapter-memory": "^6.1.0",
     "pouchdb-all-dbs": "^1.0.2",
