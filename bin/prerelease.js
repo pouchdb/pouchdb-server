@@ -42,7 +42,7 @@ modules.forEach(function (mod) {
   }).sort();
 
   //find dependencies and igonore if we referencing a local file
-  const dependencies = uniqDeps.reduce(function (deps, dep) {
+  var newPkg = uniqDeps.reduce(function (deps, dep) {
     if (/^\.\//.test(dep) || /^\.\.\//.test(dep)) {
       return deps; // do nothing its a local file
     }
@@ -65,7 +65,14 @@ modules.forEach(function (mod) {
     optionalDependencies: {}
   });
 
-  Object.assign(pkg, dependencies);
+  // special case – `pouchdb-fauxton` is included using `require.resolve()`,
+  // meaning that `find-requires` doesn't find it. so we have to do it manually
+  if (pkg.name === 'express-pouchdb') {
+    newPkg.dependencies['pouchdb-fauxton'] =
+      topPkg.dependencies['pouchdb-fauxton'];
+  }
+
+  Object.assign(pkg, newPkg);
 
   var jsonString = JSON.stringify(pkg, null, '  ') + '\n';
   fs.writeFileSync(pkgPath, jsonString, 'utf8');
