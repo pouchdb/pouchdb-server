@@ -13,7 +13,7 @@ If you think you've found a bug in PouchDB, please write a reproducible test cas
 
 ## Contributing
 
-See the CONTRIBUTING.md file for how to get involved
+See the [CONTRIBUTING.md](https://github.com/pouchdb/pouchdb-server/blob/master/CONTRIBUTING.md) file for how to get involved
 
 ## Contributors
 

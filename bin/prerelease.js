@@ -3,7 +3,7 @@
 // Update all the dependencies inside packages/node_modules/*/package.json
 // to reflect the true dependencies (automatically determined by require())
 // and update the version numbers to reflect the version from the top-level
-// dependencies list.
+// package.json.
 
 var fs = require('fs');
 var path = require('path');
@@ -15,14 +15,18 @@ var flatten = require('lodash.flatten');
 
 var topPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 var modules = fs.readdirSync('./packages/node_modules');
+var version = topPkg.version;
 
 modules.forEach(function (mod) {
   var pkgDir = path.join('./packages/node_modules', mod);
   var pkgPath = path.join(pkgDir, 'package.json');
   var pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
+  // all packages get the same version as the top package.json
+  pkg.version = version;
+
   // for the dependencies, find all require() calls
-  var srcFiles = glob.sync(path.join(pkgDir, 'src/**/*.js'));
+  var srcFiles = glob.sync(path.join(pkgDir, 'lib/**/*.js'));
   var uniqDeps = uniq(flatten(srcFiles.map(function (srcFile) {
     var code = fs.readFileSync(srcFile, 'utf8');
     try {
@@ -38,7 +42,7 @@ modules.forEach(function (mod) {
   }).sort();
 
   //find dependencies and igonore if we referencing a local file
-  const dependencies = uniqDeps.reduce((deps, dep) => {
+  const dependencies = uniqDeps.reduce(function (deps, dep) {
     if (/^\.\//.test(dep) || /^\.\.\//.test(dep)) {
       return deps; // do nothing its a local file
     }

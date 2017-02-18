@@ -1,33 +1,14 @@
 {
-  "name": "pouchdb-server",
-  "description": "A standalone REST interface server for PouchDB.",
-  "version": "3.0.0-prerelease",
-  "homepage": "https://github.com/pouchdb/pouchdb-server",
-  "license": "Apache-2.0",
-  "author": {
-    "name": "Nick Thompson",
-    "email": "ncthom91@gmail.com"
-  },
-  "contributors": [
-    "Marten de Vries",
-    "Nolan Lawson",
-    "Garren Smith <garren@redcometlabs.com>"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/pouchdb/pouchdb-server.git"
-  },
+  "name": "pouchdb-server-monorepo",
+  "private": true,
+  "version": "2.3.0",
   "scripts": {
     "unit-tests": "mocha tests/**/*",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-setup.sh && ./bin/test-couchdb.sh",
     "eslint": "eslint bin/ packages/node_modules/**/src tests/",
     "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh",
-    "update-deps": "node ./bin/update-package-json-for-publish.js",
-    "set-version": "node bin/set-version.js"
-  },
-  "engines": {
-    "node": ">= 0.8.0"
+    "release": "node ./bin/prerelease.js && ./bin/release.sh"
   },
   "dependencies": {
     "basic-auth": "^1.1.0",
@@ -84,13 +65,14 @@
   },
   "devDependencies": {
     "bluebird": "^3.4.7",
-    "builtin-modules": "1.1.1",
+    "builtin-modules": "^1.1.1",
     "eslint": "3.15.0",
     "express": "^4.14.1",
     "find-requires": "^0.2.2",
     "fs-extra": "^2.0.0",
-    "lodash.flatten": "4.4.0",
-    "lodash.uniq": "4.5.0",
+    "glob": "^7.1.1",
+    "lodash.flatten": "^4.4.0",
+    "lodash.uniq": "^4.5.0",
     "memdown": "^1.2.4",
     "mocha": "^3.2.0",
     "supertest": "^3.0.0"
