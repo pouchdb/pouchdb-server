@@ -50,6 +50,13 @@ env:
   - COMMAND=test-couchdb
  
 matrix:
+  fast_finish: true
+  include:
+    - node_js: "4"
+      env: CLIENT=node COMMAND=test-pouchdb
+  include:
+    - node_js: "7"
+      env: CLIENT=node COMMAND=test-pouchdb
   allow_failures:
   - env: COMMAND=test-couchdb
 
