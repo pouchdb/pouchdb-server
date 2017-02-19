@@ -11,7 +11,7 @@ module.exports = function (app) {
       if (err) {
         return utils.sendError(res, err);
       }
-      utils.sendJSON(res, 200, {ok: true});
+      utils.sendJSON(res, 202, {ok: true});
     });
   });
 };
