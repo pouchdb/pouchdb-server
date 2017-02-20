@@ -1,5 +1,5 @@
 import {PouchDB, setup, teardown, should, shouldThrowError} from 'pouchdb-plugin-helper/testutils';
-import Replicator from '../';
+import Replicator from '../../packages/node_modules/pouchdb-replicator';
 import extend from 'extend';
 
 PouchDB.plugin(Replicator);
