@@ -1,3 +1,2 @@
 --colors
---compilers js:pouchdb-plugin-helper/mocha-babel 
 -R spec
