@@ -6,9 +6,7 @@ Node.js. It is modeled after the single-node design of CouchDB 1.x,
 although it contains some CouchDB 2.x features such as
 [Mango queries](http://github.com/nolanlawson/pouchdb-find).
 
-PouchDB Server is not designed for production environments, as it is much less
-battle-tested than CouchDB. However, it can be useful for development,
-testing, and prototypes. It passes the full [PouchDB test suite](https://github.com/pouchdb/pouchdb/tree/master/tests).
+PouchDB Server is much less battle-tested than CouchDB, but it does pass the full [PouchDB test suite](https://github.com/pouchdb/pouchdb/tree/master/tests).
 
 _For the `express-pouchdb` sub-package, skip to [express-pouchdb](#express-pouchdb)._
 
