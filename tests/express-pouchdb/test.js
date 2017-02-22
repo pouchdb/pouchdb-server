@@ -261,19 +261,37 @@ describe('redirects', function () {
 });
 
 describe('invalid databases (#213)', function () {
-  it.only('GET /_invalid should return 400 Bad Request', function (done) {
+  it('GET /_invalid should return 400 Bad Request', function (done) {
     request(coreApp)
       .get('/_invalid')
       .expect(400)
       .expect(function (res) {
-        var error = JSON.parse(res.text)
+        var error = JSON.parse(res.text);
         if (error.error !== 'illegal_database_name') {
-          return 'should return "illegal_database_name" error'
+          return 'should return "illegal_database_name" error';
         }
         if (!/Name: '_invalid'/.test(error.reasons)) {
-          return 'should return "reason"'
+          return 'should return "reason"';
         }
       })
+      .end(done);
+  });
+
+  it('GET /_internal should not return 400 Bad Request', function (done) {
+    // router handler is never called because it’s already handled by the
+    // `GET /:db` handler which returns a 404, as no `_internal` db exists
+    coreApp.get('/_internal', function () {});
+
+    request(coreApp)
+      .get('/_internal')
+      .expect(404)
+      .end(done);
+  });
+
+  it('GET /user%2Fabc4567 should not return 400 Bad Request', function (done) {
+    request(coreApp)
+      .get('/user%2Fabc4567')
+      .expect(404)
       .end(done);
   });
 });
