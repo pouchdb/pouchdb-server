@@ -260,6 +260,24 @@ describe('redirects', function () {
   });
 });
 
+describe('invalid databases (#213)', function () {
+  it.only('GET /_invalid should return 400 Bad Request', function (done) {
+    request(coreApp)
+      .get('/_invalid')
+      .expect(400)
+      .expect(function (res) {
+        var error = JSON.parse(res.text)
+        if (error.error !== 'illegal_database_name') {
+          return 'should return "illegal_database_name" error'
+        }
+        if (!/Name: '_invalid'/.test(error.reasons)) {
+          return 'should return "reason"'
+        }
+      })
+      .end(done);
+  });
+});
+
 function assertException(func, re) {
   var e;
   try {
