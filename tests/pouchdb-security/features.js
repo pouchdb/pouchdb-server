@@ -1,4 +1,4 @@
-const {PouchDB, Security, setup, teardown, shouldThrowError} = require('./utils');
+const {PouchDB, Security, setup, teardown} = require('./utils');
 
 let db;
 
@@ -32,7 +32,7 @@ describe('Security tests', () => {
 
 describe('Installed security tests', () => {
   const rightlessUser = {name: null, roles: []};
-  beforeEach(() =>  {
+  const before = () =>  {
     db = setup();
     db.installSecurityMethods();
     return db.putSecurity({
@@ -45,7 +45,9 @@ describe('Installed security tests', () => {
         roles: ['member']
       }
     });
-  });
+  };
+
+  beforeEach(before);
 
   afterEach(() => {
     db.uninstallSecurityMethods();
@@ -183,142 +185,158 @@ describe('Installed security tests', () => {
     });
   });
 
-//   it('attachment', async () => {
-//     const buf = new Buffer('');
-//     const resp = await db.putAttachment('docId', 'attachmentId', buf, 'text/plain');
-//     resp.ok.should.be.ok;
+  it('attachment', () => {
+    const buf = new Buffer('');
+    let resp;
+    return db.putAttachment('docId', 'attachmentId', buf, 'text/plain')
+    .then(resp1 => {
+      resp = resp1;
+      resp.ok.should.be.ok;
+      return db.getAttachment('docId', 'attachmentId');
+    })
+    .then(resp2 => {
+      resp2.type.should.equal('text/plain');
+      return db.putAttachment('docId', 'attachmentId', buf, 'text/plain', {userCtx: rightlessUser});
+    })
+    .catch(err => {
+      err.status.should.equal(401);
+      return db.removeAttachment(resp.id, 'attachmentId', resp.rev, {userCtx: rightlessUser});
+    })
+    .catch(err2 => {
+      err2.status.should.equal(401);
+    });
+  });
 
-//     const resp2 = await db.getAttachment('docId', 'attachmentId');
-//     resp2.type.should.equal('text/plain');
+  it('view cleanup', () => {
+    return db.viewCleanup({userCtx: rightlessUser})
+    .catch(err => {
+      err.status.should.equal(401);
+    });
+  });
 
-//     const err = await shouldThrowError(async () => {
-//       await db.putAttachment('docId', 'attachmentId', buf, 'text/plain', {userCtx: rightlessUser});
-//     });
-//     err.status.should.equal(401);
+  it('get security', () => {
+    return db.getSecurity({userCtx: {name: 'member', roles: []}})
+    .then(resp => {
+      resp.should.have.property('admins');
+    });
+  });
 
-//     const err2 = await shouldThrowError(async () => {
-//       await db.removeAttachment(resp.id, 'attachmentId', resp.rev, {userCtx: rightlessUser});
-//     });
-//     err2.status.should.equal(401);
-//   });
+  it('replicate', () => {
+    return db.replicate.to('testb')
+    .then(resp => {
+      resp.ok.should.be.ok;
+    });
+  });
 
-//   it('view cleanup', async () => {
-//     const err = await shouldThrowError(async () => {
-//       await db.viewCleanup({userCtx: rightlessUser});
-//     });
-//     err.status.should.equal(401);
-//   });
+  it('remove alternative signature', () => {
+    return db.remove('id', 'rev', {userCtx: rightlessUser})
+    .catch(err => {
+      err.status.should.equal(401);
+    });
+  });
 
-//   it('get security', async () => {
-//     const resp = await db.getSecurity({userCtx: {name: 'member', roles: []}});
-//     resp.should.have.property('admins');
-//   })
+  it('show', () => {
+    return db.show('some/non-existing/values', {secObj: {
+      admins: {'names': ['unknown']}
+    }, userCtx: {
+      name: 'unknown',
+      roles: []
+    }})
+    .catch(err => {
+      err.status.should.equal(404); // not 401!
+    });
+  });
 
-//   it('replicate', async () => {
-//     const resp = await db.replicate.to('testb');
-//     resp.ok.should.be.ok;
-//   });
+  it('destroy', () => {
+    return db.destroy()
+    .then(resp => {
+      resp.ok.should.be.ok;
+      return before();
+    })
+    .then(() => {
+      return db.destroy({userCtx: rightlessUser});
+    })
+    .catch(err => {
+      err.status.should.equal(401);
+    });
+  });
 
-//   it('remove alternative signature', async () => {
-//     const err = await shouldThrowError(async () => {
-//       await db.remove('id', 'rev', {userCtx: rightlessUser});
-//     });
-//     err.status.should.equal(401);
-//   });
+  it('changes', () => {
+    const result = db.changes({live: true, userCtx: {
+      name: 'marten',
+      roles: ['member']
+    }});
+    result.on('change', () => {});
+    result.cancel();
+  });
+});
 
-//   it('show', async () => {
-//     const err = await shouldThrowError(async () => {
-//       await db.show('some/non-existing/values', {secObj: {
-//         admins: {'names': ['unknown']}
-//       }, userCtx: {
-//         name: 'unknown',
-//         roles: []
-//       }});
-//     });
-//     err.status.should.equal(404) // not 401!
-//   });
+describe('Static security methdods installed', () => {
+  beforeEach(() => {
+    Security.installStaticSecurityMethods(PouchDB);
+  });
+  afterEach(() => {
+    Security.uninstallStaticSecurityMethods(PouchDB);
+  });
 
-//   it('destroy', async () => {
-//     (await db.destroy()).ok.should.be.ok;
+  it('basic', () => {
+    // beforeEach() and afterEach()
+  });
+  it('installing twice', () => {
+    //1: beforeEach
+    //2:
+    (() => {
+      Security.installStaticSecurityMethods(PouchDB);
+    }).should.throw(/already installed/);
+  });
 
-//     await before();
+  it('uninstalling twice', () => {
+    Security.uninstallStaticSecurityMethods(PouchDB);
+    (() => {
+      Security.uninstallStaticSecurityMethods(PouchDB);
+    }).should.throw(/not installed/);
 
-//     const err = await shouldThrowError(async () => {
-//       await db.destroy({userCtx: rightlessUser});
-//     });
-//     err.status.should.equal(401);
-//   });
+    // for afterEach
+    Security.installStaticSecurityMethods(PouchDB);
+  });
 
-//   it('changes', () => {
-//     const result = db.changes({live: true, userCtx: {
-//       name: 'marten',
-//       roles: ['member']
-//     }});
-//     result.on('change', () => {});
-//     result.cancel();
-//   });
-// });
+  it('destroy', () => {
+    new PouchDB('test');
+    return PouchDB.destroy('test', {userCtx: {name: null, roles: []}})
+    .catch(err => {
+      err.status.should.equal(401);
+      // admin paty - should be no problem
+      return PouchDB.destroy({name: 'test'});
+    })
+    .then(resp => {
+      resp.ok.should.be.ok;
+    });
 
-// describe('Static security methdods installed', async () => {
-//   beforeEach(() => {
-//     Security.installStaticSecurityMethods(PouchDB);
-//   });
-//   afterEach(() => {
-//     Security.uninstallStaticSecurityMethods(PouchDB);
-//   });
+  });
 
-//   it('basic', () => {
-//     // beforeEach() and afterEach()
-//   });
-//   it('installing twice', async () => {
-//     //1: beforeEach
-//     //2:
-//     (() => {
-//       Security.installStaticSecurityMethods(PouchDB);
-//     }).should.throw(/already installed/);
-//   })
+  it('replicate', () => {
+    const db = new PouchDB('a');
+    return db.putSecurity({members: {names: ['hi!']}})
+    .then(() => {
+      return PouchDB.replicate(new PouchDB('a'), 'b', {userCtx: {name: null, roles: []}});
+    })
+    .catch(err => {
+      err.status.should.equal(401);
+      return PouchDB.replicate('a', 'b');
+    })
+    .then(resp => {
+      // admin party - should be no problem
+      resp.ok.should.be.ok;
+    });
+  });
 
-//   it('uninstalling twice', async () => {
-//     Security.uninstallStaticSecurityMethods(PouchDB);
-//     (() => {
-//       Security.uninstallStaticSecurityMethods(PouchDB);
-//     }).should.throw(/not installed/);
-
-//     // for afterEach
-//     Security.installStaticSecurityMethods(PouchDB);
-//   });
-
-//   it('destroy', async () => {
-//     new PouchDB('test');
-//     const err = await shouldThrowError(async () => {
-//       await PouchDB.destroy('test', {userCtx: {name: null, roles: []}});
-//     });
-//     err.status.should.equal(401);
-
-//     // admin paty - should be no problem
-//     const resp = await PouchDB.destroy({name: 'test'});
-//     resp.ok.should.be.ok;
-//   });
-
-//   it('replicate', async () => {
-//     const db = new PouchDB('a');
-//     await db.putSecurity({members: {names: ['hi!']}});
-//     const err = await shouldThrowError(async () => {
-//       await PouchDB.replicate(new PouchDB('a'), 'b', {userCtx: {name: null, roles: []}});
-//     });
-//     err.status.should.equal(401);
-
-//     // admin party - should be no problem
-//     (await PouchDB.replicate('a', 'b')).ok.should.be.ok;
-//   });
-
-//   it('new() alternate signature', async () => {
-//     const err = await shouldThrowError(async () => {
-//       await PouchDB.new({name: 'test', userCtx: {name: null, roles: []}});
-//     });
-//     err.status.should.equal(401);
-//   });
- });
+  it('new() alternate signature', () => {
+    return PouchDB.new({name: 'test', userCtx: {name: null, roles: []}})
+    .catch(err => {
+      err.status.should.equal(401);
+    });
+  });
+});
 
 describe('Async security tests', () => {
   beforeEach(() => {
