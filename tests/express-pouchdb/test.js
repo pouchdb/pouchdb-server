@@ -2,6 +2,8 @@
 
 /*globals before */
 
+var memwatch = require('memwatch-next');
+var assert = require('assert');
 var buildApp = require('../../packages/node_modules/express-pouchdb'),
     PouchDB  = require('pouchdb'),
     express  = require('express'),
@@ -195,6 +197,41 @@ function testWelcome(app, done, path) {
     })
     .end(done);
 }
+
+describe('memory leaks', function () {
+  this.timeout(60000);
+
+  var timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  it('should not leak memory', function () {
+    var heapDiff = new memwatch.HeapDiff();
+    var promises = [];
+    return request(coreApp)
+      .put('/test-memory-leak')
+      .expect(201)
+      .then(() => {
+      var requestChanges = () => (request(coreApp)
+          .get('/test-memory-leak/_changes')
+          .expect(200)
+      );
+      for (var i = 0; i < 1000; i++) {
+        promises.push(timeout(Math.round(Math.random() * 10))
+          .then(requestChanges));
+      }
+      return Promise.all(promises);
+    }).then(function () {
+      return request(coreApp)
+        .delete('/test-memory-leak');
+    }).then(function () {
+      return timeout(10000);
+    }).then(function () {
+      var diff = heapDiff.end();
+      var bytesDiff = diff.after.size_bytes - diff.before.size_bytes;
+      console.log(bytesDiff);
+      assert(bytesDiff < 20000, bytesDiff + ' should be < 20000');
+    });
+  });
+});
 
 describe('modes', function () {
   it('should always return a 404 in our custom configuration', function (done) {
