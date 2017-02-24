@@ -80,6 +80,7 @@
     "lodash.flatten": "^4.4.0",
     "lodash.uniq": "^4.5.0",
     "memdown": "^1.2.4",
+    "memwatch-next": "^0.3.0",
     "mocha": "^3.2.0",
     "pouchdb-plugin-helper": "^3.0.2",
     "supertest": "^3.0.0"
