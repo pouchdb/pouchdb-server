@@ -22,7 +22,7 @@
     "couchdb-log-parse": "^0.0.4",
     "denodeify": "^1.2.1",
     "equals": "^1.0.5",
-    "express": "^4.10.4",
+    "express": "^4.15.0",
     "extend": "^3.0.0",
     "find-requires": "^0.2.2",
     "glob": "^7.1.1",
