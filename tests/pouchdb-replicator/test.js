@@ -15,6 +15,48 @@ const replicationDocument = {
 
 let db;
 
+describe('replicator url helper', () => {
+	const createSafeUrl = Replicator.createSafeUrl;
+
+	it("handles string", () => {
+		const db = "db-name";
+		const out = createSafeUrl(db);
+		out.should.equal(db);
+	});
+
+	it("handles name object", () => {
+		const db = {
+			name: "db-name"
+		};
+
+		const out = createSafeUrl(db);
+		out.should.equal(db);
+	});
+
+	it("returns url without auth", () => {
+		const source = {
+			headers: {},
+			url: 'http://dev:5984/animaldb-clone'
+		};
+
+		const out = createSafeUrl(source);
+		out.should.equal(source.url);
+	});
+
+	it("returns url with auth", () => {
+		const source = {
+			headers: {
+				Authorization: "Basic dGVzdGVyOnRlc3RlcnBhc3M="
+			},
+			url: 'http://dev:5984/animaldb-clone'
+		};
+
+		const out = createSafeUrl(source);
+		out.should.equal('http://tester:testerpass@dev:5984/animaldb-clone');
+	});
+
+});
+
 describe('async replicator tests', () => {
 	beforeEach(() => {
 		db = setup();
