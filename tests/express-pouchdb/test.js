@@ -8,7 +8,8 @@ var buildApp = require('../../packages/node_modules/express-pouchdb'),
     request  = require('supertest'),
     Promise  = require('bluebird'),
     fse      = Promise.promisifyAll(require('fs-extra')),
-    memdown  = require('memdown');
+    memdown  = require('memdown'),
+    assert   = require('assert');
 
 var TEST_DATA = __dirname + '/testdata/';
 var LARGE_TIMEOUT = 5000;
@@ -180,6 +181,17 @@ prefixes.forEach(function (prefix) {
       app.use(prefix, expressApp);
 
       testWelcome(app, done, prefix);
+    });
+    it('GET / should respond with adapters', function () {
+      var app = express();
+      app.use(prefix, expressApp);
+      return request(app)
+        .get(prefix)
+        .expect(200)
+        .then(function (res) {
+          var json = JSON.parse(res.text);
+          assert.deepEqual(json['pouchdb-adapters'], ['leveldb']);
+        });
     });
   });
 });
