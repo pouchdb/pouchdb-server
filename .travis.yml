@@ -20,6 +20,7 @@ before_script:
   - export FIREFOX_BIN=$(which firefox)
   # The next two lines are required for Firefox to run on Travis
   - "export DISPLAY=:99.0"
+  - "export SELENIUM_VERSION=2.42.0"
   - "sh -e /etc/init.d/xvfb start"
   # Install PhantomJS and cache it
   # See https://github.com/Medium/phantomjs#continuous-integration
