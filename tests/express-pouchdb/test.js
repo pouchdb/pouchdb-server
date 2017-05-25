@@ -286,7 +286,7 @@ var createdListener = function (name) {
 
 describe('own pouch', function () {
   this.timeout(LARGE_TIMEOUT);
-  var write, log, error, warn, err = '', out = '';
+  var error, out = '';
 
   // restore process.stdout.write() and console.log() to their previous glory
   var cleanup = function () {
@@ -334,7 +334,7 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
+    new PouchDB('foo');
 
     request(app)
       .get('/foo')
@@ -363,7 +363,7 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
+    new PouchDB('foo');
 
     request(app)
       .get('/foo')
@@ -397,7 +397,7 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
+    new PouchDB('foo');
 
     request(app)
       .get('/foo')
@@ -428,7 +428,7 @@ describe('own pouch', function () {
 
     app.use('/', buildApp(InMemPouchDB));
 
-    var myPouch = new InMemPouchDB('foo');
+    new InMemPouchDB('foo');
 
     request(app)
       .get('/foo')
@@ -467,7 +467,7 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
+    new PouchDB('foo');
 
     created = [];
     PouchDB.on('created', createdListener);
@@ -524,7 +524,7 @@ describe('own pouch', function () {
 
     app.use('/', buildApp(InMemPouchDB));
 
-    var myPouch = new InMemPouchDB('foo');
+    new InMemPouchDB('foo');
 
     created = [];
     InMemPouchDB.on('created', createdListener);
@@ -589,7 +589,7 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
+    new PouchDB('foo');
 
     created = [];
     PouchDB.on('created', createdListener);
@@ -647,8 +647,8 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo');
-    var myPouch2 = new PouchDB('bar');
+    new PouchDB('foo');
+    new PouchDB('bar');
 
     created = [];
     PouchDB.on('created', createdListener);
@@ -695,11 +695,11 @@ describe('own pouch', function () {
       )
     );
 
-    var myPouch = new PouchDB('foo', {
+    new PouchDB('foo', {
       db: memdown
     });
 
-    var myPouch2 = new PouchDB('bar', {
+    new PouchDB('bar', {
       db: memdown
     });
 
@@ -751,8 +751,8 @@ describe('own pouch', function () {
     });
     app.use('/', buildApp(InMemPouchDB));
 
-    var myPouch = new InMemPouchDB('foo');
-    var myPouch2 = new InMemPouchDB('bar');
+    new InMemPouchDB('foo');
+    new InMemPouchDB('bar');
 
     created = [];
     InMemPouchDB.on('created', createdListener);
@@ -879,7 +879,6 @@ describe('own pouch', function () {
 
     var myPouch = new PouchDB('foo');
     var myPouch2 = new PouchDB('bar');
-    var newPouch;
 
     created = [];
     InMemPouchDb.on('created', createdListener);
@@ -923,7 +922,7 @@ describe('own pouch', function () {
         );
       })
       .then(function () {
-        newPouch = new InMemPouchDb('newfoo');
+        new InMemPouchDb('newfoo');
         return Promise.delay(1000);
       })
       .then(function () {
