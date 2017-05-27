@@ -240,6 +240,34 @@ describe('modes', function () {
   });
 });
 
+describe('all-docs', function () {
+  before(function () {
+    return request(coreApp)
+      .put('/animaldb')
+      .expect(201)
+      .then(() => {
+        return request(coreApp)
+          .put('/animaldb/dog', { name: 'Dog'})
+          .expect(201);
+      })
+      .then(() => {
+        return request(coreApp)
+          .put('/animaldb/cat', { name: 'Cat'})
+          .expect(201);
+      });
+  });
+
+  it('returns newline delimeted arrays', function () {
+    return request(coreApp)
+      .get('/animaldb/_all_docs')
+      .expect(200, `{"total_rows":2,"offset":0,"rows":[
+{"id":"cat","key":"cat","value":{"rev":"1-dbb7ce9c13b09047a4f05c05cadcc935"}},
+{"id":"dog","key":"dog","value":{"rev":"1-b5460388d90a0b964a7e3c5f884e5356"}}
+]}
+`);
+  });
+});
+
 describe('redirects', function () {
   it('GET /_utils should redirect to /_utils/', function (done) {
     request(coreApp)
