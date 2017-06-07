@@ -72,7 +72,7 @@ module.exports = function httpQuery(db, req) {
     }
 
     //strips the database from the requested_path
-    var url = db.getUrl().split("/").slice(0, -2).join("/") + req.raw_path;
+    var url = db.name.replace(/\/[^\/]+\/?$/, "") + req.raw_path;
     var pouchHeaders = (db.getHeaders || fakeGetHeaders)();
     var headers = extend({}, pouchHeaders, req.headers);
 
