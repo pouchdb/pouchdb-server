@@ -247,16 +247,15 @@ describe('redirects', function () {
       .expect(301)
       .end(done);
   });
-  it('GET /_utils/ should return fauxton', function (done) {
-    request(coreApp)
+  it('GET /_utils/ should return fauxton', function () {
+    return request(coreApp)
       .get('/_utils/')
       .expect(200)
-      .expect(function (res) {
-        if (!/<title>PouchDB Server<\/title>/.test(res.text)) {
-          return "No '<title>PouchDB Server</title>' in response";
+      .then(function (res) {
+        if (!/<p>Fauxton <strong>requires<\/strong> JavaScript to be enabled.<\/p>/.test(res.text)) {
+          throw new Error('No "<p>Fauxton <strong>requires</strong> JavaScript to be enabled.</p>" in response');
         }
-      })
-      .end(done);
+      });
   });
 });
 
