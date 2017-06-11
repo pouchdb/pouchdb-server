@@ -129,18 +129,17 @@ describe('config', function () {
       });
     });
   });
-  it('should support externally adding a default', function (done) {
+  it('should support externally adding a default', function () {
     expressApp.couchConfig.registerDefault('a', 'b', 'c');
-    request(expressApp)
+    return request(expressApp)
       .get('/_config')
       .expect(200)
-      .expect(function (res) {
+      .then(function (res) {
         var a = JSON.parse(res.text).a;
         if (!(typeof a === "object" && a.b === "c")) {
-          return "Default not shown";
+          throw new Error("Default not shown");
         }
-      })
-      .end(done);
+      });
   });
   it('should support externally getting a config value', function (done) {
     request(expressApp)
@@ -154,21 +153,20 @@ describe('config', function () {
         done();
       });
   });
-  it('should support external listeners to a config change', function (done) {
+  it('should support external listeners to a config change', function () {
     var changed = false;
     expressApp.couchConfig.on('test2.a', function () {
       changed = true;
     });
-    request(expressApp)
+    return request(expressApp)
       .put('/_config/test2/a')
       .send('"b"')
       .expect(200)
-      .expect(function () {
+      .then(function () {
         if (!changed) {
-          return "Didn't get notice of the setting change";
+          throw new Error("Didn't get notice of the setting change");
         }
-      })
-      .end(done);
+      });
   });
 });
 
@@ -200,25 +198,24 @@ function testWelcome(app, done, path) {
   request(app)
     .get(path)
     .expect(200)
-    .expect(function (res) {
+    .then((res) => {
       if (!/Welcome!/.test(res.text)) {
-        return "No 'Welcome!' in response";
+        throw new Error("No 'Welcome!' in response");
       }
     })
-    .end(done);
+    .then(done, done);
 }
 
 describe('modes', function () {
-  it('should always return a 404 in our custom configuration', function (done) {
-    request(customApp)
+  it('should always return a 404 in our custom configuration', function () {
+    return request(customApp)
       .get('/')
       .expect(404)
-      .expect(function (res) {
+      .then(function (res) {
         if (JSON.parse(res.text).error !== 'not_found') {
-          return "Wrong response body";
+          throw new Error("Wrong response body");
         }
-      })
-      .end(done);
+      });
   });
   it('should generate a functioning core app', function (done) {
     testWelcome(coreApp, done, '/');
