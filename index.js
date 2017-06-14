@@ -43,6 +43,21 @@ function invalidateCache(passthrough) {
 }
 
 var api = {};
+api.setSeamlessAuthLocalDB = function (localDB, callback) {
+  local = localDB;
+
+  var promise = Auth.useAsAuthenticationDB.call(local)
+    .then(invalidateCache);
+
+  nodify(promise, callback);
+  return promise;
+};
+
+api.unsetSeamlessAuthLocalDB = function () {
+  local = undefined;
+  invalidateCache();
+};
+
 api.setSeamlessAuthRemoteDB = function (remoteName, remoteOptions, callback) {
   remote = new PouchDB(remoteName, remoteOptions);
 
