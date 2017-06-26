@@ -1,12 +1,6 @@
-"use strict";
-
-/* global describe, it */
-/*jshint expr: true*/
-
-var PouchDB = require('pouchdb');
-//var buildHTTPPouchDB = require('http-pouchdb');
-var buildHTTPPouchDB = require('../index.js');
-var should = require('chai').should();
+const {PouchDB} = require('pouchdb-plugin-helper/testutils');
+const buildHTTPPouchDB = require('../../packages/node_modules/http-pouchdb');
+const should = require('chai').should();
 
 var HTTPPouchDB = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/');
 var XMLHttpRequest = require('xhr2');
@@ -24,17 +18,9 @@ describe('isHTTPPouchDB', function () {
 describe('constructor', function () {
   it('should create remote databases for normal db names', function () {
     var users = new HTTPPouchDB('_users');
-    return users.info().then(function (info) {
-      // a couchdb-only property. Even pouchdb-size doesn't provide it.
-      info.should.have.property('data_size');
-    });
-  });
 
-  it('should not accept http urls', function (done) {
-    var replicator = new HTTPPouchDB('http://localhost:5984/_replicator');
-    replicator.allDocs(function (err, resp) {
-      should.exist(err);
-      done();
+    return users.info().then(function (info) {
+      info.should.have.property('db_name');
     });
   });
 });
@@ -58,7 +44,7 @@ describe('replicate', function () {
       return dbShouldExist('test-a').then(function () {
         return dbShouldExist('test-b');
       }).then(function () {
-        return new PouchDB.destroy('http://localhost:5984/test-a');
+        return new PouchDB('http://localhost:5984/test-a').destroy();
       }).then(function () {
         return new PouchDB('test-b').destroy();
       });
@@ -67,7 +53,7 @@ describe('replicate', function () {
 });
 
 function dbShouldExist(name) {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     var xhr = new XMLHttpRequest();
     xhr.onload = function () {
       xhr.status.should.equal(200);
