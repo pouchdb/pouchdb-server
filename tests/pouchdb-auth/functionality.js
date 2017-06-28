@@ -1,5 +1,5 @@
-import {setup, teardown, should, shouldThrowError} from './utils';
-import extend from 'extend';
+const {setup, teardown, should, shouldThrowError} = require('./utils');
+const extend = require('extend');
 
 let db;
 
@@ -47,9 +47,11 @@ function shouldBeLoggedIn(session, roles) {
 }
 
 describe('SyncAuthTests', () => {
-  beforeEach(async () => {
-    db = setup()
-    should.not.exist(await db.useAsAuthenticationDB({isOnlineAuthDB: false}));
+  beforeEach((done) => {
+    db = setup();
+    db.useAsAuthenticationDB({isOnlineAuthDB: false})
+
+    .then(done);
   });
   afterEach(teardown);
 
@@ -57,149 +59,208 @@ describe('SyncAuthTests', () => {
     // handled by beforeEach and afterEach
   });
 
-  it('should not allow stopping usage as an auth db twice', async () => {
-    await db.stopUsingAsAuthenticationDB();
-    await shouldThrowError(async () =>
-      await db.stopUsingAsAuthenticationDB()
-    );
-    // startup for afterEach
-    await db.useAsAuthenticationDB();
+  it('should not allow stopping usage as an auth db twice', () => {
+    let error;
+    db.stopUsingAsAuthenticationDB();
+
+    try {
+      db.stopUsingAsAuthenticationDB();
+    } catch (error_) {
+      error = error_;
+    }
+
+    should.exist(error);
+    error.message.should.match(/Not an authentication database/i);
   });
 
-  it('should not allow using a db as an auth db twice', async () => {
-    //1: beforeEach()
-    //2: see below:
-    await shouldThrowError(async () =>
-      await db.useAsAuthenticationDB()
-    );
+  it('should not allow using a db as an auth db twice', () => {
+    let error;
+
+    try {
+      db.useAsAuthenticationDB();
+    } catch (error_) {
+      error = error_;
+    }
+
+    should.exist(error);
+    error.message.should.match(/Already in use as an authentication database/i);
   });
 
-  it('should have working db methods', async () => {
-    const signUpData = await db.signUp("username", "password", {roles: ["test"]});
-    signUpData.rev.indexOf("1-").should.equal(0);
-    signUpData.ok.should.be.ok;
-    signUpData.id.should.equal("org.couchdb.user:username");
+  it('should have working db methods', () => {
+    return db.signUp("username", "password", {roles: ["test"]})
 
-    const doc = await db.get("org.couchdb.user:username");
-    doc._rev.indexOf("1-").should.equal(0);
-    doc.should.have.property("derived_key");
-    doc.iterations.should.equal(10);
-    doc.name.should.equal("username");
-    doc.password_scheme.should.equal("pbkdf2");
-    doc.roles.should.eql(["test"]);
-    doc.should.have.property("salt");
-    doc.type.should.equal("user");
+    .then((signUpData) => {
+      signUpData.rev.indexOf("1-").should.equal(0);
+      signUpData.ok.should.be.ok;
+      signUpData.id.should.equal("org.couchdb.user:username");
 
-    doc.should.not.have.property("password");
+      return db.get("org.couchdb.user:username");
+    })
 
-    const session = await db.session();
-    shouldBeAdminParty(session);
+    .then((doc) => {
+      doc._rev.indexOf("1-").should.equal(0);
+      doc.should.have.property("derived_key");
+      doc.iterations.should.equal(10);
+      doc.name.should.equal("username");
+      doc.password_scheme.should.equal("pbkdf2");
+      doc.roles.should.eql(["test"]);
+      doc.should.have.property("salt");
+      doc.type.should.equal("user");
 
-    const logInData = await db.logIn("username", "password");
-    shouldBeSuccesfulLogIn(logInData, ["test"]);
+      doc.should.not.have.property("password");
 
-    const session2 = await db.session();
-    shouldBeLoggedIn(session2, ["test"]);
+      return db.session();
+    })
 
-    const session3 = await db.multiUserSession();
-    shouldBeAdminParty(session3);
+    .then((session) => {
+      shouldBeAdminParty(session);
 
-    const logOutData = await db.logOut();
-    logOutData.ok.should.be.ok;
-    const session4 = await db.session();
-    shouldBeAdminParty(session4);
+      return db.logIn("username", "password");
+    })
 
-    //should also give a {ok: true} when not logged in.
-    const logOutData2 = await db.logOut();
-    logOutData2.ok.should.be.ok;
+    .then((logInData) => {
+      shouldBeSuccesfulLogIn(logInData, ["test"]);
 
-    const error = await shouldThrowError(async () =>
-      await db.logIn("username", "wrongPassword")
-    );
-    error.status.should.equal(401);
-    error.name.should.equal("unauthorized");
-    error.message.should.equal("Name or password is incorrect.");
-  });
+      return db.session();
+    })
 
-  it('should support sign up without roles', async () => {
-    const result = await db.signUp("username", "password");
-		result.ok.should.be.ok;
+    .then((session2) => {
+      shouldBeLoggedIn(session2, ["test"]);
 
-		const resp2 = await db.get("org.couchdb.user:username");
-		resp2.roles.should.eql([]);
-  });
+      return db.multiUserSession();
+    })
 
-  it('should validate docs', async () => {
-    const error = await shouldThrowError(async () =>
-      await db.post({})
-    );
-    error.status.should.equal(403);
+    .then((session3) => {
+      shouldBeAdminParty(session3);
 
-    const resp = await db.bulkDocs([{}]);
-    resp[0].status.should.equal(403);
-  });
+      return db.logOut();
+    })
 
-  it('should handle conflicting logins', async () => {
-		const doc1 = {
-      _id: "org.couchdb.user:test",
-			_rev: "1-blabla",
-			type: "user",
-			name: "test",
-			roles: []
-		};
-		const doc2 = extend({}, doc1);
-		doc2._rev = "2-something";
-		//generate conflict
-		await db.bulkDocs([doc1, doc2], {new_edits: false});
+    .then((logOutData) => {
+      logOutData.ok.should.be.ok;
 
-    const error = await shouldThrowError(async () =>
-      await db.logIn("test", "unimportant")
-    );
+      return db.session();
+    })
 
-    error.status.should.equal(401);
-    error.name.should.equal("unauthorized");
-    error.message.should.contain("conflict");
-  });
+    .then((session4) => {
+      shouldBeAdminParty(session4);
 
-  it('should not accept invalid session ids', async () => {
-    const err = await shouldThrowError(async () => {
-      await db.multiUserSession('invalid-session-id');
+      return db.logOut();
+    })
+
+    .then((logOutData2) => {
+      logOutData2.ok.should.be.ok;
+
+      return shouldThrowError(() => db.logIn("username", "wrongPassword"));
+    })
+
+    .then((error) => {
+      error.status.should.equal(401);
+      error.name.should.equal("unauthorized");
+      error.message.should.equal("Name or password is incorrect.");
     });
-    err.status.should.equal(400);
-    err.name.should.equal('bad_request');
-    err.message.should.contain('Malformed');
   });
 
-  it('should hash plain-text passwords in bulkDocs', async () => {
+  it('should support sign up without roles', () => {
+    return db.signUp("username", "password")
+
+    .then((result) => {
+      result.ok.should.be.ok;
+
+      return db.get("org.couchdb.user:username");
+    })
+
+    .then((resp2) => {
+      resp2.roles.should.eql([]);
+    });
+  });
+
+  it('should validate docs', () => {
+    return shouldThrowError(() => db.post({}))
+
+    .then((error) => {
+      error.status.should.equal(403);
+
+      return db.bulkDocs([{}]);
+    })
+
+    .then((resp) => {
+      resp[0].status.should.equal(403);
+    });
+  });
+
+  it('should handle conflicting logins', () => {
+    const doc1 = {
+      _id: "org.couchdb.user:test",
+      _rev: "1-blabla",
+      type: "user",
+      name: "test",
+      roles: []
+    };
+    const doc2 = extend({}, doc1);
+    doc2._rev = "2-something";
+
+    //generate conflict
+    return db.bulkDocs([doc1, doc2], {new_edits: false})
+
+    .then(() => {
+      return shouldThrowError(() => db.logIn("test", "unimportant"));
+    })
+
+    .then((error) => {
+      error.status.should.equal(401);
+      error.name.should.equal("unauthorized");
+      error.message.should.contain("conflict");
+    });
+  });
+
+  it('should not accept invalid session ids', () => {
+    shouldThrowError(() => db.multiUserSession('invalid-session-id'))
+
+    .then((error) => {
+      error.status.should.equal(400);
+      error.name.should.equal('bad_request');
+      error.message.should.contain('Malformed');
+    });
+  });
+
+  it('should hash plain-text passwords in bulkDocs', () => {
     // https://github.com/pouchdb/express-pouchdb/issues/297
-    const resp = await db.bulkDocs({docs: [{
+    db.bulkDocs({docs: [{
       _id: "org.couchdb.user:testuser",
       name:"testuser",
       password:"test",
       type:"user",
       roles:[]
-    }]});
-    should.not.exist((await db.get(resp[0].id)).password);
+    }]})
+
+    .then((response) => {
+      return db.get(response[0].id);
+    })
+
+    .then((doc) => {
+      should.not.exist(doc.password);
+    });
   });
 });
 
 describe('AsyncAuthTests', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     db = setup();
   });
   afterEach(teardown);
-  it('should suport the basics', done => {
-    function cb(err) {
+  it('should suport the basics', (done) => {
+    function cb(error) {
       db.stopUsingAsAuthenticationDB();
-      done(err);
+      done(error);
     }
     db.useAsAuthenticationDB(cb);
   });
 });
 
 describe('AsyncAuthTestsWithoutDaemon', () => {
-  beforeEach(async () => {
-    db = setup()
+  beforeEach(() => {
+    db = setup();
   });
   afterEach(teardown);
 
@@ -210,24 +271,31 @@ describe('AsyncAuthTestsWithoutDaemon', () => {
     should.not.exist(db.logOut);
   });
 
-  it('should hash admin passwords', async () => {
+  it('should hash admin passwords', () => {
     const admins = {
-			test: "-pbkdf2-0abe2dcd23e0b6efc39004749e8d242ddefe46d1,16a1031881b31991f21a619112b1191fb1c41401be1f31d5,10",
-			test2: "test"
-		};
-		const resp = await db.hashAdminPasswords(admins);
-		resp.test.should.equal(admins.test);
-		//10 is the default amount of iterations
-		resp.test2.indexOf("-pbkdf2-").should.equal(0);
-    resp.test2.lastIndexOf(",10").should.equal(resp.test2.length - 3);
+      test: "-pbkdf2-0abe2dcd23e0b6efc39004749e8d242ddefe46d1,16a1031881b31991f21a619112b1191fb1c41401be1f31d5,10",
+      test2: "test"
+    };
+
+    return db.hashAdminPasswords(admins)
+
+    .then((response) => {
+      response.test.should.equal(admins.test);
+      //10 is the default amount of iterations
+      response.test2.indexOf("-pbkdf2-").should.equal(0);
+      response.test2.lastIndexOf(",10").should.equal(response.test2.length - 3);
+    });
   });
 
-  it('should support changing admin passwords hash iterations', async () => {
-    const resp = await db.hashAdminPasswords({
+  it('should support changing admin passwords hash iterations', () => {
+    return db.hashAdminPasswords({
       abc: "test"
-    }, {iterations: 11});
-    resp.abc.indexOf("-pbkdf2-").should.equal(0);
-    resp.abc.lastIndexOf(",11").should.equal(resp.abc.length - 3);
+    }, {iterations: 11})
+
+    .then((response) => {
+      response.abc.indexOf("-pbkdf2-").should.equal(0);
+      response.abc.lastIndexOf(",11").should.equal(response.abc.length - 3);
+    });
   });
 });
 
@@ -237,56 +305,102 @@ describe('No automated test setup', () => {
   });
   afterEach(teardown);
 
-  it('should support admin logins', async () => {
+  it('should support admin logins', () => {
     const opts = {
       admins: {
         username: '-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10'
       },
       secret: db.generateSecret()
     };
-    await db.useAsAuthenticationDB(opts);
 
-    shouldNotBeLoggedIn(await db.multiUserSession());
-    const logInData = await db.multiUserLogIn('username', 'test');
-    shouldBeSuccesfulLogIn(logInData, ['_admin']);
+    return db.useAsAuthenticationDB(opts)
 
-    db.stopUsingAsAuthenticationDB();
-    await db.useAsAuthenticationDB({/* no admins */});
+    .then(() => {
+      return db.multiUserSession();
+    })
 
-    //if admins not supplied, there's no session (admin party!)
-    shouldBeAdminParty(await db.multiUserSession(logInData.sessionID));
+    .then((sessionData) => {
+      shouldNotBeLoggedIn(sessionData);
 
-    db.stopUsingAsAuthenticationDB();
-    await db.useAsAuthenticationDB(opts);
+      return db.multiUserLogIn('username', 'test');
+    })
 
-    //otherwise there is
-    const sessionData = await db.multiUserSession(logInData.sessionID);
-    shouldBeLoggedIn(sessionData, ["_admin"]);
+    .then((logInData) => {
+      shouldBeSuccesfulLogIn(logInData, ['_admin']);
 
-    //check if logout works (i.e. forgetting the session id.)
-    shouldNotBeLoggedIn(await db.multiUserSession());
+      db.stopUsingAsAuthenticationDB();
+      return db.useAsAuthenticationDB({/* no admins */})
+
+      .then(() => logInData.sessionID);
+    })
+
+    .then((sessionID) => {
+      return db.multiUserSession(sessionID);
+    })
+
+    .then((sessionData) => {
+      //if admins not supplied, there's no session (admin party!)
+      shouldBeAdminParty(sessionData);
+
+      db.stopUsingAsAuthenticationDB();
+      return db.useAsAuthenticationDB(opts);
+    })
+
+    .then(() => {
+      return db.multiUserLogIn('username', 'test');
+    })
+
+    .then((logInData) => {
+      return db.multiUserSession(logInData.sessionID);
+    })
+
+    .then((sessionData) => {
+      //otherwise there is
+      shouldBeLoggedIn(sessionData, ["_admin"]);
+
+      return db.multiUserSession();
+    })
+
+    .then((sessionData) => {
+      //check if logout works (i.e. forgetting the session id.)
+      shouldNotBeLoggedIn(sessionData);
+    });
   });
 
-  it('should handle invalid admins field on login', async () => {
+  it('should handle invalid admins field on login', () => {
     const admins = {
       username: "-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10",
       username2: 'this-is-no-hash'
     };
-    await db.useAsAuthenticationDB({admins: admins});
 
-    shouldNotBeLoggedIn(await db.session());
-    const error = await shouldThrowError(async () =>
-      await db.logIn("username2", "test")
-    );
-    error.status.should.equal(401);
-    shouldNotBeLoggedIn(await db.session());
+    return db.useAsAuthenticationDB({admins: admins})
+
+    .then(() => {
+      return db.session();
+    })
+
+    .then((sessionData) => {
+      shouldNotBeLoggedIn(sessionData);
+
+      return shouldThrowError(() => db.logIn("username2", "test"));
+    })
+
+    .then((error) => {
+      error.status.should.equal(401);
+
+      return db.session();
+    })
+
+    .then((sessionData) => {
+      shouldNotBeLoggedIn(sessionData);
+    });
   });
 
-  it('should not accept timed out sessions', async () => {
+  it('should not accept timed out sessions', () => {
     // example stolen from calculate-couchdb-session-id's test suite. That
     // session timed out quite a bit ago.
 
-    await db.useAsAuthenticationDB({
+    return db.useAsAuthenticationDB({
       secret: '4ed13457964f05535fbb54c0e9f77a83',
       timeout: 3600,
       admins: {
@@ -295,7 +409,13 @@ describe('No automated test setup', () => {
       }
     })
 
-    var sessionID = 'amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm';
-    shouldNotBeLoggedIn(await db.multiUserSession(sessionID));
+    .then(() => {
+      const sessionID = 'amFuOjU2Njg4MkI5OkEK3-1SRseo6yNRHfk-mmk6zOxm';
+      return db.multiUserSession(sessionID);
+    })
+
+    .then((sessionData) => {
+      shouldNotBeLoggedIn(sessionData);
+    });
   });
 });
