@@ -12,12 +12,24 @@ app.use(config.dbServerEndpoint, require('express-pouchdb')(PouchDB.defaults({pr
 app.listen(config.port);
 
 async function setup() {
+  
+  // Set up the admin user.
   try {
-    await http.put(`${DB_URL}/_config/admins/${config.admin.username}`, config.admin.password);
-    await http.put(`${DB_ADMIN_URL}/app`);
+    await http.put(`${DB_URL}/_config/admins/${config.admin.username}`, `"${config.admin.password}"`, {headers:{}});
+    console.log("Admin created.");
   }
   catch (err) {
-    console.log(err); 
+    console.log("We already have admins."); 
   }
+
+  // Set up the app database.
+  try {
+    await http.put(`${DB_ADMIN_URL}/app`);
+    console.log("App database created.");
+  }
+  catch (err) {
+    console.log("We already have an app database."); 
+  }
+
 }
 setup();
