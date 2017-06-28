@@ -2,6 +2,7 @@ var http = require('axios');
 var read = require('read-yaml');
 var PouchDB = require('pouchdb');
 var express = require('express');
+var path = require('path');
 var app = express();
 var config = read.sync('./config.yml');
 
@@ -10,6 +11,8 @@ const DB_ADMIN_URL = `${config.protocol}${config.admin.username}:${config.admin.
 
 app.use(config.dbServerEndpoint, require('express-pouchdb')(PouchDB.defaults({prefix: './db/'})));
 app.listen(config.port);
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 async function setup() {
   
