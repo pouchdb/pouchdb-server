@@ -1,6 +1,6 @@
 {
 	"name": "couchdb-objects",
-	"version": "1.0.7",
+	"version": "1.0.8",
 	"main": "index.js",
 	"description": "Aids in the construction of JSON objects as used by CouchDB.",
 	"repository": "pouchdb/couchdb-objects",
@@ -15,10 +15,10 @@
 	"license": "Apache-2.0",
 	"author": "Marten de Vries",
 	"dependencies": {
-		"is-empty": "^0.0.1",
-		"extend": "^1.2.1",
-		"pouchdb-promise": "^0.0.0",
+		"is-empty": "^1.2.0",
+		"extend": "^3.0.1",
+		"pouchdb-promise": "^6.2.0",
 		"random-uuid-v4": "^0.0.6",
-		"header-case-normalizer": "^1.0.0"
+		"header-case-normalizer": "^1.0.3"
 	}
 }
