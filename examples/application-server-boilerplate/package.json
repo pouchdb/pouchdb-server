@@ -1,0 +1,28 @@
+{
+  "name": "express-pouchdb-server-boilerplate",
+  "version": "0.0.0",
+  "description": "Boilerplate for creating an express-pouchdb-server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rjsteinert/express-pouchdb-server-boilerplate.git"
+  },
+  "keywords": [
+    "express-pouchdb",
+    "pouchdb"
+  ],
+  "author": "R.J. Steinert",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rjsteinert/express-pouchdb-server-boilerplate/issues"
+  },
+  "homepage": "https://github.com/rjsteinert/express-pouchdb-server-boilerplate#readme",
+  "dependencies": {
+    "axios": "^0.16.2",
+    "express-pouchdb": "^2.3.7",
+    "read-yaml": "^1.1.0"
+  }
+}
