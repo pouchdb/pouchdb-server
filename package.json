@@ -11,6 +11,7 @@
     "release": "node ./bin/prerelease.js && ./bin/release.sh"
   },
   "dependencies": {
+    "base64url": "^1.0.5",
     "basic-auth": "^1.1.0",
     "body-parser": "^1.16.1",
     "builtin-modules": "^1.1.1",
@@ -18,8 +19,10 @@
     "compression": "^1.6.2",
     "cookie-parser": "^1.4.3",
     "corser": "~2.0.0",
+    "couchdb-calculate-session-id": "^1.1.0",
     "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.4",
+    "crypto-lite": "^0.1.0",
     "denodeify": "^1.2.1",
     "equals": "^1.0.5",
     "express": "^4.10.4",
@@ -65,6 +68,7 @@
     "random-uuid-v4": "0.0.6",
     "raw-body": "^2.2.0",
     "sanitize-filename": "^1.6.1",
+    "secure-random": "^1.1.1",
     "serve-favicon": "~2.3.2",
     "tail": "^1.2.1",
     "uuid": "^3.0.1",
