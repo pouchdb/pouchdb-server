@@ -1,12 +1,21 @@
-import {setup, teardown, Auth} from './utils';
+const {setup, teardown, Auth} = require('./utils');
 
 describe('hashAdminPasswords', () => {
-  it('should return a promise', async () => {
-    (await Auth.hashAdminPasswords({})).should.eql({});
+  it('should return a promise', () => {
+    return Auth.hashAdminPasswords({})
+
+    .then((response) => {
+      response.should.eql({});
+    });
   });
-  it('should return a promise and accept a callback', async () => {
+  it('should return a promise and accept a callback', () => {
     const cb = () => {};
-    (await Auth.hashAdminPasswords({}, cb)).should.eql({});
+
+    return Auth.hashAdminPasswords({}, cb)
+
+    .then((response) => {
+      response.should.eql({});
+    });
   });
 });
 
@@ -16,9 +25,16 @@ describe('workflow', () => {
     db = setup();
   });
   afterEach(teardown);
-  it('should not throw and methods should return promises', async () => {
-    await db.useAsAuthenticationDB();
-    await db.session(() => {});
-    db.stopUsingAsAuthenticationDB();
+
+  it('should not throw and methods should return promises', () => {
+    return db.useAsAuthenticationDB()
+
+    .then(() => {
+      return db.session(() => {});
+    })
+
+    .then(() => {
+      db.stopUsingAsAuthenticationDB();
+    });
   });
 });
