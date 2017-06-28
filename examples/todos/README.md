@@ -4,5 +4,7 @@ Gets you set up with an express server with pouchdb, and admin user, and an app 
 ## Install
 ```
 npm install
-node index.js
+node app.js
 ```
+
+Then go to http://127.0.0.1:3030/index.html
