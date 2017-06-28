@@ -8,18 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rjsteinert/express-pouchdb-server-boilerplate.git"
+    "url": ""
   },
   "keywords": [
     "express-pouchdb",
     "pouchdb"
   ],
-  "author": "R.J. Steinert",
+  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/rjsteinert/express-pouchdb-server-boilerplate/issues"
-  },
-  "homepage": "https://github.com/rjsteinert/express-pouchdb-server-boilerplate#readme",
   "dependencies": {
     "axios": "^0.16.2",
     "express-pouchdb": "^2.3.7",
