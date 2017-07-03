@@ -1,17 +1,21 @@
-import {setupHTTP, teardown, updateDocument, should} from './utils';
+const {setupHTTP, teardown, updateDocument, should} = require('./utils');
 
 let db;
 
 describe('http tests', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     db = setupHTTP();
-    await db.put(updateDocument);
-  })
+    return db.put(updateDocument);
+  });
   afterEach(teardown);
 
-  it('update', async () => {
-    const [doc, req] = JSON.parse((await db.update('test/args/my-id')).body);
-    should.not.exist(doc);
-    req.id.should.equal('my-id');
+  it('update', () => {
+    return db.update('test/args/my-id')
+
+    .then((result) => {
+      const [doc, req] = JSON.parse(result.body);
+      should.not.exist(doc);
+      req.id.should.equal('my-id');
+    });
   });
 });
