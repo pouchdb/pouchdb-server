@@ -1,0 +1,39 @@
+{
+	"name": "pouchdb-validation",
+	"version": "1.2.1",
+	"main": "index.js",
+	"description": "A PouchDB plug-in that allows you to re-use your CouchDB validate_doc_update functions on the client side.",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/pouchdb/pouchdb-validation.git"
+	},
+	"homepage": "http://python-pouchdb.marten-de-vries.nl/plugins.html",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"validation",
+		"validate",
+		"validate_doc_update"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"couchdb-objects": "^1.0.0",
+		"couchdb-eval": "^1.0.0",
+		"pouchdb-promise": "^0.0.0",
+		"random-uuid-v4": "^0.0.6",
+		"pouchdb-plugin-error": "^1.0.0",
+		"pouchdb-wrappers": "^1.0.0",
+		"pouchdb-bulkdocs-wrapper": "^1.0.0"
+	},
+	"devDependencies": {
+		"pouchdb-plugin-helper": "^3.0.0"
+	},
+	"scripts": {
+		"helper": "./node_modules/.bin/pouchdb-plugin-helper",
+		"test": "npm run helper -- test",
+		"build": "npm run helper -- build Validation"
+	}
+}
