@@ -62,7 +62,6 @@
     "pouchdb-req-http-query": "^1.0.3",
     "pouchdb-rewrite": "^1.0.7",
     "pouchdb-show": "^1.0.8",
-    "pouchdb-size": "^1.2.2",
     "pouchdb-system-db": "^1.0.4",
     "pouchdb-update": "^1.0.8",
     "pouchdb-validation": "^1.2.1",
