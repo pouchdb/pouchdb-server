@@ -1,9 +1,8 @@
-import {setup, teardown} from './utils';
+const {setup, teardown} = require('./utils');
 
 describe('callback usage', () => {
-  it('should allow passing in a callback', async () => {
+  it('should allow passing in a callback', () => {
     const db = setup();
-    await db.validatingPost({}, () => {});
-    await teardown();
+    return db.validatingPost({}, () => {}).then(teardown);
   });
 });

@@ -1,4 +1,4 @@
-import {setupHTTP, teardown, shouldThrowError, onlyTestValidationDoc} from './utils';
+const {setupHTTP, teardown, shouldThrowError, onlyTestValidationDoc} = require('./utils');
 
 let db;
 function before() {
@@ -8,9 +8,10 @@ function before() {
 describe('signature http tests', () => {
   beforeEach(before);
   afterEach(teardown);
-  it('should work with post', async () => {
+
+  it('should work with post', () => {
     // Tests one special validation case to complete JS coverage
-    await db.validatingPost({});
+    return db.validatingPost({});
   });
 });
 
@@ -18,16 +19,25 @@ describe('http tests', () => {
   beforeEach(before);
   afterEach(teardown);
   //FIXME: re-enable (related to bug report)
-  it.skip('should work', async () => {
-    await db.put(onlyTestValidationDoc);
-    const error = await shouldThrowError(async () => {
-      await db.validatingPost({});
-    });
-    error.status.should.equal(403);
-    error.name.should.equal('forbidden');
-    error.message.should.equal("only a document named 'test' is allowed.");
+  it.skip('should work', () => {
+    return db.put(onlyTestValidationDoc)
 
-    const resp = await db.validatingPut({_id: 'test'});
-    resp.ok.should.be.ok;
+    .then(() => {
+      return shouldThrowError(() => {
+        return db.validatingPost({});
+      });
+    })
+
+    .then((error) => {
+      error.status.should.equal(403);
+      error.name.should.equal('forbidden');
+      error.message.should.equal("only a document named 'test' is allowed.");
+
+      return db.validatingPut({_id: 'test'});
+    })
+
+    .then((response) => {
+      response.ok.should.be.ok;
+    });
   });
 });
