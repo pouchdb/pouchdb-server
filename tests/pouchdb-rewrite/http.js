@@ -1,4 +1,4 @@
-import {setupHTTP, teardown, rewriteDocument, shouldThrowError} from './utils';
+const {setupHTTP, teardown, rewriteDocument, shouldThrowError} = require('./utils');
 
 let db;
 
