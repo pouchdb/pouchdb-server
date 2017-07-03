@@ -22,6 +22,8 @@
     "couchdb-calculate-session-id": "^1.1.0",
     "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.4",
+    "couchdb-objects": "^1.0.0",
+    "couchdb-render": "^1.0.0",
     "crypto-lite": "^0.1.0",
     "denodeify": "^1.2.1",
     "equals": "^1.0.5",
