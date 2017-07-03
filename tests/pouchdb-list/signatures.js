@@ -1,4 +1,4 @@
-import {setup, teardown} from './utils';
+const {setup, teardown} = require('./utils');
 
 let db;
 
