@@ -59,6 +59,7 @@
     "pouchdb-replication": "^6.1.0",
     "pouchdb-req-http-query": "^1.0.3",
     "pouchdb-rewrite": "^1.0.7",
+    "pouchdb-route": "^1.0.0",
     "pouchdb-show": "^1.0.8",
     "pouchdb-size": "^1.2.2",
     "pouchdb-system-db": "^1.0.4",
