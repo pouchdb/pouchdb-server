@@ -1,4 +1,4 @@
-import {PouchDB} from './utils';
+const {PouchDB} = require('./utils');
 
 describe('signatures', () => {
   it('vhost', () => {

@@ -1,7 +1,8 @@
-import stuff from 'pouchdb-plugin-helper/testutils';
-import Show from 'pouchdb-show';
-import Rewrite from 'pouchdb-rewrite';
-import VirtualHost from '../';
+const stuff = require('pouchdb-plugin-helper/testutils');
+const Show = require('pouchdb-show');
+const Rewrite = require('pouchdb-rewrite');
+
+const VirtualHost = require('../../packages/node_modules/pouchdb-vhost');
 
 stuff.PouchDB.plugin(Show);
 stuff.PouchDB.plugin(Rewrite);
