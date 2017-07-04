@@ -1,0 +1,21 @@
+{
+	"name": "pouchdb-wrappers",
+	"version": "1.3.6",
+	"main": "index.js",
+	"description": "Makes wrapping PouchDB functions a lot easier.",
+	"repository": "pouchdb/pouchdb-wrappers",
+	"keywords": [
+		"couchdb",
+		"pouchdb",
+		"plug-in",
+		"plugin",
+		"wrap",
+		"wrapper",
+		"wrappers"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"promise-nodify": "^1.0.1"
+	}
+}
