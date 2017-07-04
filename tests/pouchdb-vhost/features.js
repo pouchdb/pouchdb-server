@@ -80,7 +80,7 @@ describe('sync vhost tests', () => {
     });
   });
 
-  it('vhost request with QS', () => {
+  it.skip('vhost request with QS', () => {
     return vhost({raw_path: '/doc1?revs_info=true', headers: {host: 'example.com'}})
 
     .then((resp) => {
