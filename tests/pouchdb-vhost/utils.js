@@ -1,6 +1,6 @@
 const stuff = require('pouchdb-plugin-helper/testutils');
-const Show = require('pouchdb-show');
-const Rewrite = require('pouchdb-rewrite');
+const Show = require('../../packages/node_modules/pouchdb-show');
+const Rewrite = require('../../packages/node_modules/pouchdb-rewrite');
 
 const VirtualHost = require('../../packages/node_modules/pouchdb-vhost');
 
