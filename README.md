@@ -1,6 +1,5 @@
 PouchDB Server [![Build Status](https://travis-ci.org/pouchdb/pouchdb-server.svg)](https://travis-ci.org/pouchdb/pouchdb-server)
 =====
-
 PouchDB Server is a drop-in replacement for CouchDB, using PouchDB and
 Node.js. It is modeled after the single-node design of CouchDB 1.x,
 although it contains some CouchDB 2.x features such as
@@ -9,6 +8,10 @@ although it contains some CouchDB 2.x features such as
 PouchDB Server is much less battle-tested than CouchDB, but it does pass the full [PouchDB test suite](https://github.com/pouchdb/pouchdb/tree/master/tests).
 
 _For the `express-pouchdb` sub-package, skip to [express-pouchdb](#express-pouchdb)._
+
+This git repository is a [monorepo](https://github.com/babel/babel/blob/master/doc/design/monorepo.md), and is the source for many [pouchdb npm packages](https://github.com/pouchdb/pouchdb-server/tree/master/packages/node_modules).
+
+For information about interacting with a PouchDB, see https://pouchdb.com/.
 
 Usage
 ---
