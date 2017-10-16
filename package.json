@@ -58,7 +58,7 @@
     "pouchdb-plugin-error": "^1.0.1",
     "pouchdb-promise": "^6.1.2",
     "pouchdb-replication": "^6.1.0",
-    "pouchdb-req-http-query": "^1.0.3",
+    "pouchdb-req-http-query": "^2.0.0",
     "couchdb-resp-completer": "^1.0.0",
     "pouchdb-rewrite": "^1.0.7",
     "pouchdb-show": "^1.0.8",
