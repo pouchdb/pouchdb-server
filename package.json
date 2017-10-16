@@ -24,7 +24,6 @@
     "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.4",
     "couchdb-objects": "^1.0.0",
-    "couchdb-eval": "^1.0.0",
     "couchdb-render": "^1.0.0",
     "crypto-lite": "^0.1.0",
     "denodeify": "^1.2.1",
