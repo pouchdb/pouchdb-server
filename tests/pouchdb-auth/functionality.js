@@ -418,4 +418,24 @@ describe('No automated test setup', () => {
       shouldNotBeLoggedIn(sessionData);
     });
   });
+
+  it('should account for roles set in user doc even for server admins', () => {
+    return db.useAsAuthenticationDB({
+      admins: {
+        username: '-pbkdf2-37508a1f1c5c19f38779fbe029ae99ee32988293,885e6e9e9031e391d5ef12abbb6c6aef,10'
+      }
+    })
+      .then(() => db.logIn('username', 'test'))
+      .then(() => db.session())
+      .then((session) => {
+        session.userCtx.name.should.equal('username');
+        session.userCtx.roles.should.deep.equal(['_admin']);
+      })
+      .then(() => db.signUp('username', 'password', {roles: ['test']}))
+      .then(() => db.session())
+      .then((session) => {
+        session.userCtx.name.should.equal('username');
+        session.userCtx.roles.should.deep.equal(['_admin', 'test']);
+      });
+  });
 });
