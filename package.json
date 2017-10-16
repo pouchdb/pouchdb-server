@@ -92,7 +92,7 @@
     "lodash.uniq": "^4.5.0",
     "memdown": "^1.2.4",
     "mocha": "^3.2.0",
-    "pouchdb-plugin-helper": "^3.0.2",
+    "pouchdb-plugin-helper": "^5.0.1",
     "pouchdb-seamless-auth": "^1.0.2",
     "pouchdb-show": "^1.0.7",
     "pouchdb-update": "^1.0.7",
