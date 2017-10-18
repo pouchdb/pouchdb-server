@@ -3,9 +3,9 @@ const Rewrite = require('../../packages/node_modules/pouchdb-rewrite');
 
 const List = require('../../packages/node_modules/pouchdb-list');
 const Security = require('../../packages/node_modules/pouchdb-security');
-const Show = require('pouchdb-show');
-const Update = require('pouchdb-update');
-const Validation = require('pouchdb-validation');
+const Show = require('../../packages/node_modules/pouchdb-show');
+const Update = require('../../packages/node_modules/pouchdb-update');
+const Validation = require('../../packages/node_modules/pouchdb-validation');
 
 const AllDbs = require('pouchdb-all-dbs');
 const SeamlessAuth = require('pouchdb-seamless-auth');

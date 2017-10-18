@@ -1,4 +1,4 @@
-import {setup, teardown} from './utils';
+const {setup, teardown} = require('./utils');
 
 let db;
 
@@ -7,8 +7,8 @@ describe('signatures', () => {
     db = setup();
   });
   afterEach(teardown);
-  it('rewrite', () => {
-    const promise = db.rewrite('test/test/test', () => {});
+  it('show', () => {
+    const promise = db.show('test/test/test', () => {});
     promise.then.should.be.ok;
     promise.catch.should.be.ok;
   });
