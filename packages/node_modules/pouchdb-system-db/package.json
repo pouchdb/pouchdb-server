@@ -1,0 +1,27 @@
+{
+	"name": "pouchdb-system-db",
+	"version": "1.0.4",
+	"main": "index.js",
+	"description": "Protects PouchDB system databases by wrapping their methods.",
+	"repository": "pouchdb/pouchdb-system-db",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"couchdb",
+		"pouchdb",
+		"plug-in",
+		"plugin",
+		"wrap",
+		"system",
+		"database",
+		"protect",
+		"protection"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-security": "^1.0.0",
+		"pouchdb-wrappers": "^1.0.0",
+		"pouchdb-plugin-error": "^1.0.0",
+		"pouchdb-changeslike-wrapper": "^1.0.0"
+	}
+}
