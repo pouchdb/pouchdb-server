@@ -14,7 +14,7 @@ if [ ! -d "$DIRECTORY" ]; then
     https://github.com/pouchdb/pouchdb.git ${DIRECTORY}
 fi
 
-cd pouchdb-tests
-git checkout 1ccf22988088273013a5954361f4f963f713a612
+cd "$DIRECTORY"
+git checkout de54c62f99d028593059e615b5702131864b6dd4 # 6.4.1
 npm install
 cd ..
