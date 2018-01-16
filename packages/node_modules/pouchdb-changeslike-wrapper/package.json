@@ -1,0 +1,22 @@
+{
+	"name": "pouchdb-changeslike-wrapper",
+	"version": "1.0.1",
+	"main": "index.js",
+	"description": "Helper function that makes wrapping changes(), sync(), replicate() etc. using pouchdb-wrappers easier.",
+	"repository": "pouchdb/pouchdb-changeslike-wrapper",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"couchdb",
+		"pouchdb",
+		"plug-in",
+		"plugin",
+		"wrap",
+		"wrapper",
+		"wrappers",
+		"changes",
+		"replicate",
+		"sync"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries"
+}
