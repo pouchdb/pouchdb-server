@@ -1,0 +1,23 @@
+{
+	"name": "pouchdb-bulkdocs-wrapper",
+	"version": "1.0.2",
+	"main": "index.js",
+	"description": "Helper function that makes wrapping bulkDocs using pouchdb-wrappers easier.",
+	"repository": "pouchdb/pouchdb-bulkdocs-wrapper",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"couchdb",
+		"pouchdb",
+		"plug-in",
+		"plugin",
+		"wrap",
+		"wrapper",
+		"wrappers",
+		"bulkDocs"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"pouchdb-promise": "^0.0.0"
+	}
+}
