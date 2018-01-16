@@ -49,6 +49,7 @@
     "uuid": "^3.0.1",
     "wordwrap": "1.0.0",
     "xhr2": "^0.1.3",
+    "xmlhttprequest-cookie": "^0.9.2",
     "pouchdb": "^6.4.1",
     "pouchdb-adapter-http": "^6.4.1",
     "pouchdb-adapter-leveldb-core": "^6.4.1",
@@ -66,7 +67,7 @@
     "pouchdb-changeslike-wrapper": "^1.0.1",
     "pouchdb-list": "file:packages/node_modules/pouchdb-list",
     "pouchdb-plugin-error": "^1.0.1",
-    "pouchdb-req-http-query": "^2.0.0",
+    "pouchdb-req-http-query": "file:packages/node_modules/pouchdb-req-http-query",
     "pouchdb-rewrite": "file:packages/node_modules/pouchdb-rewrite",
     "pouchdb-show": "^1.0.8",
     "pouchdb-size": "^1.2.2",
@@ -96,5 +97,8 @@
   "optionalDependencies": {
     "pouchdb-adapter-node-websql": "^6.4.1",
     "pouchdb-adapter-leveldb": "^6.4.1"
+  },
+  "browser": {
+    "xmlhttprequest-cookie": false
   }
 }
