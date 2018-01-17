@@ -63,7 +63,7 @@
     "pouchdb-all-dbs": "^1.0.2",
     "http-pouchdb": "file:packages/node_modules/http-pouchdb",
     "pouchdb-auth": "file:packages/node_modules/pouchdb-auth",
-    "pouchdb-bulkdocs-wrapper": "^1.0.2",
+    "pouchdb-bulkdocs-wrapper": "file:packages/node_modules/pouchdb-bulkdocs-wrapper",
     "pouchdb-changeslike-wrapper": "file:packages/node_modules/pouchdb-changeslike-wrapper",
     "pouchdb-list": "file:packages/node_modules/pouchdb-list",
     "pouchdb-plugin-error": "^1.0.1",
