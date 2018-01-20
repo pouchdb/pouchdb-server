@@ -1,0 +1,15 @@
+{
+	"name": "pouchdb-plugin-error",
+	"version": "1.0.1",
+	"main": "index.js",
+	"description": "A PouchDB-like error object, for use by plug-ins.",
+	"repository": "pouchdb/pouchdb-plugin-error",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"error",
+		"plugin"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries"
+}
