@@ -66,7 +66,7 @@
     "pouchdb-bulkdocs-wrapper": "file:packages/node_modules/pouchdb-bulkdocs-wrapper",
     "pouchdb-changeslike-wrapper": "file:packages/node_modules/pouchdb-changeslike-wrapper",
     "pouchdb-list": "file:packages/node_modules/pouchdb-list",
-    "pouchdb-plugin-error": "^1.0.1",
+    "pouchdb-plugin-error": "file:packages/node_modules/pouchdb-plugin-error",
     "pouchdb-req-http-query": "file:packages/node_modules/pouchdb-req-http-query",
     "pouchdb-rewrite": "file:packages/node_modules/pouchdb-rewrite",
     "pouchdb-show": "^1.0.8",
