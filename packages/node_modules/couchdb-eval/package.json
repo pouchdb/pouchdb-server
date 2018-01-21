@@ -1,0 +1,21 @@
+{
+	"name": "couchdb-eval",
+	"main": "index.js",
+	"version": "1.0.6",
+	"description": "Compiles a piece of code to a function object, providing a CouchDB-like JavaScript context.",
+	"repository": "pouchdb/couchdb-eval",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"eval"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"extend": "^1.2.1",
+		"pouchdb-plugin-error": "^1.0.0"
+	}
+}
