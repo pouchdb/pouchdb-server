@@ -1,10 +1,4 @@
-"use strict";
-
-/*global describe, it, after, before */
-/*jshint expr: true */
-
-var chai = require('chai');
-var should = chai.should();
+var should = require('chai').should();
 var PouchDB = require('pouchdb');
 var memdown = require('memdown');
 var sqldown = require('sqldown');
@@ -13,8 +7,8 @@ var jsondown = require('jsondown');
 var locket = require('locket');
 var Promise = require('bluebird');
 var fse = Promise.promisifyAll(require("fs-extra"));
-//pouchdb-size
-PouchDB.plugin(require('../'));
+
+PouchDB.plugin(require('pouchdb-size'));
 
 describe('pouchdb-size tests', function () {
   before(function () {
