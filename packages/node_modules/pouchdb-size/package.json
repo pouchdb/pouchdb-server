@@ -1,0 +1,49 @@
+{
+  "name": "pouchdb-size",
+  "version": "1.2.2",
+  "description": "Adds disk_size to info()'s output for your leveldown backed PouchDB's.",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^3.2.1",
+    "get-folder-size": "^1.0.0",
+    "pouchdb-wrappers": "^1.2.0",
+    "promise-nodify": "^1.0.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "fs-extra": "^0.30.0",
+    "istanbul": "^0.4.2",
+    "jshint": "^2.5.10",
+    "jsondown": "^0.1.1",
+    "locket": "1.0.0",
+    "medeadown": "^1.1.1",
+    "memdown": "^1.0.0",
+    "mocha": "^2.0.1",
+    "pouchdb": "^5.2.1",
+    "sqldown": "^2.1.0",
+    "sqlite3": "^3.0.4"
+  },
+  "scripts": {
+    "test": "npm run coverage && npm run jshint",
+    "coverage": "npm run collect-coverage && npm run check-coverage",
+    "collect-coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha",
+    "check-coverage": "./node_modules/.bin/istanbul check-coverage --statement 100 --branch 100 --function 100",
+    "jshint": "./node_modules/.bin/jshint index.js test/test.js"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "couch",
+    "couchdb",
+    "size",
+    "disk_size",
+    "info",
+    "filesize"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marten-de-vries/pouchdb-size.git"
+  },
+  "author": "Marten de Vries",
+  "license": "Apache-2.0"
+}
