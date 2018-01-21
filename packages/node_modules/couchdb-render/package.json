@@ -1,0 +1,26 @@
+{
+	"name": "couchdb-render",
+	"version": "1.0.1",
+	"main": "index.js",
+	"description": "Given the code of a CouchDB show/list function (and some other stuff), this module runs it and returns the result.",
+	"repository": "pouchdb/couchdb-render",
+	"bugs": "https://bugs.launchpad.net/python-pouchdb",
+	"keywords": [
+		"pouch",
+		"pouchdb",
+		"couch",
+		"couchdb",
+		"render",
+		"show",
+		"list"
+	],
+	"license": "Apache-2.0",
+	"author": "Marten de Vries",
+	"dependencies": {
+		"extend": "^1.2.1",
+		"is-empty": "^0.0.1",
+		"couchdb-eval": "^1.0.0",
+		"couchdb-resp-completer": "^1.0.0",
+		"pouchdb-plugin-error": "^1.0.0"
+	}
+}
