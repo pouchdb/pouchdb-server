@@ -20,7 +20,6 @@
     "cookie-parser": "^1.4.3",
     "corser": "~2.0.0",
     "couchdb-calculate-session-id": "^1.1.0",
-    "couchdb-harness": "*",
     "couchdb-log-parse": "^0.0.4",
     "crypto-lite": "^0.1.0",
     "denodeify": "^1.2.1",
@@ -83,6 +82,7 @@
   },
   "devDependencies": {
     "assert": "^1.4.1",
+    "couchdb-harness": "*",
     "bluebird": "^3.4.7",
     "builtin-modules": "^1.1.1",
     "chai": "^4.1.2",
