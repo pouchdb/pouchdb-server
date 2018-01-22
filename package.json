@@ -71,13 +71,14 @@
     "pouchdb-plugin-error": "file:packages/node_modules/pouchdb-plugin-error",
     "pouchdb-req-http-query": "file:packages/node_modules/pouchdb-req-http-query",
     "pouchdb-rewrite": "file:packages/node_modules/pouchdb-rewrite",
+    "pouchdb-route": "file:packages/node_modules/pouchdb-route",
     "pouchdb-show": "^1.0.8",
     "pouchdb-size": "file:packages/node_modules/pouchdb-size",
     "pouchdb-security": "file:packages/node_modules/pouchdb-security",
     "pouchdb-system-db": "file:packages/node_modules/pouchdb-system-db",
     "pouchdb-update": "file:packages/node_modules/pouchdb-update",
     "pouchdb-validation": "file:packages/node_modules/pouchdb-validation",
-    "pouchdb-vhost": "^1.0.2",
+    "pouchdb-vhost": "file:packages/node_modules/pouchdb-vhost",
     "pouchdb-wrappers": "file:packages/node_modules/pouchdb-wrappers"
   },
   "devDependencies": {
