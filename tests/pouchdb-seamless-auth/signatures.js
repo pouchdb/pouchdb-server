@@ -1,4 +1,4 @@
-import {waitUntilReady, cleanup, PouchDB} from './utils';
+const {waitUntilReady, cleanup, PouchDB} = require('./utils');
 
 describe('signatures', () => {
   before(waitUntilReady);
@@ -8,5 +8,6 @@ describe('signatures', () => {
     const promise = PouchDB.seamlessSession(() => {});
     promise.then.should.be.ok;
     promise.catch.should.be.ok;
+    return promise;
   });
 });
