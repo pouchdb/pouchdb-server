@@ -1,8 +1,8 @@
 const {PouchDB} = require('./utils');
 
-describe('signatures', () => {
-  it('vhost', () => {
-    const promise = PouchDB.virtualHost({raw_path: '/'}, {}, () => {});
+describe('signatures', function () {
+  it('vhost', function () {
+    const promise = PouchDB.virtualHost({raw_path: '/'}, {}, function () {});
     promise.then.should.be.ok;
     promise.catch.should.be.ok;
   });

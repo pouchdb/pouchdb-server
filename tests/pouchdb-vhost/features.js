@@ -19,7 +19,7 @@
 const {setup, teardown, PouchDB} = require('./utils');
 let db;
 
-describe('sync vhost tests', () => {
+describe('sync vhost tests', function () {
   const vhosts = {
     'example.com': '/test',
     '*.example.com': '/test/_design/doc1/_rewrite',
@@ -33,83 +33,102 @@ describe('sync vhost tests', () => {
     'example3.com': '/'
   };
 
-  beforeEach(async () => {
+  beforeEach(function () {
     db = setup();
-    await db.put({
+    return db.put({
       _id: 'doc1',
       value: 666
-    });
-    await db.put({
-      _id: '_design/doc1',
-      shows: {
-        test: `function (doc, req) {
-          return {
-            json: {
-              requested_path: '/' + req.requested_path.join('/'),
-              path: '/' + req.path.join('/')
-            }
-          };
-        }`
-      },
-      rewrites: [{
-        from: '/',
-        to: '_show/test'
-      }]
+    }).then(function () {
+      return db.put({
+        _id: '_design/doc1',
+        shows: {
+          test: `function (doc, req) {
+            return {
+              json: {
+                requested_path: '/' + req.requested_path.join('/'),
+                path: '/' + req.path.join('/')
+              }
+            };
+          }`
+        },
+        rewrites: [{
+          from: '/',
+          to: '_show/test'
+        }]
+      });
     });
   });
+
   afterEach(teardown);
 
   function vhost(req) {
     req.raw_path = req.raw_path || '/';
     return PouchDB.virtualHost(req, vhosts);
   }
+
   function resolve(req) {
     req.raw_path = req.raw_path || '/';
     return PouchDB.resolveVirtualHost(req, vhosts);
   }
 
-  it('regular request', async () => {
+  it('regular request', function () {
     // with no host headers, no vhost should be used
-    await resolve({}).should.equal('/');
+    return resolve({}).should.equal('/');
   });
 
-  it('vhost request', async () => {
-    const info = await vhost({headers:{host: 'example.com'}});
-    info.should.have.property('db_name');
+  it('vhost request', function () {
+    return vhost({headers:{host: 'example.com'}})
+      .then(function (info) {
+        info.should.have.property('db_name');
+      });
   });
 
-  it('vhost request with QS', async () => {
-    const doc = await vhost({raw_path: '/doc1?revs_info=true', headers: {host: 'example.com'}});
-    doc.should.have.property('_revs_info');
+  it('vhost request with QS', function () {
+    return vhost({raw_path: '/doc1?revs_info=true', headers: {host: 'example.com'}})
+      .then(function (doc) {
+        doc.should.have.property('_revs_info');
+      });
   });
 
-  it('vhost requested path', async () => {
-    const resp = await vhost({headers: {host: 'example1.com'}});
-    resp.json.requested_path.should.equal('/');
+  it('vhost requested path', function () {
+    return vhost({headers: {host: 'example1.com'}})
+      .then(function (resp) {
+        resp.json.requested_path.should.equal('/');
+      });
   });
 
-  it('vhost requested path path', async () => {
-    const resp = await vhost({headers: {Host: 'example1.com'}});
-    resp.json.path.should.equal('/test/_design/doc1/_show/test');
+  it('vhost requested path path', function () {
+    return vhost({headers: {Host: 'example1.com'}})
+      .then(function (resp) {
+        resp.json.path.should.equal('/test/_design/doc1/_show/test');
+      });
   });
 
-  it('vhost request with wildcard', async () => {
-    const resp = await vhost({headers: {host: 'test.example.com'}});
-    resp.json.path.should.equal('/test/_design/doc1/_show/test');
+  it('vhost request with wildcard', function () {
+    return vhost({headers: {host: 'test.example.com'}})
+      .then(function (resp) {
+        resp.json.path.should.equal('/test/_design/doc1/_show/test');
+      });
   });
 
-  it('vhost request replace var', async () => {
-    const info = await vhost({headers: {host: 'test.example1.com'}});
-    info.should.have.property('db_name');
+  it('vhost request replace var', function () {
+    return vhost({headers: {host: 'test.example1.com'}})
+      .then(function (info) {
+        info.should.have.property('db_name');
+      });
   });
 
-  it('vhost request replace var1', async () => {
-    const resp = await vhost({headers: {Host: 'doc1.test.example1.com'}});
-    resp.json.path.should.equal('/test/_design/doc1/_show/test');
+  it('vhost request replace var1', function () {
+    return vhost({headers: {Host: 'doc1.test.example1.com'}})
+      .then(function (resp) {
+        resp.json.path.should.equal('/test/_design/doc1/_show/test');
+      });
   });
 
-  it('vhost request replace wildcard', async () => {
-    const info = await vhost({headers: {host: 'test.example2.com'}});
-    info.should.have.property('db_name');
+  it('vhost request replace wildcard', function () {
+    return vhost({headers: {host: 'test.example2.com'}})
+      .then(function (info) {
+        info.should.have.property('db_name');
+      });
   });
 });
