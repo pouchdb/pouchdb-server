@@ -16,7 +16,7 @@
     - testVHostRequestPath
 */
 
-import {setup, teardown, PouchDB} from './utils';
+const {setup, teardown, PouchDB} = require('./utils');
 let db;
 
 describe('sync vhost tests', () => {
@@ -35,8 +35,12 @@ describe('sync vhost tests', () => {
 
   beforeEach(async () => {
     db = setup();
-    await db.put({value: 666}, 'doc1');
     await db.put({
+      _id: 'doc1',
+      value: 666
+    });
+    await db.put({
+      _id: '_design/doc1',
       shows: {
         test: `function (doc, req) {
           return {
@@ -51,7 +55,7 @@ describe('sync vhost tests', () => {
         from: '/',
         to: '_show/test'
       }]
-    }, '_design/doc1');
+    });
   });
   afterEach(teardown);
 

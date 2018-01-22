@@ -78,7 +78,7 @@
     "pouchdb-system-db": "file:packages/node_modules/pouchdb-system-db",
     "pouchdb-update": "file:packages/node_modules/pouchdb-update",
     "pouchdb-validation": "file:packages/node_modules/pouchdb-validation",
-    "pouchdb-vhost": "^1.0.2",
+    "pouchdb-vhost": "file:packages/node_modules/pouchdb-vhost",
     "pouchdb-wrappers": "file:packages/node_modules/pouchdb-wrappers"
   },
   "devDependencies": {
