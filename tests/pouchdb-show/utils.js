@@ -1,5 +1,5 @@
-import stuff from 'pouchdb-plugin-helper/testutils';
-import Show from '../';
+const stuff = require('pouchdb-plugin-helper/testutils');
+const Show = require('../../packages/node_modules/pouchdb-show');
 
 stuff.PouchDB.plugin(Show);
 
@@ -66,11 +66,11 @@ stuff.showDocument = {
 stuff.checkUserAgent = ua => {
 	ua.should.contain('Mozilla');
 	ua.should.contain('Gecko');
-}
+};
 
 stuff.checkUuid = uuid => {
 	uuid.should.be.a('string');
-	uuid.length.should.be.greaterThan(30)
-}
+	uuid.length.should.be.greaterThan(30);
+};
 
 module.exports = stuff;
