@@ -71,6 +71,7 @@
     "pouchdb-req-http-query": "file:packages/node_modules/pouchdb-req-http-query",
     "pouchdb-rewrite": "file:packages/node_modules/pouchdb-rewrite",
     "pouchdb-route": "file:packages/node_modules/pouchdb-route",
+    "pouchdb-seamless-auth": "file:packages/node_modules/pouchdb-seamless-auth",
     "pouchdb-show": "file:packages/node_modules/pouchdb-show",
     "pouchdb-size": "file:packages/node_modules/pouchdb-size",
     "pouchdb-security": "file:packages/node_modules/pouchdb-security",
@@ -99,7 +100,6 @@
     "mocha": "^3.2.0",
     "navigator": "^1.0.1",
     "pouchdb-plugin-helper": "^5.0.1",
-    "pouchdb-seamless-auth": "^1.0.2",
     "sqldown": "^2.1.0",
     "sqlite3": "^3.1.13",
     "supertest": "^3.0.0"
