@@ -21,7 +21,7 @@ var systemDB = require('pouchdb-system-db');
 var Validation = require('pouchdb-validation');
 var wrappers = require('pouchdb-wrappers');
 
-var admins = require('./admins')
+var admins = require('./admins');
 var api = require('./sessionapi');
 var designDoc = require('./designdoc');
 var utils = require('./utils');
