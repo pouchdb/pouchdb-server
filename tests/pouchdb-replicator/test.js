@@ -1,6 +1,6 @@
 const Promise = require('bluebird');
 global.Promise = Promise; //use bluebird for all promises
-const {PouchDB, setup, teardown, should} = require('pouchdb-plugin-helper/testutils');
+const {PouchDB, setup, teardown, should} = require('../testutils');
 const Replicator = require('../../packages/node_modules/pouchdb-replicator');
 const extend = require('extend');
 

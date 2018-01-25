@@ -1,5 +1,5 @@
 const Validation = require('../../packages/node_modules/pouchdb-validation');
-const stuff = require('pouchdb-plugin-helper/testutils');
+const stuff = require('../testutils');
 
 stuff.PouchDB.plugin(Validation);
 stuff.onlyTestValidationDoc = {
