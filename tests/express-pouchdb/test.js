@@ -256,6 +256,76 @@ describe('redirects', function () {
   });
 });
 
+describe('endpoints', function () {
+  it("should be on the 'secured' whitelist (pouchdb/pouchdb-server#290)", function () {
+    // https://stackoverflow.com/a/14934933
+    var unguardedRoutes = inMemoryConfigApp._router.stack.filter(function (layer) {
+      if (layer.route) {
+        return typeof {
+          // A lookup that maps [a route we know is never exposed to a user
+          // without proper authorization] to [the file, module or other reason
+          // that the route is secured (the value of which is given here only
+          // for human convenience)].
+          //
+          // Before adding to this list, make sure of the following:
+          // - the security document is respected
+          // - validation documents are respected
+          // - extra system database restrictions (_users & _replicator) are
+          //   handled correctly
+          //
+          '/_config': 'routes/authorization.js',
+          '/_config/:section': 'routes/authorization.js',
+          '/_config/:section/:key': 'routes/authorization.js',
+          '/_log': 'routes/authorization.js',
+          '/_active_tasks': 'routes/authorization.js',
+          '/_db_updates': 'routes/authorization.js',
+          '/_restart': 'routes/authorization.js',
+          '/': 'publicly accessible API',
+          '/_session': 'publicly accessable API',
+          '/_utils': 'publicly accessable API',
+          '/_membership': 'publicly accessable API',
+          '/_cluster_setup': 'publically accessable API',
+          '/_uuids': 'publically accessable API',
+          '/_all_dbs': 'publically accessable API',
+          '/_replicate': 'publically accessable API',
+          '/_stats': 'publically accessable API',
+          '/:db': 'pouchdb-security',
+          '/:db/*': 'pouchdb-security + pouchdb-system-db + pouchdb-validation',
+          '/:db/_ensure_full_commit': 'db.js: for now at least',
+          '/:db/_bulk_docs': 'pouchdb-security + pouchdb-validation',
+          '/:db/_all_docs': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_bulk_get': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_changes': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_compact': 'pouchdb-security',
+          '/:db/_revs_diff': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_security': 'pouchdb-security',
+          '/:db/_query': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_view_cleanup': 'pouhdb-security',
+          '/:db/_temp_view': 'pouchdb-security + pouchdb-system-db',
+          '/:db/:id(*)': 'pouchdb-security + pouchdb-validation',
+          '/:db/:id': 'pouchdb-security + pouchdb-validation + pouchdb-system-db',
+          '/:db/_index': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_index/:ddoc/:type/:name': 'pouchdb-security',
+          '/:db/_find': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_explain': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_design/:id/_view/:view': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_design/:id/_info': 'ddoc-info.js itself (at least for now)',
+          '/:db/_design/:id/_show/:func*': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_design/:id/_list/:func/:view': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_design/:id/_list/:func/:id2/:view': 'pouchdb-security + pouchdb-system-db',
+          '/:db/_design/:id/_update/:func*': 'pouchdb-security + pouchdb-validation',
+          '/:db/_design/:id/:attachment(*)': 'pouchdb-security + pouchdb-validation + pouchdb-system-db',
+          '/:db/:id/:attachment(*)': 'pouchdb-security + pouchdb-validation + pouchdb-system-db',
+        }[layer.route.path] === 'undefined';
+      }
+    }).map(function (layer) {
+      return layer.route.path;
+    });
+    var msg = "Not on the whitelist:\n\n" + unguardedRoutes.join('\n');
+    assert.equal(unguardedRoutes.length, 0, msg);
+  });
+});
+
 function assertException(func, re) {
   var e;
   try {
