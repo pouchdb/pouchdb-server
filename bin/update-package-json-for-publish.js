@@ -50,11 +50,13 @@ modules.forEach(function (mod) {
     dep = dep.split('/')[0]; // split colors/safe to be colors
 
     if (topPkg.dependencies[dep]) {
-      deps.dependencies[dep] = topPkg.dependencies[dep];
+      if (modules.indexOf(dep) !== -1) { // core pouchdb-* module
+        deps.dependencies[dep] = topPkg.version;
+      } else {
+        deps.dependencies[dep] = topPkg.dependencies[dep];
+      }
     } else if (topPkg.optionalDependencies[dep]) {
       deps.optionalDependencies[dep] = topPkg.optionalDependencies[dep];
-    } else if (modules.indexOf(dep) !== -1) { // core pouchdb-* module
-      deps.dependencies[dep] = topPkg.version;
     } else {
       throw new Error('Unknown dependency ' + dep);
     }
