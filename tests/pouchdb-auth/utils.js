@@ -1,5 +1,5 @@
 const Auth = require('../../packages/node_modules/pouchdb-auth');
-const stuff = require('pouchdb-plugin-helper/testutils');
+const stuff = require('../testutils');
 const extend = require('extend');
 
 stuff.PouchDB.plugin(Auth);

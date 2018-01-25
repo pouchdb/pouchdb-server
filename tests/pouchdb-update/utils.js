@@ -1,4 +1,4 @@
-const stuff = require('pouchdb-plugin-helper/testutils');
+const stuff = require('../testutils');
 const Update = require('../../packages/node_modules/pouchdb-update');
 
 stuff.PouchDB.plugin(Update);

@@ -1,4 +1,4 @@
-const stuff = require('pouchdb-plugin-helper/testutils');
+const stuff = require('../testutils');
 const SeamlessAuth = require('../../packages/node_modules/pouchdb-seamless-auth');
 
 stuff.waitUntilReady = () => SeamlessAuth(stuff.PouchDB);

@@ -1,4 +1,4 @@
-const {PouchDB} = require('pouchdb-plugin-helper/testutils');
+const {PouchDB} = require('../testutils');
 const buildHTTPPouchDB = require('../../packages/node_modules/http-pouchdb');
 const should = require('chai').should();
 
