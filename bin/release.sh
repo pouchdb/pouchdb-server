@@ -46,10 +46,10 @@ done
 
 # Build browser packages
 for pkg in $(ls packages/node_modules); do
-  if [ "false" = $(node --eval "console.log(!!require('./packages/node_modules/$pkg/package.json').browser);") ]; then
+  if [ "false" = $(node --eval "console.log(!!require('./package.json').browserPackages['$pkg']);") ]; then
       continue
   fi
-  module_name=$(node --eval "console.log(require('pascalcase')('$pkg'));")
+  module_name=$(node --eval "console.log(require('./package.json').browserPackages['$pkg']);")
   browserify packages/node_modules/$pkg -o packages/node_modules/$pkg/dist/$pkg.js -s $module_name
   uglifyjs packages/node_modules/$pkg/dist/$pkg.js -o packages/node_modules/$pkg/dist/$pkg.min.js
 done

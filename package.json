@@ -103,7 +103,6 @@
     "memdown": "^1.2.4",
     "mocha": "^3.2.0",
     "navigator": "^1.0.1",
-    "pascalcase": "^0.1.1",
     "pouchdb-plugin-helper": "^5.0.1",
     "sqldown": "^2.1.0",
     "sqlite3": "^3.1.13",
@@ -114,7 +113,17 @@
     "pouchdb-adapter-node-websql": "^6.4.1",
     "pouchdb-adapter-leveldb": "^6.4.1"
   },
-  "browser": {
-    "xmlhttprequest-cookie": false
+  "browserPackages": {
+    "http-pouchdb": "buildHTTPPouchDB",
+    "pouchdb-auth": "Auth",
+    "pouchdb-list": "List",
+    "pouchdb-replicator": "Replicator",
+    "pouchdb-rewrite": "Rewrite",
+    "pouchdb-seamless-auth": "SeamlessAuth",
+    "pouchdb-security": "Security",
+    "pouchdb-show": "Show",
+    "pouchdb-update": "Update",
+    "pouchdb-validation": "Validation",
+    "pouchdb-vhost": "VirtualHost"
   }
 }
