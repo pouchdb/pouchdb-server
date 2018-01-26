@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -f config.json
+rm -rf _users
+rm -rf _replicator
+rm -rf pouch__all_dbs__
