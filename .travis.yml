@@ -75,6 +75,7 @@ matrix:
 branches:
   only:
   - master
+  - /^greenkeeper/.*$/
 
 cache:
   directories:
