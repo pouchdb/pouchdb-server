@@ -1,5 +1,6 @@
-PouchDB Server [![Build Status](https://travis-ci.org/pouchdb/pouchdb-server.svg)](https://travis-ci.org/pouchdb/pouchdb-server)
+PouchDB Server [![Build Status](https://travis-ci.org/pouchdb/pouchdb-server.svg)](https://travis-ci.org/pouchdb/pouchdb-server) [![Greenkeeper badge](https://badges.greenkeeper.io/pouchdb/pouchdb-server.svg)](https://greenkeeper.io/)
 =====
+
 PouchDB Server is a drop-in replacement for CouchDB, using PouchDB and
 Node.js. It is modeled after the single-node design of CouchDB 1.x,
 although it contains some CouchDB 2.x features such as
