@@ -274,7 +274,7 @@ var app2 = require('express-pouchdb')(require('pouchdb'), {
 #### Using your own PouchDB
 
 Since you pass in the `PouchDB` that you would like to use with
-`express-pouchb`, you can drop `express-pouchdb` into an existing Node-based
+`express-pouchdb`, you can drop `express-pouchdb` into an existing Node-based
 PouchDB application and get all the benefits of the HTTP interface
 without having to change your code.
 
