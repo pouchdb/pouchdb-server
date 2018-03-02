@@ -91,7 +91,7 @@
     "builtin-modules": "^2.0.0",
     "chai": "^4.1.2",
     "couchdb-harness": "*",
-    "eslint": "4.18.1",
+    "eslint": "4.18.2",
     "find-requires": "^0.2.2",
     "fs-extra": "^5.0.0",
     "glob": "^7.1.1",
