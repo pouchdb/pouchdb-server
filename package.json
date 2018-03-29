@@ -43,7 +43,7 @@
     "raw-body": "^2.2.0",
     "sanitize-filename": "^1.6.1",
     "secure-random": "^1.1.1",
-    "serve-favicon": "~2.4.5",
+    "serve-favicon": "~2.5.0",
     "tail": "^1.2.1",
     "uuid": "^3.0.1",
     "wordwrap": "1.0.0",
