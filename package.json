@@ -27,7 +27,7 @@
     "equals": "^1.0.5",
     "express": "^4.14.1",
     "extend": "^3.0.0",
-    "get-folder-size": "^1.0.0",
+    "get-folder-size": "^2.0.0",
     "header-case-normalizer": "^1.0.3",
     "is-empty": "^1.2.0",
     "killable": "^1.0.0",
