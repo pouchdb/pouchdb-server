@@ -3,6 +3,12 @@ const buildHTTPPouchDB = require('../../packages/node_modules/http-pouchdb');
 const should = require('chai').should();
 
 var HTTPPouchDB = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/');
+var HTTPPouchDBWithAuth = buildHTTPPouchDB(PouchDB, 'http://localhost:5984/', {
+  auth: {
+    username: 'john',
+    password: 'smith'
+  }
+});
 var XMLHttpRequest = require('xhr2');
 var Promise = require('bluebird');
 
@@ -70,6 +76,17 @@ describe('allDbs', function () {
       should.not.exist(err);
       dbs.should.contain('_users');
       dbs.should.contain('_replicator');
+
+      done();
+    });
+  });
+
+  it('should make use of opts.auth', function (done) {
+    HTTPPouchDBWithAuth.allDbs(function (err, dbs) {
+      should.not.exist(err);
+      should.exist(dbs);
+      dbs.error.should.equal('unauthorized');
+      dbs.reason.should.equal('Name or password is incorrect.');
 
       done();
     });
