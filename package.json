@@ -100,7 +100,7 @@
     "lodash.flatten": "^4.4.0",
     "lodash.uniq": "^4.5.0",
     "medeadown": "^1.1.1",
-    "memdown": "^1.2.4",
+    "memdown": "^3.0.0",
     "mocha": "^5.0.0",
     "navigator": "^1.0.1",
     "sqldown": "^2.1.0",
