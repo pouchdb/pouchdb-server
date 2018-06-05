@@ -47,7 +47,9 @@ modules.forEach(function (mod) {
       return deps; // do nothing its a local file
     }
 
-    dep = dep.split('/')[0]; // split colors/safe to be colors
+    if (dep[0] !== '@') {
+      dep = dep.split('/')[0]; // split colors/safe to be colors
+    }
 
     if (topPkg.dependencies[dep]) {
       if (modules.indexOf(dep) !== -1) { // core pouchdb-* module
