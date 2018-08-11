@@ -107,6 +107,49 @@ describe('config', function () {
       });
     });
   });
+  it('should support setting admins', function (done) {
+    var cleanUpTest = function () {
+      return fse.removeAsync(TEST_DATA + 'one-shot');
+    };
+    fse.mkdirsAsync(TEST_DATA + 'one-shot').then(function () {
+      // Creates a single usage app.
+      var oneShotExpressApp = buildApp(PouchDB.defaults({
+        prefix: TEST_DATA + 'one-shot/',
+      }), {
+        configPath: TEST_DATA + 'one-shot/config.json',
+        logPath: TEST_DATA + 'one-shot/log.txt'
+      });
+      // Set up an admin.
+      return new Promise(function (resolve, reject) {
+        oneShotExpressApp.couchConfig.set('admins', 'admin', 'pass', function (err) {
+          if (err) { reject(err); }
+          resolve();
+        });
+      });
+    }).then(function () {
+      // Read the config file.
+      return fse.readFile(TEST_DATA + 'one-shot/config.json');
+    }).then(function (data) {
+      var config = JSON.parse(data.toString());
+      if (!config.admins['admin']) {
+        // Make sure the admin has been created.
+        throw new Error("Admin does not exist");
+      } else if (config.admins['admin'] === 'pass') {
+        // Also make sure the password has been hashed.
+        throw new Error("Admin's password is not hashed");
+      }
+    }).then(
+      // Whatever happened, clean up.
+      function () {
+        return cleanUpTest().then(done);
+      },
+      function (err) {
+        return cleanUpTest().then(function () {
+          throw err;
+        });
+      }
+    );
+  });
   it('should support setting a different config path', function (done) {
     // make sure the file is written to disk.
     expressApp2.couchConfig.set('demo', 'demo', true, function () {
