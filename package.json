@@ -110,7 +110,7 @@
   },
   "optionalDependencies": {
     "pouchdb-adapter-node-websql": "^6.4.1",
-    "pouchdb-adapter-leveldb": "^6.4.1"
+    "pouchdb-adapter-leveldb": "^7.0.0"
   },
   "browserPackages": {
     "http-pouchdb": "buildHTTPPouchDB",
