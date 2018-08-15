@@ -54,7 +54,7 @@
     "pouchdb-adapter-leveldb-core": "^7.0.0",
     "pouchdb-adapter-memory": "^7.0.0",
     "pouchdb-collections": "^7.0.0",
-    "pouchdb-core": "^6.4.1",
+    "pouchdb-core": "^7.0.0",
     "pouchdb-find": "^6.4.1",
     "pouchdb-mapreduce": "^6.4.1",
     "pouchdb-promise": "^6.4.1",
