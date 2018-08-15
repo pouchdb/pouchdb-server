@@ -53,7 +53,7 @@
     "pouchdb-adapter-http": "^7.0.0",
     "pouchdb-adapter-leveldb-core": "^7.0.0",
     "pouchdb-adapter-memory": "^7.0.0",
-    "pouchdb-collections": "^6.4.1",
+    "pouchdb-collections": "^7.0.0",
     "pouchdb-core": "^6.4.1",
     "pouchdb-find": "^6.4.1",
     "pouchdb-mapreduce": "^6.4.1",
