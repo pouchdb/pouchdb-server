@@ -19,7 +19,7 @@
     "colors": "^1.0.3",
     "compression": "^1.6.2",
     "cookie-parser": "^1.4.3",
-    "corser": "~2.0.0",
+    "corser": "~2.0.1",
     "couchdb-calculate-session-id": "^1.1.0",
     "couchdb-log-parse": "^0.0.4",
     "crypto-lite": "^0.2.0",
