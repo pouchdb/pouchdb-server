@@ -105,7 +105,7 @@
     "navigator": "^1.0.1",
     "sqldown": "^2.1.0",
     "sqlite3": "^4.0.0",
-    "supertest": "^3.0.0",
+    "supertest": "^3.4.2",
     "uglify-es": "^3.3.8"
   },
   "optionalDependencies": {
