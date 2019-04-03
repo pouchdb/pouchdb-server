@@ -14,7 +14,7 @@
     "base64url": "^3.0.0",
     "basic-auth": "^2.0.0",
     "basic-authorization-header": "^0.2.7",
-    "bluebird": "^3.4.7",
+    "bluebird": "^3.5.4",
     "body-parser": "^1.16.1",
     "colors": "^1.0.3",
     "compression": "^1.6.2",
