@@ -15,7 +15,7 @@
     "basic-auth": "^2.0.0",
     "basic-authorization-header": "^0.2.7",
     "bluebird": "^3.4.7",
-    "body-parser": "^1.16.1",
+    "body-parser": "^1.19.0",
     "colors": "^1.0.3",
     "compression": "^1.6.2",
     "cookie-parser": "^1.4.3",
