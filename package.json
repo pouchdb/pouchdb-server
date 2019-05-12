@@ -86,7 +86,7 @@
     "pouchdb-wrappers": "file:packages/node_modules/pouchdb-wrappers"
   },
   "devDependencies": {
-    "assert": "^1.4.1",
+    "assert": "^2.0.0",
     "browserify": "16.2.2",
     "builtin-modules": "^3.0.0",
     "chai": "^4.1.2",
