@@ -56,7 +56,7 @@
     "pouchdb-collections": "^7.1.1",
     "pouchdb-core": "^7.1.1",
     "pouchdb-find": "^7.1.1",
-    "pouchdb-mapreduce": "^7.0.0",
+    "pouchdb-mapreduce": "^7.1.1",
     "pouchdb-promise": "^6.4.1",
     "pouchdb-replication": "^7.0.0",
     "couchdb-eval": "file:packages/node_modules/couchdb-eval",
