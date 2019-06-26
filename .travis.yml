@@ -1,3 +1,5 @@
+dist: trusty
+
 language: node_js
 
 node_js:
@@ -64,10 +66,7 @@ env:
 matrix:
   fast_finish: true
   include:
-    - node_js: "4"
-      env: CLIENT=node COMMAND=test-pouchdb
-  include:
-    - node_js: "7"
+    - node_js: "8"
       env: CLIENT=node COMMAND=test-pouchdb
   allow_failures:
   - env: COMMAND=test-couchdb
