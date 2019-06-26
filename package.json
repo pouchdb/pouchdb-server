@@ -40,7 +40,7 @@
     "pouchdb-fauxton": "^0.0.6",
     "promise-nodify": "^1.0.2",
     "random-uuid-v4": "0.0.7",
-    "raw-body": "^2.2.0",
+    "raw-body": "^2.4.1",
     "sanitize-filename": "^1.6.1",
     "secure-random": "^1.1.1",
     "serve-favicon": "~2.5.0",
