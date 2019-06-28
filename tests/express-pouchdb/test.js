@@ -11,6 +11,9 @@ var buildApp = require('../../packages/node_modules/express-pouchdb'),
     memdown  = require('memdown'),
     assert   = require('assert');
 
+const should = require('chai').should();
+
+
 var TEST_DATA = __dirname + '/testdata/';
 var LARGE_TIMEOUT = 5000;
 
@@ -299,7 +302,37 @@ describe('redirects', function () {
   });
 });
 
+
 describe('endpoints', function () {
+
+  let db;
+  let endpointApp;
+  let person = {
+    _id: "person_1",
+    first: "Fred",
+    last: "Flintstone",
+  };
+
+  before('seed the database with a doc before all tests', () => {
+
+    endpointApp = buildApp(PouchDB, {
+      mode: 'minimumForPouchDB'
+    });
+
+    db = new PouchDB('endpointDB');
+
+    return db.put(person).then(function (resultDoc) {
+      //save off the revision so we can use it later
+      person._rev = resultDoc.rev;
+      return resultDoc;
+    });
+
+  });
+
+  after(function () {
+    return db.destroy();
+  });
+
   it("should be on the 'secured' whitelist (pouchdb/pouchdb-server#290)", function () {
     // https://stackoverflow.com/a/14934933
     var unguardedRoutes = inMemoryConfigApp._router.stack.filter(function (layer) {
@@ -367,6 +400,74 @@ describe('endpoints', function () {
     var msg = "Not on the whitelist:\n\n" + unguardedRoutes.join('\n');
     assert.equal(unguardedRoutes.length, 0, msg);
   });
+  it('should handle a get request for a specific rev', function () {
+
+    return request(endpointApp)
+        .post('/endpointDB/_bulk_get/')
+        .send({docs: [{id: person._id, rev: person._rev}]})
+        .expect(200)
+        .then((resp) => {
+
+          let respBody = JSON.parse(resp.text);
+          respBody.should.have.property('results').with.lengthOf(1);
+          respBody.results[0].id.should.equal(person._id);
+          respBody.results[0].should.have.property('docs').with.lengthOf(1);
+          respBody.results[0].docs[0].ok._rev.should.equal(person._rev);
+        });
+  });
+
+  it('should handle a get request with a bad revision', function () {
+
+    return request(endpointApp)
+        .post('/endpointDB/_bulk_get/')
+        .send({docs: [{id: person._id, rev: 'not_a_real_rev'}]})
+        .expect(200)
+        .then((resp) => {
+          let respBody = JSON.parse(resp.text);
+          respBody.should.have.property('results').with.lengthOf(1);
+          respBody.results[0].id.should.equal(person._id);
+          respBody.results[0].should.have.property('docs').with.lengthOf(1);
+          respBody.results[0].docs[0].should.be.empty;
+        });
+
+  });
+  it('should handle a get request with a non-existing revision pattern', function () {
+
+    //get a non-existing revision
+    const modifiedRev = getInvalidRev(person._rev);
+
+    return request(endpointApp)
+        .post('/endpointDB/_bulk_get/')
+        .send({docs: [{id: person._id, rev: modifiedRev}]})
+        .expect(200)
+        .then((resp) => {
+          let respBody = JSON.parse(resp.text);
+          respBody.should.have.property('results').with.lengthOf(1);
+          respBody.results[0].id.should.equal(person._id);
+          respBody.results[0].should.have.property('docs').with.lengthOf(1);
+          respBody.results[0].docs[0].should.have.property('missing', modifiedRev);
+        });
+  });
+
+  //failing with PouchDB throwing exception
+  xit('should handle a get request with a non-existing revision pattern and asking for latest', function () {
+
+    const modifiedRev = getInvalidRev(person._rev);
+
+    return request(endpointApp)
+        .post('/endpointDB/_bulk_get/')
+        .query({latest:true})
+        .send({docs: [{id: person._id, rev: modifiedRev}]})
+        .expect(200)
+        .then((resp) => {
+          let respBody = JSON.parse(resp.text);
+          respBody.should.have.property('results').with.lengthOf(1);
+          respBody.results[0].id.should.equal(person._id);
+          respBody.results[0].should.have.property('docs').with.lengthOf(1);
+          respBody.results[0].docs[0].missing.should.equal(modifiedRev);
+        });
+  });
+
 });
 
 function assertException(func, re) {
@@ -381,3 +482,12 @@ function assertException(func, re) {
   }
   throw (e || new Error('no error was thrown'));
 }
+
+function getInvalidRev(rev) {
+  // Create an invalid revision by incrementing the last digit.
+  const lastDigit = parseInt(rev[rev.length - 1], 16);
+  const newLastDigit = lastDigit === 0xf ? 0 : lastDigit + 1;
+  const invalidRev = rev.slice(0, -1) + newLastDigit.toString(16);
+  return invalidRev;
+}
+
