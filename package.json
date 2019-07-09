@@ -79,7 +79,7 @@
     "sanitize-filename": "^1.6.1",
     "secure-random": "^1.1.1",
     "serve-favicon": "~2.5.0",
-    "tail": "^1.2.1",
+    "tail": "^2.0.2",
     "uuid": "^3.0.1",
     "wordwrap": "1.0.0",
     "xhr2": "^0.2.0",
@@ -87,7 +87,7 @@
   },
   "devDependencies": {
     "assert": "^2.0.0",
-    "browserify": "16.2.2",
+    "browserify": "^16.3.0",
     "builtin-modules": "^3.0.0",
     "chai": "^4.1.2",
     "couchdb-harness": "*",
