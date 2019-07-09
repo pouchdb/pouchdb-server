@@ -39,7 +39,7 @@
     "pouchdb-all-dbs": "^1.0.2",
     "pouchdb-fauxton": "^0.0.6",
     "promise-nodify": "^1.0.2",
-    "random-uuid-v4": "0.0.7",
+    "random-uuid-v4": "0.0.8",
     "raw-body": "^2.2.0",
     "sanitize-filename": "^1.6.1",
     "secure-random": "^1.1.1",
