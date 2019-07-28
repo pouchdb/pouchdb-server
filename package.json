@@ -76,7 +76,7 @@
     "promise-nodify": "^1.0.2",
     "random-uuid-v4": "0.0.8",
     "raw-body": "^2.2.0",
-    "sanitize-filename": "^1.6.1",
+    "sanitize-filename": "^1.6.2",
     "secure-random": "^1.1.1",
     "serve-favicon": "~2.5.0",
     "tail": "^2.0.2",
