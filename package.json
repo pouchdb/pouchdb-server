@@ -87,7 +87,7 @@
   },
   "devDependencies": {
     "assert": "^2.0.0",
-    "browserify": "^16.3.0",
+    "browserify": "^16.5.0",
     "builtin-modules": "^3.0.0",
     "chai": "^4.1.2",
     "couchdb-harness": "*",
