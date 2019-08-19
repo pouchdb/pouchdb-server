@@ -80,7 +80,7 @@
     "secure-random": "^1.1.1",
     "serve-favicon": "~2.5.0",
     "tail": "^2.0.2",
-    "uuid": "^3.0.1",
+    "uuid": "^3.3.3",
     "wordwrap": "1.0.0",
     "xhr2": "^0.2.0",
     "xmlhttprequest-cookie": "^0.9.2"
