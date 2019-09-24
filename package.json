@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-server-monorepo",
   "private": true,
-  "version": "4.1.0",
+  "version": "4.2.0",
   "scripts": {
     "unit-tests": "./bin/unit-tests.sh",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
