@@ -1,0 +1,24 @@
+{
+  "name": "express-pouchdb-server-boilerplate",
+  "version": "0.0.0",
+  "description": "Boilerplate for creating an express-pouchdb-server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "express-pouchdb",
+    "pouchdb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.16.2",
+    "express-pouchdb": "^2.3.7",
+    "read-yaml": "^1.1.0"
+  }
+}

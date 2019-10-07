@@ -1,0 +1,8 @@
+admin:
+  username: "admin"
+  password: "password"
+domain: "127.0.0.1"
+protocol: "http://"
+port: 3030
+dbServerEndpoint: '/db'
+appDatabase: 'app'
