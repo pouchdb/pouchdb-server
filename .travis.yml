@@ -3,7 +3,7 @@ dist: trusty
 language: node_js
 
 node_js:
-  - "6"
+  - "8"
 
 sudo: false
 
@@ -66,8 +66,7 @@ env:
 matrix:
   fast_finish: true
   include:
-    - node_js: "8"
-      env: CLIENT=node COMMAND=test-pouchdb
+    - env: CLIENT=node COMMAND=test-pouchdb
   allow_failures:
   - env: COMMAND=test-couchdb
 

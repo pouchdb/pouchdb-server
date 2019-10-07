@@ -6,7 +6,7 @@
     "unit-tests": "./bin/unit-tests.sh",
     "test-pouchdb": "./bin/test-setup.sh && ./bin/test-pouchdb.sh",
     "test-couchdb": "./bin/test-couchdb.sh",
-    "eslint": "eslint bin/ packages/node_modules/**/src tests/",
+    "eslint": "eslint bin/ packages/node_modules/**/lib tests/",
     "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh",
     "release": "./bin/release.sh"
   },
@@ -91,7 +91,7 @@
     "builtin-modules": "^3.0.0",
     "chai": "^4.1.2",
     "couchdb-harness": "*",
-    "eslint": "4.18.2",
+    "eslint": "^6.0.1",
     "find-requires": "^0.2.2",
     "fs-extra": "^8.1.0",
     "glob": "^7.1.1",

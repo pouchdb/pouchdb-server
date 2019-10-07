@@ -1,7 +1,5 @@
 "use strict";
 
-/*globals before */
-
 var buildApp = require('../../packages/node_modules/express-pouchdb'),
     PouchDB  = require('pouchdb'),
     express  = require('express'),

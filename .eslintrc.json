@@ -66,6 +66,7 @@
     ],
     "space-before-blocks": [
       "error"
-    ]
+    ],
+    "no-prototype-builtins": "warn"
   }
 }
