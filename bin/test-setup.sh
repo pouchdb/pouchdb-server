@@ -9,11 +9,11 @@ DIRECTORY='pouchdb-tests'
 
 if [ ! -d "$DIRECTORY" ]; then
   # Control will enter here if $DIRECTORY exists.
-  git clone --single-branch --branch 7.0.0 \
-    --depth 500 \
+  git clone --branch master --depth 500 \
     https://github.com/pouchdb/pouchdb.git ${DIRECTORY}
 fi
 
 cd "$DIRECTORY"
+git checkout 7.0.0
 npm install
 cd ..
