@@ -15,6 +15,6 @@ if [ ! -d "$DIRECTORY" ]; then
 fi
 
 cd "$DIRECTORY"
-git checkout de54c62f99d028593059e615b5702131864b6dd4 # 6.4.1
+git checkout 7.0.0
 npm install
 cd ..
