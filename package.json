@@ -45,7 +45,7 @@
     "pouchdb": "^7.2.0",
     "pouchdb-adapter-http": "^7.1.1",
     "pouchdb-adapter-leveldb-core": "^7.1.1",
-    "pouchdb-adapter-memory": "^7.0.0",
+    "pouchdb-adapter-memory": "^7.1.1",
     "pouchdb-all-dbs": "^1.0.2",
     "pouchdb-auth": "file:packages/node_modules/pouchdb-auth",
     "pouchdb-bulkdocs-wrapper": "file:packages/node_modules/pouchdb-bulkdocs-wrapper",
