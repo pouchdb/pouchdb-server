@@ -53,7 +53,7 @@
     "pouchdb-collections": "^7.2.1",
     "pouchdb-core": "^7.2.1",
     "pouchdb-fauxton": "^0.0.6",
-    "pouchdb-find": "^7.0.0",
+    "pouchdb-find": "^7.2.1",
     "pouchdb-list": "file:packages/node_modules/pouchdb-list",
     "pouchdb-mapreduce": "^7.0.0",
     "pouchdb-plugin-error": "file:packages/node_modules/pouchdb-plugin-error",
