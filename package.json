@@ -58,7 +58,7 @@
     "pouchdb-mapreduce": "^7.2.1",
     "pouchdb-plugin-error": "file:packages/node_modules/pouchdb-plugin-error",
     "pouchdb-promise": "^6.4.1",
-    "pouchdb-replication": "^7.0.0",
+    "pouchdb-replication": "^7.2.1",
     "pouchdb-replicator": "file:packages/node_modules/pouchdb-replicator",
     "pouchdb-req-http-query": "file:packages/node_modules/pouchdb-req-http-query",
     "pouchdb-rewrite": "file:packages/node_modules/pouchdb-rewrite",
