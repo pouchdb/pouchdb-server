@@ -43,7 +43,7 @@
     "object-assign": "^4.1.0",
     "on-finished": "^2.3.0",
     "pouchdb": "^7.2.1",
-    "pouchdb-adapter-http": "^7.0.0",
+    "pouchdb-adapter-http": "^7.2.1",
     "pouchdb-adapter-leveldb-core": "^7.0.0",
     "pouchdb-adapter-memory": "^7.0.0",
     "pouchdb-all-dbs": "^1.0.2",
