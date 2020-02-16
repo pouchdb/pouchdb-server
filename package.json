@@ -50,7 +50,7 @@
     "pouchdb-auth": "file:packages/node_modules/pouchdb-auth",
     "pouchdb-bulkdocs-wrapper": "file:packages/node_modules/pouchdb-bulkdocs-wrapper",
     "pouchdb-changeslike-wrapper": "file:packages/node_modules/pouchdb-changeslike-wrapper",
-    "pouchdb-collections": "^7.0.0",
+    "pouchdb-collections": "^7.1.1",
     "pouchdb-core": "^7.0.0",
     "pouchdb-fauxton": "^0.0.6",
     "pouchdb-find": "^7.0.0",
