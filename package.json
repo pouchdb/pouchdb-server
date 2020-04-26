@@ -11,7 +11,7 @@
     "release": "./bin/release.sh"
   },
   "dependencies": {
-    "@gerhobbelt/nomnom": "^1.8.4-24",
+    "@gerhobbelt/nomnom": "^1.8.4-30",
     "base64url": "^3.0.0",
     "basic-auth": "^2.0.0",
     "basic-authorization-header": "^0.2.7",
