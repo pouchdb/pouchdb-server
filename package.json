@@ -32,7 +32,7 @@
     "equals": "^1.0.5",
     "express": "^4.14.1",
     "express-pouchdb": "file:packages/node_modules/express-pouchdb",
-    "extend": "^3.0.0",
+    "extend": "^3.0.2",
     "get-folder-size": "^2.0.0",
     "header-case-normalizer": "^1.0.3",
     "http-pouchdb": "file:packages/node_modules/http-pouchdb",
