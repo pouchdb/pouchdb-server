@@ -356,6 +356,28 @@ on the mode used, of course):
 [rewrite]:              http://docs.couchdb.org/en/latest/api/ddoc/rewrites.html
 [virtual host]:         http://docs.couchdb.org/en/latest/config/http.html#vhosts
 
+## Installing on Alpine Linux based images
+
+You need the following packages:
+* build-base
+* python
+
+```bash
+apk --no-cache add --virtual builds-deps build-base python
+```
+We recommend using no-cache and virtual, in order to keep the resulting container size same.
+
+Alpine linux based images _use musl libc_ instead of the standard glibc and thus are _not compatible with compiled binaries_. node-pre-gyp currently does not test the pre-compiled binaries to be ABI-compatible and thus you may see segfaults. We are working to resolve this issue.
+
+As a workaround, In alpine based images, force recompiling the leveldown native addon after a npm install with this command: `npm rebuild leveldown --build-from-source`.
+
+```Dockerfile
+RUN apk --no-cache add --virtual builds-deps build-base python
+RUN yarn --production && npm rebuild leveldown --build-from-source
+CMD node node_modules/pouchdb-server -p 5432
+```
+
+
 Getting Help
 ------------
 
