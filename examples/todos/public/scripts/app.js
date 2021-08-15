@@ -9,7 +9,7 @@
   // EDITING STARTS HERE (you dont need to edit anything above this line)
 
   var db = new PouchDB('todos');
-  var remoteCouch = window.location.href + 'db/todos';
+  var remoteCouch = window.location.origin + '/db/todos';
 
   db.info(function(err, info) {
     db.changes({
