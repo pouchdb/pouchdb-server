@@ -28,7 +28,7 @@ exports.dbData = {
 exports.dbDataFor = function (db) {
   var i = exports.dbData.dbs.indexOf(db);
   return exports.dbData.dataByDBIdx[i];
-}
+};
 
 exports.nodify = function (promise, callback) {
   require('promise-nodify')(promise, callback);
