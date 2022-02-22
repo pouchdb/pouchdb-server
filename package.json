@@ -52,7 +52,7 @@
     "pouchdb-changeslike-wrapper": "file:packages/node_modules/pouchdb-changeslike-wrapper",
     "pouchdb-collections": "^7.0.0",
     "pouchdb-core": "^7.0.0",
-    "pouchdb-fauxton": "^0.0.6",
+    "fauxton": "^1.2.6",
     "pouchdb-find": "^7.0.0",
     "pouchdb-list": "file:packages/node_modules/pouchdb-list",
     "pouchdb-mapreduce": "^7.0.0",
