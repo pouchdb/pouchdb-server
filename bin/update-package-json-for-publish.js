@@ -69,11 +69,11 @@ modules.forEach(function (mod) {
     optionalDependencies: {}
   });
 
-  // special case – `pouchdb-fauxton` is included using `require.resolve()`,
+  // special case – `fauxton` is included using `require.resolve()`,
   // meaning that `find-requires` doesn't find it. so we have to do it manually
   if (pkg.name === 'express-pouchdb') {
-    newPkg.dependencies['pouchdb-fauxton'] =
-      topPkg.dependencies['pouchdb-fauxton'];
+    newPkg.dependencies['fauxton'] =
+      topPkg.dependencies['fauxton'];
   }
 
   Object.assign(pkg, newPkg);
