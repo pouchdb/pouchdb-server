@@ -46,6 +46,9 @@ Or it can run using SQLite rather than LevelDB:
 
     pouchdb-server --sqlite
 
+**NOTE:** The underlying [`node-sqlite3`](https://github.com/mapbox/node-sqlite3#supported-platforms)
+currently only supports up to Node.js v14.
+
 ### Full options
 
 Most PouchDB Server options are available via the command line:
