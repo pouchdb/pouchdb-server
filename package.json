@@ -30,7 +30,7 @@
     "crypto-lite": "^0.2.0",
     "denodeify": "^1.2.1",
     "equals": "^1.0.5",
-    "express": "^4.14.1",
+    "express": "^4.17.3",
     "express-pouchdb": "file:packages/node_modules/express-pouchdb",
     "extend": "^3.0.2",
     "get-folder-size": "^2.0.0",
