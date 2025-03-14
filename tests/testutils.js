@@ -51,7 +51,7 @@ exports.setupWithDocAndAttachment = function () {
 };
 
 exports.teardown = function () {
-  return db.destroy();
+  return db.destroy()
 };
 
 exports.shouldThrowError = function (func) {

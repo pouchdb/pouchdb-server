@@ -58,12 +58,12 @@ describe('basic validation tests', () => {
       resp.ok.should.be.ok;
       db.getAttachment('test', 'test').then(getCb);
     }
-    const blob = new Buffer('Hello world!', 'ascii');
+    const blob = Buffer.from('Hello world!', 'ascii');
     db.validatingPutAttachment('test', 'test', blob, "text/plain", putCb);
   });
   it('should fail', () => {
     //setup - put an attachment
-    const blob = new Buffer('Hello world!', 'ascii');
+    const blob = Buffer.from('Hello world!', 'ascii');
     return db.putAttachment('mytest', 'test', blob, 'text/plain')
 
     .then((resp) => {
@@ -336,14 +336,14 @@ describe('attachment validation tests', () => {
     });
   });
   it('should succesfully put an attachment', () => {
-    return db.validatingPutAttachment('attachment_test2', 'text', new Buffer('tést', 'UTF-8'), 'text/plain');
+    return db.validatingPutAttachment('attachment_test2', 'text', Buffer.from('tést', 'UTF-8'), 'text/plain');
   });
   it("shouldn't put an attachment when forbidden", () => {
     return db.put(forbiddenDesignDoc)
 
     .then(() => {
       return shouldThrowError(() => {
-        return db.validatingPutAttachment('attachment_test2', 'text', new Buffer('tést', 'UTF-8'), 'text/plain');
+        return db.validatingPutAttachment('attachment_test2', 'text', Buffer.from('tést', 'UTF-8'), 'text/plain');
       });
     })
 

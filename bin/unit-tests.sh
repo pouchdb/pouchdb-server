@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/bash -x
 
-./packages/node_modules/pouchdb-server/bin/pouchdb-server -m -n -p 5984 $SERVER_ARGS &
+./packages/node_modules/pouchdb-server/bin/pouchdb-server -m -p 5984 $SERVER_ARGS &
 POUCHDB_SERVER_PID=$!
 
-COUCH_HOST=http://localhost:5984 TIMEOUT=120000 mocha ./tests/**/* $1
+COUCH_HOST=http://localhost:5984 TIMEOUT=120000 mocha -b --full-trace ./tests/**/* $1
 
 EXIT_STATUS=$?
 if [[ ! -z $POUCHDB_SERVER_PID ]]; then
