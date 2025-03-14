@@ -2,7 +2,6 @@ var should = require('chai').should();
 var PouchDB = require('pouchdb');
 var memdown = require('memdown');
 var sqldown = require('sqldown');
-var medeadown = require('medeadown');
 var jsondown = require('jsondown');
 var locket = require('locket');
 var Promise = require('bluebird');
@@ -20,10 +19,6 @@ describe('pouchdb-size tests', function () {
       return new PouchDB('b/chello world!').destroy();
     }).then(function () {
       return fse.rmdirAsync("b");
-    // }).then(function () {
-    //   return new PouchDB("e", {db: sqldown}).destroy();
-    }).then(function () {
-      return new PouchDB("./f", {db: medeadown}).destroy();
     }).then(function () {
       return fse.removeAsync("g");
     }).then(function () {
@@ -100,18 +95,6 @@ describe('pouchdb-size tests', function () {
       })
       .then(function (info) {
         info.db_name.should.equal("e");
-        info.disk_size.should.be.greaterThan(0);
-      });
-  });
-
-  it("should work with medeadown", function () {
-    // ./f instead of f is needed for medeadown.
-    var db = new PouchDB("./f", {db: medeadown});
-    db.installSizeWrapper();
-
-    return db.info()
-      .then(function (info) {
-        info.db_name.should.equal("./f");
         info.disk_size.should.be.greaterThan(0);
       });
   });
