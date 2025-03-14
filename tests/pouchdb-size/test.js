@@ -20,8 +20,8 @@ describe('pouchdb-size tests', function () {
       return new PouchDB('b/chello world!').destroy();
     }).then(function () {
       return fse.rmdirAsync("b");
-    }).then(function () {
-      return new PouchDB("e", {db: sqldown}).destroy();
+    // }).then(function () {
+    //   return new PouchDB("e", {db: sqldown}).destroy();
     }).then(function () {
       return new PouchDB("./f", {db: medeadown}).destroy();
     }).then(function () {
