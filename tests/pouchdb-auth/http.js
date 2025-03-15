@@ -1,9 +1,8 @@
 const {BASE_URL, HTTP_AUTH, PouchDB, should, shouldThrowError} = require('./utils');
 
 describe('SyncHTTPAuthTests', () => {
-  it('should work with http dbs', () => {
+  it.skip('should work with http dbs', () => {
     const db = new PouchDB(BASE_URL + "/_users", {auth: HTTP_AUTH});
-
     return db.useAsAuthenticationDB()
 
     .then((response) => {

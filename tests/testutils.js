@@ -42,7 +42,7 @@ exports.setupWithDocAndAttachment = function () {
   var res;
   return exports.setupWithDoc().then(function (info) {
     res = info;
-    var buffer = new Buffer('abcd', 'ascii');
+    var buffer = Buffer.from('abcd', 'ascii');
     return db.putAttachment('attachment_test', 'text', buffer, 'text/plain');
   }).then(function (info) {
     res.attRev = info.rev;

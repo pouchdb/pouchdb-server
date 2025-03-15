@@ -37,7 +37,7 @@ var coreApp = buildApp(PouchDB.defaults({
 
 var inMemoryConfigApp = buildApp(PouchDB.defaults({
   db: memdown,
-  prefix: 'e'
+  // prefix: 'e' // TODO fix in pouchdb: ignore prefix for URLs that start with http
 }), {
   inMemoryConfig: true
 });
