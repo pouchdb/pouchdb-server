@@ -3,25 +3,24 @@ var PouchDB = require('pouchdb');
 var memdown = require('memdown');
 var sqldown = require('sqldown');
 var jsondown = require('jsondown');
-var Promise = require('bluebird');
-var fse = Promise.promisifyAll(require("fs-extra"));
+var fse = require("fs-extra");
 
 PouchDB.plugin(require('pouchdb-size'));
 
 describe('pouchdb-size tests', function () {
   before(function () {
-    return fse.mkdirAsync("b");
+    return fse.mkdir("b");
   });
 
   after(function () {
     return new PouchDB("a").destroy().then(function () {
       return new PouchDB('b/chello world!').destroy();
     }).then(function () {
-      return fse.rmdirAsync("b");
+      return fse.rmdir("b");
     }).then(function () {
-      return fse.removeAsync("g");
+      return fse.remove("g");
     }).then(function () {
-      return fse.removeAsync("h");
+      return fse.remove("h");
     });
   });
 

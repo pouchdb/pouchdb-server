@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 ./packages/node_modules/pouchdb-server/bin/pouchdb-server -m -p 5984 $SERVER_ARGS &
 POUCHDB_SERVER_PID=$!
@@ -10,3 +10,4 @@ if [[ ! -z $POUCHDB_SERVER_PID ]]; then
   kill $POUCHDB_SERVER_PID
 fi
 exit $EXIT_STATUS
+ 
