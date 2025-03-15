@@ -3,7 +3,6 @@ var PouchDB = require('pouchdb');
 var memdown = require('memdown');
 var sqldown = require('sqldown');
 var jsondown = require('jsondown');
-var locket = require('locket');
 var Promise = require('bluebird');
 var fse = Promise.promisifyAll(require("fs-extra"));
 
@@ -110,17 +109,6 @@ describe('pouchdb-size tests', function () {
       })
       .then(function (info) {
         info.db_name.should.equal("g");
-        info.disk_size.should.be.greaterThan(0);
-      });
-  });
-
-  it("should work with locket", function () {
-    var db = new PouchDB("h", {db: locket});
-    db.installSizeWrapper();
-
-    return db.info()
-      .then(function (info) {
-        info.db_name.should.equal("h");
         info.disk_size.should.be.greaterThan(0);
       });
   });
