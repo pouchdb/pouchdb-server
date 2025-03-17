@@ -1,8 +1,6 @@
 var should = require('chai').should();
 var PouchDB = require('pouchdb');
-var memdown = require('memdown');
-var sqldown = require('sqldown');
-var jsondown = require('jsondown');
+var memdown = require('memory-level');
 var fse = require("fs-extra");
 
 PouchDB.plugin(require('pouchdb-size'));
@@ -79,36 +77,4 @@ describe('pouchdb-size tests', function () {
     });
   });
 
-  // PouchDB doesn't create a directory with sqldown, only a sqlite file
-  // which means that at this point `pouchdb-size` is not compatible with
-  // sqldown.
-  it.skip("should work with sqldown", function () {
-    var db = new PouchDB("e", {db: sqldown});
-    db.installSizeWrapper();
-
-    return db.getDiskSize()
-      .then(function (size) {
-        size.should.be.greaterThan(0);
-        return db.info();
-      })
-      .then(function (info) {
-        info.db_name.should.equal("e");
-        info.disk_size.should.be.greaterThan(0);
-      });
-  });
-
-  it("should work with jsondown", function () {
-    var db = new PouchDB("g", {db: jsondown});
-    db.installSizeWrapper();
-
-    return db.getDiskSize()
-      .then(function (size) {
-        size.should.be.greaterThan(0);
-        return db.info();
-      })
-      .then(function (info) {
-        info.db_name.should.equal("g");
-        info.disk_size.should.be.greaterThan(0);
-      });
-  });
 });

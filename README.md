@@ -99,10 +99,6 @@ Examples:
   pouchdb-server --level-backend redisdown
   Starts up a pouchdb-server that talks to Redis, on localhost:6379.
   Requires: npm install redisdown
-
-  pouchdb-server --level-backend sqldown --level-prefix /tmp/
-  Starts up a pouchdb-server using SQLite, with files stored in /tmp/.
-  Requires: npm install sqldown sqlite3
 ```
 
 ### Configuration

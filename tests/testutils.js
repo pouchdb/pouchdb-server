@@ -4,7 +4,7 @@ var Promise = require('pouchdb-promise');
 var chai = require('chai');
 
 exports.PouchDB = require('pouchdb').defaults({
-  db: require('memdown')
+  db: require('memory-level')
 });
 
 var testConfig;
