@@ -7,7 +7,7 @@ var buildApp = require('../../packages/node_modules/express-pouchdb'),
     express  = require('express'),
     request  = require('supertest'),
     fse      = require('fs-extra'),
-    memdown  = require('memory-level'),
+    memdown  = require('memdown'),
     assert   = require('assert');
 
 var TEST_DATA = __dirname + '/testdata/';
