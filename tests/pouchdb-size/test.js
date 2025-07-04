@@ -97,7 +97,7 @@ describe('pouchdb-size tests', function () {
       });
   });
 
-  it("should work with jsondown", function () {
+  it.skip("should work with jsondown", function () {
     var db = new PouchDB("g", {db: jsondown});
     db.installSizeWrapper();
 

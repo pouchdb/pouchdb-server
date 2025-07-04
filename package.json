@@ -95,7 +95,7 @@
     "navigator": "^1.0.1",
     "sqldown": "^2.1.0",
     "supertest": "^7.0.0",
-    "uglify-es": "^3.3.8"
+    "uglify-js": "^3.19.3"
   },
   "optionalDependencies": {
     "pouchdb-adapter-leveldb": "^9.0.0"
