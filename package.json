@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@gerhobbelt/nomnom": "^1.8.4-31",
-    "base64url": "^3.0.1",
     "basic-auth": "^2.0.1",
     "basic-authorization-header": "^0.2.7",
     "body-parser": "^1.16.1",
