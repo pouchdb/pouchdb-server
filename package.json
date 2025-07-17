@@ -8,7 +8,8 @@
     "test-couchdb": "./bin/test-couchdb.sh",
     "eslint": "eslint bin/ packages/node_modules/**/src tests/",
     "test-express-minimum": "./bin/test-setup.sh && ./bin/test-express-minimum.sh",
-    "release": "./bin/release.sh"
+    "release": "./bin/release.sh",
+    "dev": "./packages/node_modules/pouchdb-server/bin/pouchdb-server -m -p 5984"
   },
   "dependencies": {
     "@gerhobbelt/nomnom": "^1.8.4-31",
