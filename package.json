@@ -81,7 +81,6 @@
     "browserify": "^17.0.1",
     "builtin-modules": "^5.0.0",
     "chai": "^5.2.0",
-    "couchdb-harness": "*",
     "eslint": "9.22.0",
     "find-requires": "^1.0.0",
     "fs-extra": "^11.3.0",
