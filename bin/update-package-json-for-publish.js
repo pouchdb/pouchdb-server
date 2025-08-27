@@ -10,7 +10,6 @@ var path = require('path');
 var glob = require('glob');
 var findRequires = require('find-requires');
 var builtinModules = require('builtin-modules').default;
-console.log(builtinModules)
 var uniq = require('lodash.uniq');
 var flatten = require('lodash.flatten');
 
