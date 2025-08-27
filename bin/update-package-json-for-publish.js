@@ -10,6 +10,7 @@ var path = require('path');
 var glob = require('glob');
 var findRequires = require('find-requires');
 var builtinModules = require('builtin-modules').default;
+console.log(builtinModules)
 var uniq = require('lodash.uniq');
 var flatten = require('lodash.flatten');
 
@@ -40,7 +41,6 @@ modules.forEach(function (mod) {
       // exclude built-ins like 'inherits', 'fs', etc.
       builtinModules.indexOf(dep) === -1;
   }).sort();
-
   //find dependencies and igonore if we referencing a local file
   var newPkg = uniqDeps.reduce(function (deps, dep) {
     if (/^\.\//.test(dep) || /^\.\.\//.test(dep)) {

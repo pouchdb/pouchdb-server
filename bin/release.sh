@@ -45,13 +45,17 @@ for pkg in $(ls packages/node_modules); do
   cd -
 done
 
+echo "Building Browser Packages"
 # Build browser packages
 for pkg in $(ls packages/node_modules); do
   if [ "false" = $(node --eval "console.log(!!require('./package.json').browserPackages['$pkg']);") ]; then
       continue
   fi
+  echo "Browser Package $pkg"
   module_name=$(node --eval "console.log(require('./package.json').browserPackages['$pkg']);")
+  echo "browserify"
   browserify packages/node_modules/$pkg -o packages/node_modules/$pkg/dist/$pkg.js -s $module_name
+  echo "uglify"
   uglifyjs packages/node_modules/$pkg/dist/$pkg.js -o packages/node_modules/$pkg/dist/$pkg.min.js
 done
 
