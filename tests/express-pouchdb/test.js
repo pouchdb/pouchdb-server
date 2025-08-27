@@ -6,8 +6,7 @@ var buildApp = require('../../packages/node_modules/express-pouchdb'),
     PouchDB  = require('pouchdb'),
     express  = require('express'),
     request  = require('supertest'),
-    Promise  = require('bluebird'),
-    fse      = Promise.promisifyAll(require('fs-extra')),
+    fse      = require('fs-extra'),
     memdown  = require('memdown'),
     assert   = require('assert');
 
@@ -38,7 +37,7 @@ var coreApp = buildApp(PouchDB.defaults({
 
 var inMemoryConfigApp = buildApp(PouchDB.defaults({
   db: memdown,
-  prefix: 'e'
+  // prefix: 'e' // TODO fix in pouchdb: ignore prefix for URLs that start with http
 }), {
   inMemoryConfig: true
 });
@@ -46,9 +45,9 @@ var inMemoryConfigApp = buildApp(PouchDB.defaults({
 before(function (done) {
   this.timeout(LARGE_TIMEOUT);
   cleanUp().then(function () {
-    return fse.mkdirsAsync(TEST_DATA + 'a');
+    return fse.mkdirs(TEST_DATA + 'a');
   }).then(function () {
-    return fse.mkdirsAsync(TEST_DATA + 'b');
+    return fse.mkdirs(TEST_DATA + 'b');
   }).then(function () {
     expressApp = buildApp(PouchDB.defaults({
       prefix: TEST_DATA + 'a/'
@@ -71,9 +70,9 @@ after(function (done) {
 
 function cleanUp() {
   return Promise.all([
-    fse.removeAsync(TEST_DATA),
-    fse.removeAsync('./config.json'),
-    fse.removeAsync('./log.txt')
+    fse.remove(TEST_DATA),
+    fse.remove('./config.json'),
+    fse.remove('./log.txt')
   ]);
 }
 
@@ -109,9 +108,9 @@ describe('config', function () {
   });
   it('should support setting admins', function (done) {
     var cleanUpTest = function () {
-      return fse.removeAsync(TEST_DATA + 'one-shot');
+      return fse.remove(TEST_DATA + 'one-shot');
     };
-    fse.mkdirsAsync(TEST_DATA + 'one-shot').then(function () {
+    fse.mkdirs(TEST_DATA + 'one-shot').then(function () {
       // Creates a single usage app.
       var oneShotExpressApp = buildApp(PouchDB.defaults({
         prefix: TEST_DATA + 'one-shot/',
@@ -317,8 +316,11 @@ describe('endpoints', function () {
           //   handled correctly
           //
           '/_config': 'routes/authorization.js',
+          '/_config,/_node/:nodename/_config': 'routes/authorization.js',
           '/_config/:section': 'routes/authorization.js',
+          '/_config/:section,/_node/:nodename/_config/:section': 'routes/authorization.js',
           '/_config/:section/:key': 'routes/authorization.js',
+          '/_config/:section/:key,/_node/:nodename/_config/:section/:key': 'routes/authorization.js',
           '/_log': 'routes/authorization.js',
           '/_active_tasks': 'routes/authorization.js',
           '/_db_updates': 'routes/authorization.js',

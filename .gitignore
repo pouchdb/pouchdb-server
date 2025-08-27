@@ -13,3 +13,6 @@ log.txt
 /pouchdb
 /tmp
 pouchdb-tests
+.DS_Store
+.DS_Store
+couchdb
