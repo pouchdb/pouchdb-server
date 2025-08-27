@@ -25,7 +25,6 @@ describe('sync seamless auth tests with remote', () => {
   let remoteDB, localDB;
   before(waitUntilReady);
   beforeEach(() => {
-    console.log(url)
     return PouchDB.setSeamlessAuthRemoteDB(url, {auth: HTTP_AUTH})
       .then(() => {
         remoteDB = new PouchDB(url, {auth: HTTP_AUTH});
