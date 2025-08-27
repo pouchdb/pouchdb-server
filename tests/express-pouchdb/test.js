@@ -316,8 +316,11 @@ describe('endpoints', function () {
           //   handled correctly
           //
           '/_config': 'routes/authorization.js',
+          '/_config,/_node/:nodename/_config': 'routes/authorization.js',
           '/_config/:section': 'routes/authorization.js',
+          '/_config/:section,/_node/:nodename/_config/:section': 'routes/authorization.js',
           '/_config/:section/:key': 'routes/authorization.js',
+          '/_config/:section/:key,/_node/:nodename/_config/:section/:key': 'routes/authorization.js',
           '/_log': 'routes/authorization.js',
           '/_active_tasks': 'routes/authorization.js',
           '/_db_updates': 'routes/authorization.js',
